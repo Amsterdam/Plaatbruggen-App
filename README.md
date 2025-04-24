@@ -1,20 +1,20 @@
-# Plaatbruggen-App## 🔄 Workflow voor samenwerking (Fork & Pull Request)
+## 🔄 Workflow voor samenwerking (Fork & Pull Request)
 
 Omdat de repository openbaar is en sommige teamleden (nog) geen toegang hebben tot de organisatie, gebruiken we een **fork-based workflow**. Volg de stappen hieronder om samen te werken aan deze repository.
 
 ### 1. Fork de repository
-Ga naar [https://github.com/Amsterdam/Plaatbruggen-App](https://github.com/Amsterdam/Plaatbruggen-App)  
+Ga naar [https://github.com/Amsterdam/automatisch-toetsmodel-plaatbruggen](https://github.com/Amsterdam/automatisch-toetsmodel-plaatbruggen)  
 Klik rechtsboven op **"Fork"** en kies je eigen GitHub-account.
 
 ### 2. Clone je fork lokaal
 ```bash
-git clone https://github.com/<jouw-gebruikersnaam>/Plaatbruggen-App.git
-cd Plaatbruggen-App
+git clone https://github.com/<jouw-gebruikersnaam>/automatisch-toetsmodel-plaatbruggen.git
+cd automatisch-toetsmodel-plaatbruggen
 ```
 
 ### 3. Voeg de originele repo toe als upstream
 ```bash
-git remote add upstream https://github.com/Amsterdam/Plaatbruggen-App.git
+git remote add upstream https://github.com/Amsterdam/automatisch-toetsmodel-plaatbruggen.git
 ```
 
 ### 4. Blijf up-to-date met de hoofdrepo
@@ -34,6 +34,6 @@ git push origin feature/naam-van-je-feature
 
 ### 6. Maak een Pull Request aan
 Ga naar je fork op GitHub en klik op **"Compare & pull request"**  
-Kies `Amsterdam/Plaatbruggen-App:main` als doelbranch.  
+Kies `Amsterdam/automatisch-toetsmodel-plaatbruggen:main` als doelbranch.  
 Beschrijf duidelijk wat je hebt toegevoegd of aangepast.
 
