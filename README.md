@@ -25,8 +25,9 @@ git merge upstream/main
 ```
 
 ### 5. Werk op een eigen branch
+De branch word aangemaakt via de issues. Bij het forken van de code fork je ook de aangemaakte branch bij je eerstvolgende pull.
 ```bash
-git checkout -b feature/naam-van-je-feature
+git checkout feature/naam-van-je-feature
 # voer je wijzigingen door
 git commit -m "Duidelijke commit message"
 git push origin feature/naam-van-je-feature
