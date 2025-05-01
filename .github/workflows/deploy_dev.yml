@@ -1,6 +1,9 @@
 name: Deploy - ATB [DEV]
 
-on: push
+on:
+  push:
+    tags:
+      - "dev-v*.*.*"
 
 env:
   VIKTOR_DEV: ${{ secrets.VIKTOR_DEV }}
