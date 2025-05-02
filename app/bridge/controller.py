@@ -1,7 +1,6 @@
 """Module for the Bridge entity controller."""
 
 import plotly.graph_objects as go  # Added Plotly import
-
 from viktor.core import ViktorController
 from viktor.geometry import SquareBeam, Vector
 from viktor.views import GeometryResult, GeometryView, PlotlyResult, PlotlyView  # Added Plotly imports

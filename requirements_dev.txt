@@ -2,3 +2,7 @@ mypy
 ruff
 pre-commit
 pytest
+
+#mypy type libs
+types-shapely
+types-Markdown
