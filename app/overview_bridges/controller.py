@@ -1,51 +1,277 @@
-"""Module for the OverviewBridges entity controller."""
+"""Controller for the Overview Bridges entity."""
 
-from typing import ClassVar
+import contextlib  # Import contextlib for suppress
+import json  # Import json module
+import math  # Import math for isfinite check
+import os  # Import os to construct path
+import typing  # Import typing for ClassVar
 
-from viktor import ViktorController
-from viktor.views import DataItem, DataView, PDFView, PlotlyView
+# Add GeoPandas import (ensure it's installed in your venv)
+import geopandas as gpd
+from shapely.geometry import MultiPolygon, Polygon  # Import geometry types
 
+import viktor.api_v1 as api  # Import VIKTOR API
+from viktor.core import Color, ViktorController  # Import Color, ViktorController
+from viktor.errors import UserError  # Import UserError
+from viktor.parametrization import Parametrization  # Import for type hint
+from viktor.views import MapFeature, MapPoint, MapPolygon, MapResult, MapView  # Use MapPolygon instead of MapPolyline
+
+# Import the parametrization from the separate file
 from .parametrization import OverviewBridgesParametrization
 
 
 class OverviewBridgesController(ViktorController):
-    """Controller for the bridge overview entity (parent entity)."""
+    """Controller for the Overview Bridges entity."""
 
-    label = "Overzicht Bruggen"
-    parametrization = OverviewBridgesParametrization
-    children: ClassVar[list[str]] = ["Bridge"]  # Defines allowed child entity types
-    show_children_as = "Table"  # How children are displayed in the tree
+    label = "Overzicht Bruggen"  # Updated label
+    parametrization = OverviewBridgesParametrization  # type: ignore[assignment] # Ignore potential complex assignment MyPy error
+    children: typing.ClassVar[list[str]] = ["Bridge"]  # Use the alias defined in app/__init__.py
+    show_children_as: typing.ClassVar[str] = "Table"  # Optional: How to display children (Table or Cards)
 
-    @DataView("Overzicht", duration_guess=1)
-    def get_overview(self, _params: OverviewBridgesParametrization) -> DataView:
-        """
-        Displays an overview of all bridges in the batch.
+    # --- Map View Helper Methods ---
 
-        :param _params: The parametrization instance containing user inputs (unused).
-        :return: A DataView object.
-        """
-        # Placeholder: Replace with actual overview logic
-        data = DataItem("Placeholder", "Overzicht van bruggen komt hier")
-        return DataView(data=data)
+    @staticmethod
+    def _load_and_prepare_shapefile(shapefile_path: str, allowed_objectnumm: set) -> gpd.GeoDataFrame | None:
+        """Loads shapefile, filters by allowed OBJECTNUMM, and ensures correct CRS."""
+        try:
+            gdf = gpd.read_file(shapefile_path)
 
-    @PlotlyView("Vergelijking", duration_guess=1)
-    def get_comparison(self, _params: OverviewBridgesParametrization) -> PlotlyView:
-        """
-        Shows comparison plots of different bridges.
+            # Ensure the CRS is WGS84 (EPSG:4326)
+            if gdf.crs is None:
+                raise UserError("Shapefile mist een Coordinate Reference System (.prj bestand).")  # noqa: TRY301
+            if gdf.crs.to_epsg() != 4326:
+                gdf = gdf.to_crs(epsg=4326)
 
-        :param _params: The parametrization instance containing user inputs (unused).
-        :return: A PlotlyView object.
-        """
-        # Placeholder: Replace with actual comparison plot logic
-        return PlotlyView(data={})  # Replace {} with fig.to_json() when implemented
+            # Filter based on OBJECTNUMM
+            if "OBJECTNUMM" not in gdf.columns:
+                raise UserError("Shapefile mist de kolom 'OBJECTNUMM'.")  # noqa: TRY301
+            filtered_gdf = gdf[gdf["OBJECTNUMM"].isin(allowed_objectnumm)]
 
-    @PDFView("Batch Rapport", duration_guess=1)
-    def get_batch_report(self, _params: OverviewBridgesParametrization) -> PDFView:
-        """
-        Generates a batch report potentially containing all bridge reports.
+            if filtered_gdf.empty:
+                return None  # Return None if no allowed bridges found in shapefile
 
-        :param _params: The parametrization instance containing user inputs (unused).
-        :return: A PDFView object.
-        """
-        # Placeholder: Replace with actual batch report generation logic
-        return PDFView(html="<h1>Placeholder Batch Rapport</h1>")  # Replace with actual HTML content
+            return filtered_gdf  # noqa: TRY300
+
+        except FileNotFoundError:
+            # Specific error if components (.shx, .dbf) are missing relative to .shp
+            # Use resources_dir from the caller if needed for a better message, or make path absolute
+            raise UserError(f"Kon shapefile componenten niet vinden nabij {shapefile_path}. Zorg dat .shp, .shx, .dbf, .prj aanwezig zijn.")
+        except ImportError:
+            raise UserError("GeoPandas is niet correct geinstalleerd.")
+        except Exception as e:
+            raise UserError(f"Fout bij het verwerken van {shapefile_path}: {e}")
+
+    def _create_map_feature_from_polygon(self, polygon: Polygon, description: str) -> MapPolygon | None:
+        """Creates a MapPolygon feature from a Shapely Polygon, handling invalid coords."""
+        raw_coords = list(polygon.exterior.coords)
+        valid_coords = [(lat, lon) for lon, lat in raw_coords if math.isfinite(lat) and math.isfinite(lon)]
+        map_points = [MapPoint(lat, lon) for lat, lon in valid_coords]
+
+        if len(map_points) >= 3:
+            with contextlib.suppress(Exception):  # Ignore potential VIKTOR errors creating the polygon
+                return MapPolygon(map_points, description=description, color=Color.red())
+        return None
+
+    def _process_geometries(self, gdf: gpd.GeoDataFrame) -> list[MapFeature]:
+        """Processes geometries from GeoDataFrame to create MapFeatures."""
+        features = []
+        for _index, bridge in gdf.iterrows():
+            object_nummer = bridge.get("OBJECTNUMM")
+            bridge_name = bridge.get("OBJECTNAAM")
+
+            # Format description
+            if bridge_name and isinstance(bridge_name, str) and bridge_name.strip():
+                description = f"{object_nummer} - {bridge_name.strip()}"
+            else:
+                description = f"{object_nummer}"
+
+            geom = bridge.geometry
+
+            if isinstance(geom, Polygon):
+                feature = self._create_map_feature_from_polygon(geom, description)
+                if feature:
+                    features.append(feature)
+            elif isinstance(geom, MultiPolygon):
+                for i, poly in enumerate(geom.geoms):
+                    part_description = f"{description} (deel {i})"
+                    feature = self._create_map_feature_from_polygon(poly, part_description)
+                    if feature:
+                        features.append(feature)
+            # else: Handle other geometry types if needed
+
+        return features
+
+    @MapView("Overzicht Kaart", duration_guess=10, autorun=True)
+    def get_map_view(self, params: Parametrization, **kwargs) -> MapResult:  # noqa: ARG002
+        """Displays bridge polygons from the shapefile in the resources folder."""
+        # even if they are unused after refactoring the method body.
+        # 1. Define Paths
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            resources_dir = os.path.join(current_dir, "..", "..", "resources")
+            shapefile_path = os.path.join(resources_dir, "Bruggenkaart.shp")
+            allowed_bridges_path = os.path.join(resources_dir, "filtered_bridges.json")
+
+            if not os.path.exists(shapefile_path):
+                raise UserError(f"Shapefile niet gevonden op verwachtte locatie: {shapefile_path}")  # noqa: TRY301
+            if not os.path.exists(allowed_bridges_path):
+                raise UserError(f"Filter bestand niet gevonden op verwachtte locatie: {allowed_bridges_path}")  # noqa: TRY301
+
+        except Exception as e:
+            raise UserError(f"Fout bij het bepalen van bestandspaden: {e}")
+
+        # 2. Load allowed bridges list
+        try:
+            with open(allowed_bridges_path) as f:
+                filtered_bridge_data = json.load(f)
+                allowed_objectnumm = {bridge_obj.get("OBJECTNUMM") for bridge_obj in filtered_bridge_data if bridge_obj.get("OBJECTNUMM")}
+        except Exception as e:
+            raise UserError(f"Fout bij laden van {allowed_bridges_path}: {e}")
+
+        # 3. Load and prepare shapefile data
+        gdf = self._load_and_prepare_shapefile(shapefile_path, allowed_objectnumm)
+
+        # 4. Process geometries if data exists
+        features = []
+        if gdf is not None and not gdf.empty:
+            features = self._process_geometries(gdf)
+
+        # 5. Handle case where no features were generated
+        if not features:
+            default_point = MapPoint(52.37, 4.89, description="Geen geldige brugpolygonen gevonden/gefilterd.")
+            return MapResult([default_point])
+
+        # 6. Return map result
+        return MapResult(features)
+
+    # --- Helper methods for regenerate_bridges_action ---
+
+    @staticmethod
+    def _get_resource_paths() -> tuple[str, str, str]:
+        """Constructs and returns paths to resource files."""
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            resources_dir = os.path.join(current_dir, "..", "..", "resources")
+            shapefile_path = os.path.join(resources_dir, "Bruggenkaart.shp")
+            filtered_bridges_path = os.path.join(resources_dir, "filtered_bridges.json")
+
+            # Basic file existence check
+            if not os.path.exists(shapefile_path) or not os.path.exists(filtered_bridges_path):
+                raise UserError("Benodigde bestanden (Shapefile or JSON filter) niet gevonden in resources map.")  # noqa: TRY301
+            return resources_dir, shapefile_path, filtered_bridges_path  # noqa: TRY300
+        except Exception as e:
+            raise UserError(f"Fout bij het bepalen van bestandspaden: {e}")
+
+    @staticmethod
+    def _load_filtered_bridges(filtered_bridges_path: str) -> list[dict]:
+        """Loads filtered bridge data from the JSON file."""
+        try:
+            with open(filtered_bridges_path) as f:
+                return json.load(f)
+        except Exception as e:
+            raise UserError(f"Fout bij het laden van {filtered_bridges_path}: {e}")
+
+    @staticmethod
+    def _load_shapefile_and_names(shapefile_path: str) -> dict[str, str | None]:
+        """Loads the shapefile and creates a mapping from OBJECTNUMM to OBJECTNAAM."""
+        try:
+            gdf = gpd.read_file(shapefile_path)
+            objectnumm_to_name: dict[str, str | None] = {}
+            for _, row in gdf.iterrows():
+                numm = row.get("OBJECTNUMM")
+                if numm:
+                    name = row.get("OBJECTNAAM")
+                    # Format ID as integer if possible - This part seems unused for map/child generation, removing F841/SIM105 issues
+
+                    # Store None if OBJECTNAAM is missing, None, or empty/whitespace
+                    objectnumm_to_name[str(numm)] = name if name and isinstance(name, str) and name.strip() else None
+            # If loop completes without error, return the dictionary
+            return objectnumm_to_name  # noqa: TRY300
+        except Exception as e:
+            raise UserError(f"Fout bij het lezen van shapefile {shapefile_path}: {e}")
+
+    @staticmethod
+    def _get_existing_child_objectnumms(entity_id: int) -> set[str]:
+        """Retrieves the OBJECTNUMM of existing child entities."""
+        try:
+            viktor_api = api.API()
+            parent_entity = viktor_api.get_entity(entity_id)
+            existing_children = parent_entity.children(entity_type_names=["Bridge"])
+            # Store OBJECTNUMM in child params under 'bridge_objectnumm' key
+            return {
+                child.last_saved_params.get("bridge_objectnumm") for child in existing_children if child.last_saved_params.get("bridge_objectnumm")
+            }
+        except Exception as e:
+            raise UserError(f"Fout bij het ophalen van bestaande kind-entiteiten: {e}")
+
+    def _create_missing_children(
+        self,
+        parent_entity_id: int,
+        filtered_bridge_data: list[dict],
+        objectnumm_to_name: dict[str, str | None],
+        existing_objectnumms: set[str],
+    ) -> None:
+        """Creates child entities for bridges that do not already exist."""
+        created_count = 0
+        skipped_count = 0
+        try:
+            # Get parent entity object once
+            parent_entity = api.API().get_entity(parent_entity_id)
+
+            for bridge_data in filtered_bridge_data:
+                objectnumm = bridge_data.get("OBJECTNUMM")
+
+                if not objectnumm:
+                    skipped_count += 1
+                    continue
+
+                objectnumm_str = str(objectnumm)  # Ensure comparison is consistent
+
+                if objectnumm_str in existing_objectnumms:
+                    skipped_count += 1
+                    continue
+
+                # Bridge doesn't exist, create it
+                bridge_name = objectnumm_to_name.get(objectnumm_str)  # Use str for lookup
+
+                # Format child name: "OBJECTNUMM - OBJECTNAAM" or just "OBJECTNUMM"
+                child_name = f"{objectnumm_str} - {bridge_name}" if bridge_name else objectnumm_str
+
+                # Prepare parameters for the child entity
+                child_params = {
+                    "bridge_objectnumm": objectnumm_str,  # Store as string
+                    "bridge_name": bridge_name,  # Store name or None
+                }
+
+                # Call create_child on the parent entity object
+                parent_entity.create_child(entity_type_name="Bridge", name=child_name, params=child_params)
+                created_count += 1
+                # Add to set to prevent potential duplicates within this run
+                existing_objectnumms.add(objectnumm_str)
+
+        except Exception as e:
+            raise UserError(f"Fout tijdens het aanmaken van kind-entiteiten: {e}")
+
+    # --- Main Action Method ---
+
+    def regenerate_bridges_action(self, entity_id: int, **kwargs) -> None:  # noqa: ARG002
+        """Loads bridges from filtered_bridges.json and creates child entities if they don't exist."""
+        # even if it is unused within the method body.
+        # 1. Get paths
+        _resources_dir, shapefile_path, filtered_bridges_path = self._get_resource_paths()
+
+        # 2. Load data
+        filtered_bridge_data = self._load_filtered_bridges(filtered_bridges_path)
+        objectnumm_to_name = self._load_shapefile_and_names(shapefile_path)
+
+        # 3. Get existing children
+        existing_objectnumms = self._get_existing_child_objectnumms(entity_id)
+
+        # 4. Create missing children
+        self._create_missing_children(
+            parent_entity_id=entity_id,
+            filtered_bridge_data=filtered_bridge_data,
+            objectnumm_to_name=objectnumm_to_name,
+            existing_objectnumms=existing_objectnumms,
+        )
+        # No explicit return needed (implicitly returns None)

@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
-from viktor.core import ViktorApplication
 from viktor_app.batch_controller import BatchController
 
+from viktor.core import ViktorApplication
 
-class App(ViktorApplication):
+
+class Application(ViktorApplication):
     """
     Automatisch Toetsmodel voor Plaatbruggen.
 
