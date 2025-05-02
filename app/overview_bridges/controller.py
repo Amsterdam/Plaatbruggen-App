@@ -1,20 +1,32 @@
 """Controller for the Overview Bridges entity."""
 
+# ============================================================================================================
+# Imports
+# ============================================================================================================
+
 import contextlib  # Import contextlib for suppress
 import json  # Import json module
 import math  # Import math for isfinite check
 import os  # Import os to construct path
 import typing  # Import typing for ClassVar
+from io import StringIO
 
 # Add GeoPandas import (ensure it's installed in your venv)
 import geopandas as gpd
-from shapely.geometry import MultiPolygon, Polygon  # Import geometry types
-
+import markdown
 import viktor.api_v1 as api  # Import VIKTOR API
+from shapely.geometry import MultiPolygon, Polygon  # Import geometry types
 from viktor.core import Color, ViktorController  # Import Color, ViktorController
 from viktor.errors import UserError  # Import UserError
 from viktor.parametrization import Parametrization  # Import for type hint
-from viktor.views import MapFeature, MapPoint, MapPolygon, MapResult, MapView  # Use MapPolygon instead of MapPolyline
+from viktor.views import MapFeature, MapPoint, MapPolygon, MapResult, MapView, WebResult, WebView  # Use MapPolygon instead of MapPolyline
+
+from app.constants import (  # Replace relative imports with absolute imports
+    CHANGELOG_PATH,
+    CSS_PATH,
+    README_CONTENT,
+    README_PATH,
+)
 
 # Import the parametrization from the separate file
 from .parametrization import OverviewBridgesParametrization
@@ -162,6 +174,47 @@ class OverviewBridgesController(ViktorController):
         except Exception as e:
             raise UserError(f"Fout bij het bepalen van bestandspaden: {e}")
 
+    # ============================================================================================================
+    # Home Page
+    # ============================================================================================================
+
+    @WebView("Readme and Changelog", duration_guess=3)
+    def view_readme_changelog(self, **kwargs) -> WebResult:
+        """
+        Converts the docs files (README.md, CHANGELOG.md) to HTML and presents them in the viewer.
+
+        :return: WebResult.
+        """
+        with open(README_PATH, encoding="utf-8") as f:
+            html_text_readme = markdown.markdown(f.read())
+        with open(CHANGELOG_PATH, encoding="utf-8") as f:
+            html_text_changelog = markdown.markdown(f.read())
+        with open(CSS_PATH, encoding="utf-8") as f:
+            html_css = f.read()
+
+        prefix = f"""<!DOCTYPE html>
+                    <meta charset="utf-8">
+                    <head>
+                    <style>{html_css}"""
+
+        page1 = f"""
+            <iframe class="iframe" srcdoc="{html_text_readme}"></iframe>
+                    </div>
+                    <div class="iframe-wrapper">
+            """
+
+        page2 = f"""
+            <iframe class="iframe" srcdoc="{html_text_changelog}"></iframe>
+                    </div>
+                  </div>
+                </body>
+                </html>
+            """
+
+        html = StringIO(f"{prefix}\n{README_CONTENT}\n{page1}\n{page2}")
+
+        return WebResult(html=html)
+
     @staticmethod
     def _load_filtered_bridges(filtered_bridges_path: str) -> list[dict]:
         """Loads filtered bridge data from the JSON file."""
@@ -275,3 +328,5 @@ class OverviewBridgesController(ViktorController):
             existing_objectnumms=existing_objectnumms,
         )
         # No explicit return needed (implicitly returns None)
+
+
