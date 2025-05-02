@@ -2,3 +2,4 @@ viktor==14.20.0
 numpy
 scipy
 pandas
+geopandas

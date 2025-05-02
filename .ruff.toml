@@ -92,4 +92,5 @@ docstring-code-format = true
 [lint.per-file-ignores]
 # Allow unused imports in __init__.py files within the app directory
 # This is common for making symbols available at the package level.
-"app/**/__init__.py" = ["F401"]
+# Also ignore commented-out code (ERA001) in these files to allow explanations.
+"app/**/__init__.py" = ["F401", "ERA001"]
