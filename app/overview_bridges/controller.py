@@ -101,7 +101,7 @@ class OverviewBridgesController(ViktorController):
 
         return features
 
-    @MapView("Overzicht Kaart", duration_guess=10, autorun=True)
+    @MapView("Overzicht Kaart", duration_guess=1)
     def get_map_view(self, params: Parametrization, **kwargs) -> MapResult:  # noqa: ARG002
         """Displays bridge polygons from the shapefile in the resources folder."""
         # even if they are unused after refactoring the method body.
