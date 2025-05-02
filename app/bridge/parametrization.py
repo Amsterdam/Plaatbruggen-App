@@ -6,7 +6,10 @@ from viktor.parametrization import NumberField, Page, Parametrization, Tab
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
 
-    input = Page("Invoer", views=["get_3d_view", "get_top_view", "get_longitudinal_section", "get_cross_section"])
+    input = Page(
+        "Invoer",
+        views=["get_3d_view", "get_external_model_view", "get_top_view", "get_longitudinal_section", "get_cross_section"],
+    )
 
     # --- Tabs within Invoer Page ---
     input.geometrie_brug = Tab("Dimensies")
