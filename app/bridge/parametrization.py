@@ -1,70 +1,37 @@
-"""Module defining the parametrization for the Bridge entity."""
+"""Module for the Bridge entity parametrization."""
 
-from viktor.parametrization import (
-    BooleanField,
-    DateField,
-    GeoPointField,
-    IntegerField,
-    NumberField,
-    OptionField,
-    Page,
-    Tab,
-    Text,
-    TextField,
-    ViktorParametrization,
-)
+from viktor.parametrization import NumberField, Page, Parametrization, Tab
 
 
-class BridgeParametrization(ViktorParametrization):
-    """Defines the input fields and pages for the Bridge entity type."""
+class BridgeParametrization(Parametrization):
+    """Parametrization for the individual Bridge entity."""
 
-    # Bridge Info Page
-    bridge_info = Page("Brug info")
-    bridge_info.name = TextField("Naam", default="")
-    bridge_info.build_year = IntegerField("Bouwjaar", default=2000)
-    bridge_info.location = GeoPointField("Locatie op kaart")
+    input = Page("Invoer", views=["get_3d_view", "get_top_view", "get_longitudinal_section", "get_cross_section"])
 
-    # Input Page with tabs
-    input_page = Page("Invoer")
+    # --- Tabs within Invoer Page ---
+    input.geometrie_brug = Tab("Dimensies")
+    input.geometrie_wapening = Tab("Wapening")
+    input.belastingzones = Tab("Belastingzones")
+    input.belastingcombinaties = Tab("Belastingcombinaties")
 
-    # Geometry Tab
-    input_page.geometry = Tab("Geometrie")
-    input_page.geometry.bridge_length = NumberField("Lengte [m]", default=20.0)
-    input_page.geometry.bridge_width = NumberField("Breedte [m]", default=10.0)
-    input_page.geometry.deck_thickness = NumberField("Dikte brugdek [m]", default=0.5)
+    # --- Bridge Geometry (moved to geometrie_brug tab) ---
+    input.geometrie_brug.lengte = NumberField("Lengte", default=10.0, suffix="m")
+    input.geometrie_brug.breedte = NumberField("Breedte", default=5.0, suffix="m")
 
-    # Loading Zones Tab
-    input_page.loading_zones = Tab("Belastingzones")
-    input_page.loading_zones.description = Text("Definieer verschillende belastingzones op de brug")
-    input_page.loading_zones.num_zones = IntegerField("Aantal zones", default=1, min=1)
+    # --- Reinforcement Geometry (in geometrie_wapening tab) ---
+    input.geometrie_wapening.diameter = NumberField("Diameter", default=12.0, suffix="mm")
+    input.geometrie_wapening.spacing = NumberField("h.o.h. Afstand", default=150.0, suffix="mm")
+    input.geometrie_wapening.cover = NumberField("Dekking", default=30.0, suffix="mm")
 
-    # Load Combinations Tab
-    input_page.load_combinations = Tab("Belastingcombinaties")
-    input_page.load_combinations.description = Text("Definieer belastingcombinaties volgens Eurocode")
-    input_page.load_combinations.include_default_combinations = BooleanField("Standaard combinaties toevoegen", default=True)
+    # --- Load Zones (in belastingzones tab) ---
+    input.belastingzones.zone_breedte = NumberField("Zone Breedte", default=1.0, suffix="m")
+    input.belastingzones.load_intensity = NumberField("Belasting Intensiteit", default=5.0, suffix="kN/m²")
 
-    # SCIA Model Settings Tab
-    input_page.scia_settings = Tab("SCIA model input")
-    input_page.scia_settings.mesh_size = NumberField("Grootte elementen net [m]", default=0.5)
-    input_page.scia_settings.download_model = BooleanField("Model te downloaden", default=False)
+    # --- Load Combinations (in belastingcombinaties tab) ---
+    input.belastingcombinaties.permanent_factor = NumberField("Factor Permanente Belasting", default=1.35)
+    input.belastingcombinaties.variable_factor = NumberField("Factor Variabele Belasting", default=1.50)
 
-    # Calculation Page
-    calculation = Page("Berekening")
-    calculation.run_calculation = BooleanField("Berekening uitvoeren", default=False)
-    calculation.calculation_options = OptionField("Rekenopties", options=["Snel", "Normaal", "Uitgebreid"], default="Normaal")
-
-    # Results Page
-    results = Page("Resultaten")
-
-    # Cross-section checks
-    cross_section = Page("Doorsnede toetsingen")
-    cross_section.show_per_combination = BooleanField("Per belastingcombi de resultaten tonen", default=True)
-    cross_section.show_max_values = BooleanField("Maatgevende van omhullende combinatie tonen", default=True)
-
-    # Report Page
-    report = Page("Rapport")
-    report.author = TextField("Opsteller", default="")
-    report.date = DateField("Datum", default=None)
-    report.include_geometry = BooleanField("Geometrie toevoegen aan rapport", default=True)
-    report.include_results = BooleanField("Resultaten toevoegen aan rapport", default=True)
-    report.include_checks = BooleanField("Toetsingen toevoegen aan rapport", default=True)
+    # --- Added Pages ---
+    scia = Page("SCIA")
+    berekening = Page("Berekening")
+    rapport = Page("Rapport")

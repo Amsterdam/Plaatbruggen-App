@@ -2,3 +2,7 @@ viktor==14.20.0
 numpy
 scipy
 pandas
+markdown
+geopandas
+plotly
+shapely
