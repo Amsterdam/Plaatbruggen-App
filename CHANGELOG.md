@@ -9,6 +9,13 @@ Semantic versioning is used to denote different versions of this project.
 ### Added
 - Added `betonkwaliteit.csv` containing concrete quality specifications with strength parameters
 - Added `betonstaalkwaliteit.csv` containing reinforcement steel quality specifications with yield and design strengths
+- Added an explanatory text field for the bridge segments in the parametrization.
+
+### Changed
+- Set default of two items for the bridge segments dynamic array.
+
+### Fixed
+- Corrected visibility logic for "Afstand tot vorige snede" field in the bridge dimensions dynamic array, ensuring it is hidden for the first segment.
 
 ## [`v0.0.3`] - 2025-05-08
 
