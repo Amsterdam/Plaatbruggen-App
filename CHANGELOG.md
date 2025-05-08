@@ -4,11 +4,23 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
+## [`v0.0.5`] - 2025-05-08
+
+### Fixed
+- Suppressed a `DeprecationWarning` from `geopandas._compat` related to `shapely.geos` to keep console output clean. This is an internal `geopandas` issue and does not affect functionality.
+
 ## [`v0.0.4`] - 2025-05-08
 
 ### Added
 - Added `betonkwaliteit.csv` containing concrete quality specifications with strength parameters
 - Added `betonstaalkwaliteit.csv` containing reinforcement steel quality specifications with yield and design strengths
+- Added an explanatory text field for the bridge segments in the parametrization.
+
+### Changed
+- Set default of two items for the bridge segments dynamic array.
+
+### Fixed
+- Corrected visibility logic for "Afstand tot vorige snede" field in the bridge dimensions dynamic array, ensuring it is hidden for the first segment.
 
 ## [`v0.0.3`] - 2025-05-08
 

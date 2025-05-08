@@ -4,10 +4,9 @@ and cross-sections, using the `trimesh` library. It also includes functionality 
 generating a 3D representation of a bridge deck based on input parameters.
 """
 
-
 import numpy as np
 import trimesh
-from munch import Munch  # type: ignore
+from munch import Munch  # type: ignore[import-untyped]
 
 
 # Function to create a box by specifying its vertices and faces
@@ -24,26 +23,35 @@ def create_box(vertices: np.ndarray, color: list) -> trimesh.Trimesh:
 
     """
     # Define faces using vertex indices (triangles)
-    faces = np.array([
-        # Bottom face
-        [0, 1, 2], [0, 2, 3],
-        # Top face
-        [4, 5, 6], [4, 6, 7],
-        # Front face
-        [0, 1, 5], [0, 5, 4],
-        # Back face
-        [3, 2, 6], [3, 6, 7],
-        # Left face
-        [0, 3, 7], [0, 7, 4],
-        # Right face
-        [1, 2, 6], [1, 6, 5]
-    ])
+    faces = np.array(
+        [
+            # Bottom face
+            [0, 1, 2],
+            [0, 2, 3],
+            # Top face
+            [4, 5, 6],
+            [4, 6, 7],
+            # Front face
+            [0, 1, 5],
+            [0, 5, 4],
+            # Back face
+            [3, 2, 6],
+            [3, 6, 7],
+            # Left face
+            [0, 3, 7],
+            [0, 7, 4],
+            # Right face
+            [1, 2, 6],
+            [1, 6, 5],
+        ]
+    )
     # Create the mesh
     box_mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
 
     # Assign the same color to all faces
     box_mesh.visual.face_colors = np.array([color] * len(box_mesh.faces))
     return box_mesh
+
 
 # Function to create the X, Y, and Z axes
 def create_axes(length: float = 5.0, radius: float = 0.05) -> trimesh.Scene:
@@ -64,12 +72,16 @@ def create_axes(length: float = 5.0, radius: float = 0.05) -> trimesh.Scene:
     z_axis = trimesh.creation.cylinder(radius=radius, height=length, sections=20)
 
     # Rotate cylinders to align with their respective axes
-    x_axis.vertices = trimesh.transformations.rotation_matrix(
-        angle=np.pi / 2, direction=[0, 1, 0], point=[0, 0, 0]
-    ).dot(np.hstack((x_axis.vertices, np.ones((x_axis.vertices.shape[0], 1)))).T).T[:, :3]
-    y_axis.vertices = trimesh.transformations.rotation_matrix(
-        angle=np.pi / 2, direction=[1, 0, 0], point=[0, 0, 0]
-    ).dot(np.hstack((y_axis.vertices, np.ones((y_axis.vertices.shape[0], 1)))).T).T[:, :3]
+    x_axis.vertices = (
+        trimesh.transformations.rotation_matrix(angle=np.pi / 2, direction=[0, 1, 0], point=[0, 0, 0])
+        .dot(np.hstack((x_axis.vertices, np.ones((x_axis.vertices.shape[0], 1)))).T)
+        .T[:, :3]
+    )
+    y_axis.vertices = (
+        trimesh.transformations.rotation_matrix(angle=np.pi / 2, direction=[1, 0, 0], point=[0, 0, 0])
+        .dot(np.hstack((y_axis.vertices, np.ones((y_axis.vertices.shape[0], 1)))).T)
+        .T[:, :3]
+    )
 
     # Translate cylinders to align with the origin and direction of each axis
     x_axis.apply_translation([length / 2, 0, 0])  # Translate along X-axis
@@ -83,6 +95,7 @@ def create_axes(length: float = 5.0, radius: float = 0.05) -> trimesh.Scene:
 
     # Combine axes into a single scene
     return trimesh.Scene([x_axis, y_axis, z_axis])
+
 
 # Function to create a black dot at the origin
 def create_black_dot(radius: float = 0.2) -> trimesh.Trimesh:
@@ -100,6 +113,7 @@ def create_black_dot(radius: float = 0.2) -> trimesh.Trimesh:
     dot = trimesh.creation.icosphere(radius=radius)
     dot.visual.face_colors = [0, 0, 0, 255]  # Black color
     return dot
+
 
 def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray, plane_normal: list | np.ndarray) -> trimesh.Scene:
     """
@@ -132,6 +146,7 @@ def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray,
     combined_scene_2d.add_geometry(black_dot)
 
     return combined_scene_2d
+
 
 def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
     """
@@ -204,38 +219,44 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
         # Specify the vertices for each box, shifted along the Y-axis
         boxes_vertices = [
             # Box 1 (at origin in Y-axis)
-            np.array([
-                [d0l, z1d0r, z1d0b],  # Vertex 0: Bottom-front-left -- D-1
-                [d1l, z1d1r, z1d1b],  # Vertex 1: Bottom-front-right
-                [d1l, z1d1l, z1d1b],  # Vertex 2: Bottom-back-right
-                [d0l, z1d0l, z1d0b],  # Vertex 3: Bottom-back-left -- D-1
-                [d0l, z1d0r, z1d0t],  # Vertex 4: Top-front-left -- D-1
-                [d1l, z1d1r, z1d1t],  # Vertex 5: Top-front-right
-                [d1l, z1d1l, z1d1t],  # Vertex 6: Top-back-right
-                [d0l, z1d0l, z1d0t]  # Vertex 7: Top-back-left -- D-1
-            ]),
+            np.array(
+                [
+                    [d0l, z1d0r, z1d0b],  # Vertex 0: Bottom-front-left -- D-1
+                    [d1l, z1d1r, z1d1b],  # Vertex 1: Bottom-front-right
+                    [d1l, z1d1l, z1d1b],  # Vertex 2: Bottom-back-right
+                    [d0l, z1d0l, z1d0b],  # Vertex 3: Bottom-back-left -- D-1
+                    [d0l, z1d0r, z1d0t],  # Vertex 4: Top-front-left -- D-1
+                    [d1l, z1d1r, z1d1t],  # Vertex 5: Top-front-right
+                    [d1l, z1d1l, z1d1t],  # Vertex 6: Top-back-right
+                    [d0l, z1d0l, z1d0t],  # Vertex 7: Top-back-left -- D-1
+                ]
+            ),
             # Box 2 (shifted along Y-axis by 3 units)
-            np.array([
-                [d0l, z2d0r, z2d0b],  # Vertex 0: Bottom-front-left -- D-1
-                [d1l, z2d1r, z2d1b],  # Vertex 1: Bottom-front-right
-                [d1l, z2d1l, z2d1b],  # Vertex 2: Bottom-back-right
-                [d0l, z2d0l, z2d0b],  # Vertex 3: Bottom-back-left -- D-1
-                [d0l, z2d0r, z2d0t],  # Vertex 4: Top-front-left -- D-1
-                [d1l, z2d1r, z2d1t],  # Vertex 5: Top-front-right
-                [d1l, z2d1l, z2d1t],  # Vertex 6: Top-back-right
-                [d0l, z2d0l, z2d0t]  # Vertex 7: Top-back-left -- D-1
-            ]),
+            np.array(
+                [
+                    [d0l, z2d0r, z2d0b],  # Vertex 0: Bottom-front-left -- D-1
+                    [d1l, z2d1r, z2d1b],  # Vertex 1: Bottom-front-right
+                    [d1l, z2d1l, z2d1b],  # Vertex 2: Bottom-back-right
+                    [d0l, z2d0l, z2d0b],  # Vertex 3: Bottom-back-left -- D-1
+                    [d0l, z2d0r, z2d0t],  # Vertex 4: Top-front-left -- D-1
+                    [d1l, z2d1r, z2d1t],  # Vertex 5: Top-front-right
+                    [d1l, z2d1l, z2d1t],  # Vertex 6: Top-back-right
+                    [d0l, z2d0l, z2d0t],  # Vertex 7: Top-back-left -- D-1
+                ]
+            ),
             # Box 3 (shifted along Y-axis by 6 units)
-            np.array([
-                [d0l, z3d0r, z3d0b],  # Vertex 0: Bottom-front-left -- D-1
-                [d1l, z3d1r, z3d1b],  # Vertex 1: Bottom-front-right
-                [d1l, z3d1l, z3d1b],  # Vertex 2: Bottom-back-right
-                [d0l, z3d0l, z3d0b],  # Vertex 3: Bottom-back-left -- D-1
-                [d0l, z3d0r, z3d0t],  # Vertex 4: Top-front-left -- D-1
-                [d1l, z3d1r, z3d1t],  # Vertex 5: Top-front-right
-                [d1l, z3d1l, z3d1t],  # Vertex 6: Top-back-right
-                [d0l, z3d0l, z3d0t]  # Vertex 7: Top-back-left -- D-1
-            ])
+            np.array(
+                [
+                    [d0l, z3d0r, z3d0b],  # Vertex 0: Bottom-front-left -- D-1
+                    [d1l, z3d1r, z3d1b],  # Vertex 1: Bottom-front-right
+                    [d1l, z3d1l, z3d1b],  # Vertex 2: Bottom-back-right
+                    [d0l, z3d0l, z3d0b],  # Vertex 3: Bottom-back-left -- D-1
+                    [d0l, z3d0r, z3d0t],  # Vertex 4: Top-front-left -- D-1
+                    [d1l, z3d1r, z3d1t],  # Vertex 5: Top-front-right
+                    [d1l, z3d1l, z3d1t],  # Vertex 6: Top-back-right
+                    [d0l, z3d0l, z3d0t],  # Vertex 7: Top-back-left -- D-1
+                ]
+            ),
         ]
 
         # Define colors for each box in RGBA format
