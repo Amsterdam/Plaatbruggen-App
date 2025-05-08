@@ -33,5 +33,13 @@ show_error_codes = true
 pretty = true
 
 [[tool.mypy.overrides]]
-module = ["viktor.*", "geopandas.*", "shapely.*", "plotly.*"]
+module = ["viktor.*", "geopandas.*", "shapely.*", "plotly.*", "Munch.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.bridge.parametrization"
+disable_error_code = ["attr-defined"]
+
+[[tool.mypy.overrides]]
+module = "src.geometry.model_creator"
+disable_error_code = ["union-attr"]
