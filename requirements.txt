@@ -4,4 +4,4 @@ scipy
 pandas
 geopandas
 plotly
-ifcopenshell
+trimesh
