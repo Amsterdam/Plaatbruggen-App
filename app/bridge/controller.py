@@ -2,16 +2,6 @@
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
-from viktor import convert_word_to_pdf
-from viktor.core import File, ViktorController
-from viktor.views import (
-    GeometryResult,
-    GeometryView,
-    PDFResult,
-    PDFView,
-    PlotlyResult,  # Import PlotlyResult
-    PlotlyView,  # Import PlotlyView
-)
 
 from app.constants import (  # Replace relative imports with absolute imports
     OUTPUT_REPORT_PATH,
@@ -20,6 +10,16 @@ from src.geometry.model_creator import (
     create_2d_top_view,
     create_3d_model,  # Updated import
     create_cross_section,  # Import for cross-section creation
+)
+from viktor.core import File, ViktorController
+from viktor.utils import convert_word_to_pdf
+from viktor.views import (
+    GeometryResult,
+    GeometryView,
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
 )
 
 # Import parametrization from the separate file
@@ -281,7 +281,7 @@ class BridgeController(ViktorController):
         return GeometryResult(geometry, geometry_type="gltf")
 
     @PDFView("Rapport", duration_guess=1)
-    def get_output_report(self) -> PDFResult:
+    def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:  # noqa: ARG002
         """
         Generates a PDF report for the bridge design.
 
@@ -299,4 +299,3 @@ class BridgeController(ViktorController):
             pdf = convert_word_to_pdf(f1)
 
         return PDFResult(file=pdf)
-
