@@ -19,7 +19,7 @@ class BridgeParametrization(Parametrization):
 
     input = Page(
         "Invoer",
-        views=["get_3d_view", "get_top_view", "get_longitudinal_section", "get_cross_section", "get_plotly_chart"],
+        views=["get_top_view", "get_3d_view", "get_longitudinal_section", "get_cross_section"],
     )
 
     # --- Tabs within Invoer Page ---
