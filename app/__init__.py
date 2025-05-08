@@ -33,5 +33,6 @@ initial_entities = [
         entity_type_name="OverviewBridges",  # Use the alias
         name="Overzicht Bruggen",  # Updated name
         children=[],
+        use_as_start_page=True,
     )
 ]

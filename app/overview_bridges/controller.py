@@ -1,19 +1,31 @@
 """Controller for the Overview Bridges entity."""
 
+# ============================================================================================================
+# Imports
+# ============================================================================================================
+
 import contextlib  # Import contextlib for suppress
 import json  # Import json module
 import math  # Import math for isfinite check
 import os  # Import os to construct path
 import typing  # Import typing for ClassVar
+from io import StringIO
 
 # Add GeoPandas import (ensure it's installed in your venv)
 import geopandas as gpd
-import viktor.api_v1 as api  # Import VIKTOR API
+import markdown
 from shapely.geometry import MultiPolygon, Polygon  # Import geometry types
+
+import viktor.api_v1 as api  # Import VIKTOR API
+from app.constants import (  # Replace relative imports with absolute imports
+    CHANGELOG_PATH,
+    CSS_PATH,
+    README_PATH,
+)
 from viktor.core import Color, ViktorController  # Import Color, ViktorController
 from viktor.errors import UserError  # Import UserError
 from viktor.parametrization import Parametrization  # Import for type hint
-from viktor.views import MapFeature, MapPoint, MapPolygon, MapResult, MapView  # Use MapPolygon instead of MapPolyline
+from viktor.views import MapFeature, MapPoint, MapPolygon, MapResult, MapView, WebResult, WebView  # Use MapPolygon instead of MapPolyline
 
 # Import the parametrization from the separate file
 from .parametrization import OverviewBridgesParametrization
@@ -160,6 +172,114 @@ class OverviewBridgesController(ViktorController):
             return resources_dir, shapefile_path, filtered_bridges_path  # noqa: TRY300
         except Exception as e:
             raise UserError(f"Fout bij het bepalen van bestandspaden: {e}")
+
+    # ============================================================================================================
+    # Home Page
+    # ============================================================================================================
+
+    @WebView("Readme and Changelog", duration_guess=3)
+    def view_readme_changelog(self, **kwargs) -> WebResult:  # noqa: ARG002
+        """
+        Converts the docs files (README.md, CHANGELOG.md) to HTML and presents them in the viewer.
+
+        :return: WebResult.
+        """
+        with open(README_PATH, encoding="utf-8") as f:
+            html_text_readme = markdown.markdown(f.read())
+        with open(CHANGELOG_PATH, encoding="utf-8") as f:
+            html_text_changelog = markdown.markdown(f.read())
+        with open(CSS_PATH, encoding="utf-8") as f:
+            html_css = f.read()
+
+        # Create complete HTML documents for each iframe
+        readme_doc = f"""<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>{html_css}</style>
+        </head>
+        <body>
+            {html_text_readme}
+        </body>
+        </html>"""
+
+        changelog_doc = f"""<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>{html_css}</style>
+        </head>
+        <body class="changelog">
+            {html_text_changelog}
+        </body>
+        </html>"""
+
+        # Main HTML structure with responsive layout
+        html_content = f"""<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                /* Minimal styling for the container page only */
+                html, body {{
+                    margin: 0;
+                    padding: 0;
+                    height: 100%;
+                    overflow: hidden;
+                }}
+                .container {{
+                    display: flex;
+                    height: 100vh;
+                    width: 100%;
+                }}
+                .iframe-wrapper {{
+                    flex: 1;
+                    /* Use lighter border */
+                    border-right: 1px solid #eaecef;
+                    height: 100%;
+                }}
+                /* Remove border from the last wrapper */
+                .iframe-wrapper:last-child {{
+                    border-right: none;
+                }}
+                .iframe {{
+                    width: 100%;
+                    height: 100%;
+                    border: none;
+                }}
+                @media (max-width: 768px) {{
+                    .container {{
+                        flex-direction: column;
+                    }}
+                    .iframe-wrapper {{
+                        height: 50%;
+                        border-right: none;
+                        /* Use lighter border */
+                        border-bottom: 1px solid #eaecef;
+                    }}
+                    /* Remove border from the last wrapper on mobile */
+                    .iframe-wrapper:last-child {{
+                        border-bottom: none;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="iframe-wrapper">
+                    <iframe class="iframe" srcdoc="{readme_doc.replace('"', "&quot;")}" frameborder="0"></iframe>
+                </div>
+                <div class="iframe-wrapper">
+                    <iframe class="iframe" srcdoc="{changelog_doc.replace('"', "&quot;")}" frameborder="0"></iframe>
+                </div>
+            </div>
+        </body>
+        </html>"""
+
+        return WebResult(html=StringIO(html_content))
 
     @staticmethod
     def _load_filtered_bridges(filtered_bridges_path: str) -> list[dict]:

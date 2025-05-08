@@ -30,3 +30,9 @@ repos:
       hooks:
       - id: mypy
         language_version: python3.12
+        # Add dependencies needed by mypy that are not mypy itself
+        additional_dependencies: [
+            "types-Markdown",
+            "types-shapely",
+            # Add other types-* packages from requirements_dev.txt if needed
+        ]
