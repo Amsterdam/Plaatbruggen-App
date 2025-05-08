@@ -10,7 +10,7 @@ from viktor.parametrization import (
     Page,
     Parametrization,
     Tab,
-    TextField,
+    Text,
 )
 
 
@@ -33,12 +33,10 @@ class BridgeParametrization(Parametrization):
     input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
     input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
 
-    input.dimensions.segment_explanation = TextField(
-        "Uitleg Segmenten",
-        default="Definieer hier de verschillende segmenten van de brug. Standaard zijn twee segmenten voorgedefinieerd. "
-        "Pas de waarden aan of voeg meer segmenten toe via de '+' knop. "
-        "Elk segment beschrijft de geometrie tot de volgende snede.",
-        visible=True,
+    input.dimensions.segment_explanation = Text(
+        """Definieer hier de verschillende segmenten van de brug. Standaard zijn twee segmenten voorgedefinieerd.
+Pas de waarden aan of voeg meer segmenten toe via de '+' knop.
+Elk segment beschrijft de geometrie tot de volgende snede."""
     )
     input.dimensions.array = DynamicArray(
         "Brug dimensies",
