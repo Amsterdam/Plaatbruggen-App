@@ -50,7 +50,7 @@ Elk segment beschrijft de geometrie tot de volgende snede."""
                 "dz": 2.0,
                 "dze": 1.0,
                 "col_6": 0.0,
-                "l": 10,
+                "l": 0,
                 "is_first_segment": True,
             },
             {

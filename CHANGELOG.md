@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
+## [`v0.0.5`] - 2025-05-08
+
+### Fixed
+- Suppressed a `DeprecationWarning` from `geopandas._compat` related to `shapely.geos` to keep console output clean. This is an internal `geopandas` issue and does not affect functionality.
+
 ## [`v0.0.4`] - 2025-05-08
 
 ### Added

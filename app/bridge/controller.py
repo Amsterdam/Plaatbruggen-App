@@ -1,16 +1,15 @@
 """Module for the Bridge entity controller."""
 
-
 import trimesh
-from viktor.core import File, ViktorController
-from viktor.views import (
-    GeometryResult,
-    GeometryView,
-)
 
 from src.geometry.model_creator import (
     create_3d_model,  # Updated import
     create_cross_section,  # Import for cross-section creation
+)
+from viktor.core import File, ViktorController
+from viktor.views import (
+    GeometryResult,
+    GeometryView,
 )
 
 # Import parametrization from the separate file
@@ -32,7 +31,6 @@ class BridgeController(ViktorController):
         with geometry.open_binary() as w:
             w.write(trimesh.exchange.gltf.export_glb(combined_scene))
         return GeometryResult(geometry, geometry_type="gltf")
-
 
     @GeometryView("Bovenaanzicht", duration_guess=1, x_axis_to_right=True)
     def get_top_view(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
@@ -62,7 +60,6 @@ class BridgeController(ViktorController):
         with geometry.open_binary() as w:
             w.write(trimesh.exchange.gltf.export_glb(combined_scene_2d))
         return GeometryResult(geometry, geometry_type="gltf")
-
 
     @GeometryView("Langsdoorsnede", duration_guess=1, x_axis_to_right=True)
     def get_longitudinal_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
@@ -121,6 +118,3 @@ class BridgeController(ViktorController):
         with geometry.open_binary() as w:
             w.write(trimesh.exchange.gltf.export_glb(combined_scene_2d))
         return GeometryResult(geometry, geometry_type="gltf")
-
-
-
