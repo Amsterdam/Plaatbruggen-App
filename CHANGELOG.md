@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
-## [`v0.0.2`] - 2025-05-01
+## [`v0.0.3`] - 2025-05-08
 
 ### Added
 - Viktor CI/CD pipeline
@@ -13,6 +13,15 @@ Semantic versioning is used to denote different versions of this project.
 - Link to live VIKTOR application in README.
 - Hover effect on changelog version sections.
 - Set `OverviewBridges` entity as the default start page for the application.
+- Implemented 3D visualization of bridge geometry based on parametrized dimensions.
+- Added dynamic 2D views: top view, longitudinal section, and cross-section, derived from the 3D model.
+- Introduced detailed parametrization for bridge entities, including:
+    - Multi-section bridge dimensions using a dynamic array.
+    - Reinforcement geometry parameters.
+    - Load zone definitions and intensities.
+    - Load combination factors.
+    - Controls for section view locations.
+- Added placeholder pages for SCIA integration, Calculation, and Reporting within the bridge entity.
 
 ### Fixed
 - Initial configuration issues
@@ -27,7 +36,7 @@ Semantic versioning is used to denote different versions of this project.
 - Restructured README for better user/developer audience separation.
 - Clarified contribution workflow distinction (internal vs. external).
 
-## [`v0.0.1`] - 2025-05-01
+## [`v0.0.2`] - 2025-05-01
 
 ### Added
 - Initial release
@@ -39,3 +48,6 @@ Semantic versioning is used to denote different versions of this project.
 
 ### Changed
 - Initial project structure
+
+## [`v0.0.1`] - 2025-05-01
+
