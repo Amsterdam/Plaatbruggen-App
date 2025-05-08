@@ -2,9 +2,8 @@
 
 from pathlib import Path
 
-from viktor_app.batch_controller import BatchController
-
 from viktor.core import ViktorApplication
+from viktor_app.batch_controller import BatchController  # type: ignore
 
 
 class Application(ViktorApplication):

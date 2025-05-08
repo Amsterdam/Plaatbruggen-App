@@ -8,9 +8,8 @@ import typing  # Import typing for ClassVar
 
 # Add GeoPandas import (ensure it's installed in your venv)
 import geopandas as gpd
-from shapely.geometry import MultiPolygon, Polygon  # Import geometry types
-
 import viktor.api_v1 as api  # Import VIKTOR API
+from shapely.geometry import MultiPolygon, Polygon  # Import geometry types
 from viktor.core import Color, ViktorController  # Import Color, ViktorController
 from viktor.errors import UserError  # Import UserError
 from viktor.parametrization import Parametrization  # Import for type hint

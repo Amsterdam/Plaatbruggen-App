@@ -1,5 +1,6 @@
 """Module for the Bridge entity parametrization."""
 
+from viktor import DynamicArray
 from viktor.parametrization import NumberField, Page, Parametrization, Tab
 
 
@@ -8,18 +9,28 @@ class BridgeParametrization(Parametrization):
 
     input = Page(
         "Invoer",
-        views=["get_3d_view", "get_external_model_view", "get_top_view", "get_longitudinal_section", "get_cross_section"],
+        views=["get_3d_view", "get_top_view", "get_longitudinal_section", "get_cross_section"],
     )
 
     # --- Tabs within Invoer Page ---
-    input.geometrie_brug = Tab("Dimensies")
+    input.dimensions = Tab("Dimensies")
     input.geometrie_wapening = Tab("Wapening")
     input.belastingzones = Tab("Belastingzones")
     input.belastingcombinaties = Tab("Belastingcombinaties")
 
     # --- Bridge Geometry (moved to geometrie_brug tab) ---
-    input.geometrie_brug.lengte = NumberField("Lengte", default=10.0, suffix="m")
-    input.geometrie_brug.breedte = NumberField("Breedte", default=5.0, suffix="m")
+    input.dimensions.top_view_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
+    input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
+    input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
+
+    input.dimensions.array = DynamicArray("Brug dimensies", min=2)
+    input.dimensions.array.bz1 = (NumberField("Breedte zone 1", default=10.0, suffix="m"))
+    input.dimensions.array.bz2 = (NumberField("Breedte zone 2", default=5.0, suffix="m"))
+    input.dimensions.array.bz3 = (NumberField("Breedte zone 3", default=15.0, suffix="m"))
+    input.dimensions.array.dz = (NumberField("Dikte zone 1 en 3", default=2.0, suffix="m"))
+    input.dimensions.array.dze = (NumberField("Extra dikte zone 2", default=1.0, suffix="m"))
+    input.dimensions.array.col_6 = (NumberField("alpha", default=0.0, suffix="Graden"))
+    input.dimensions.array.l = (NumberField("Afstand tot vorige snede", default=10, suffix="m"))
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
     input.geometrie_wapening.diameter = NumberField("Diameter", default=12.0, suffix="mm")
