@@ -9,6 +9,20 @@ Semantic versioning is used to denote different versions of this project.
 ### Added
 - Added `betonkwaliteit.csv` containing concrete quality specifications with strength parameters
 - Added `betonstaalkwaliteit.csv` containing reinforcement steel quality specifications with yield and design strengths
+- Added an explanatory text field for the bridge segments in the parametrization.
+
+### Changed
+- Set default of two items for the bridge segments dynamic array.
+- Enhanced the 2D top view (`create_2d_top_view` in `src/geometry/model_creator.py`) to include:
+    - Clear visual separation of bridge zones (1, 2, and 3) for each segment.
+    - Background coloring for each zone to improve visual distinction.
+    - Detailed dimension labels for segment lengths (`l`) and zone widths (`bz1`, `bz2`, `bz3`) at each cross-section.
+    - Identifier labels (e.g., "D1", "D2") for each cross-section.
+    - Zone numbering within each segment (e.g., "1-1", "2-1", "3-1").
+
+### Fixed
+- Corrected visibility logic for "Afstand tot vorige snede" field in the bridge dimensions dynamic array, ensuring it is hidden for the first segment.
+- Suppressed a `DeprecationWarning` from `geopandas._compat` related to `shapely.geos` to keep console output clean. This is an internal `geopandas` issue and does not affect functionality.
 
 ## [`v0.0.3`] - 2025-05-08
 
