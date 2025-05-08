@@ -1,7 +1,17 @@
 """Module for the Bridge entity parametrization."""
 
 from viktor import DynamicArray
-from viktor.parametrization import NumberField, Page, Parametrization, Tab
+from viktor.parametrization import (
+    BooleanField,
+    DynamicArrayConstraint,
+    IsFalse,
+    Lookup,
+    NumberField,
+    Page,
+    Parametrization,
+    Tab,
+    Text,
+)
 
 
 class BridgeParametrization(Parametrization):
@@ -9,7 +19,7 @@ class BridgeParametrization(Parametrization):
 
     input = Page(
         "Invoer",
-        views=["get_3d_view", "get_top_view", "get_longitudinal_section", "get_cross_section", "get_plotly_chart"],
+        views=["get_top_view", "get_3d_view", "get_longitudinal_section", "get_cross_section"],
     )
 
     # --- Tabs within Invoer Page ---
@@ -23,14 +33,63 @@ class BridgeParametrization(Parametrization):
     input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
     input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
 
-    input.dimensions.array = DynamicArray("Brug dimensies", min=2)
-    input.dimensions.array.bz1 = (NumberField("Breedte zone 1", default=10.0, suffix="m"))
-    input.dimensions.array.bz2 = (NumberField("Breedte zone 2", default=5.0, suffix="m"))
-    input.dimensions.array.bz3 = (NumberField("Breedte zone 3", default=15.0, suffix="m"))
-    input.dimensions.array.dz = (NumberField("Dikte zone 1 en 3", default=2.0, suffix="m"))
-    input.dimensions.array.dze = (NumberField("Extra dikte zone 2", default=1.0, suffix="m"))
-    input.dimensions.array.col_6 = (NumberField("alpha", default=0.0, suffix="Graden"))
-    input.dimensions.array.l = (NumberField("Afstand tot vorige snede", default=10, suffix="m"))
+    input.dimensions.segment_explanation = Text(
+        """Definieer hier de dwarsdoorsneden (snedes) van de brug.
+Elk item in de lijst hieronder representeert een dwarsdoorsnede.
+- Het **eerste item** definieert de geometrie van het begin van de brug (snede D1).
+- Elk **volgend item** definieert de geometrie van de *volgende* dwarsdoorsnede (D2, D3, etc.).
+- Het veld '**Afstand tot vorige snede**' (`l`) geeft de lengte van het brugsegment *tussen* de voorgaande en de huidige snede.
+  Dit veld is niet zichtbaar voor de eerste snede.
+- De overige dimensievelden (zoals `bz1`, `bz2`, `dz`) beschrijven de eigenschappen van de *huidige* dwarsdoorsnede.
+Standaard zijn twee dwarsdoorsneden (D1 en D2) voorgedefinieerd, wat resulteert in één brugsegment.
+Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en '-' knoppen."""
+    )
+    input.dimensions.array = DynamicArray(
+        "Brug dimensies",
+        min=2,
+        name="bridge_segments_array",
+        default=[
+            {
+                "bz1": 10.0,
+                "bz2": 5.0,
+                "bz3": 15.0,
+                "dz": 2.0,
+                "dze": 1.0,
+                "col_6": 0.0,
+                "l": 0,
+                "is_first_segment": True,
+            },
+            {
+                "bz1": 10.0,
+                "bz2": 5.0,
+                "bz3": 15.0,
+                "dz": 2.0,
+                "dze": 1.0,
+                "col_6": 0.0,
+                "l": 10,
+                "is_first_segment": False,
+            },
+        ],
+    )
+    input.dimensions.array.is_first_segment = BooleanField("Is First Segment Marker", default=False, visible=False)
+
+    input.dimensions.array.bz1 = NumberField("Breedte zone 1", default=10.0, suffix="m")
+    input.dimensions.array.bz2 = NumberField("Breedte zone 2", default=5.0, suffix="m")
+    input.dimensions.array.bz3 = NumberField("Breedte zone 3", default=15.0, suffix="m")
+    input.dimensions.array.dz = NumberField("Dikte zone 1 en 3", default=2.0, suffix="m")
+    input.dimensions.array.dze = NumberField("Extra dikte zone 2", default=1.0, suffix="m")
+    input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden")
+
+    _l_field_visibility_constraint = DynamicArrayConstraint(
+        dynamic_array_name="bridge_segments_array",
+        operand=IsFalse(Lookup("$row.is_first_segment")),
+    )
+    input.dimensions.array.l = NumberField(
+        "Afstand tot vorige snede",
+        default=10,
+        suffix="m",
+        visible=_l_field_visibility_constraint,
+    )
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
     input.geometrie_wapening.diameter = NumberField("Diameter", default=12.0, suffix="mm")
