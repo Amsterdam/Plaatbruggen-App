@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
+## [`v0.0.4`] - 2025-05-08
+
+### Added
+- Added `betonkwaliteit.csv` containing concrete quality specifications with strength parameters
+- Added `betonstaalkwaliteit.csv` containing reinforcement steel quality specifications with yield and design strengths
+
 ## [`v0.0.3`] - 2025-05-08
 
 ### Added
