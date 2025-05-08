@@ -34,9 +34,15 @@ class BridgeParametrization(Parametrization):
     input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
 
     input.dimensions.segment_explanation = Text(
-        """Definieer hier de verschillende segmenten van de brug. Standaard zijn twee segmenten voorgedefinieerd.
-Pas de waarden aan of voeg meer segmenten toe via de '+' knop.
-Elk segment beschrijft de geometrie tot de volgende snede."""
+        """Definieer hier de dwarsdoorsneden (snedes) van de brug.
+Elk item in de lijst hieronder representeert een dwarsdoorsnede.
+- Het **eerste item** definieert de geometrie van het begin van de brug (snede D1).
+- Elk **volgend item** definieert de geometrie van de *volgende* dwarsdoorsnede (D2, D3, etc.).
+- Het veld '**Afstand tot vorige snede**' (`l`) geeft de lengte van het brugsegment *tussen* de voorgaande en de huidige snede.
+  Dit veld is niet zichtbaar voor de eerste snede.
+- De overige dimensievelden (zoals `bz1`, `bz2`, `dz`) beschrijven de eigenschappen van de *huidige* dwarsdoorsnede.
+Standaard zijn twee dwarsdoorsneden (D1 en D2) voorgedefinieerd, wat resulteert in één brugsegment.
+Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en '-' knoppen."""
     )
     input.dimensions.array = DynamicArray(
         "Brug dimensies",
