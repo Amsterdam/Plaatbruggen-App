@@ -1,15 +1,26 @@
 """Module for the Bridge entity controller."""
 
-import plotly.graph_objects as go  # Move local import global
+import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
+from viktor import convert_word_to_pdf
+from viktor.core import File, ViktorController
+from viktor.views import (
+    GeometryResult,
+    GeometryView,
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
+)
 
+from app.constants import (  # Replace relative imports with absolute imports
+    OUTPUT_REPORT_PATH,
+)
 from src.geometry.model_creator import (
     create_2d_top_view,
     create_3d_model,  # Updated import
     create_cross_section,  # Import for cross-section creation
 )
-from viktor.core import File, ViktorController
-from viktor.views import GeometryResult, GeometryView, PlotlyResult, PlotlyView
 
 # Import parametrization from the separate file
 from .parametrization import BridgeParametrization
@@ -268,3 +279,24 @@ class BridgeController(ViktorController):
         with geometry.open_binary() as w:
             w.write(trimesh.exchange.gltf.export_glb(combined_scene_2d))
         return GeometryResult(geometry, geometry_type="gltf")
+
+    @PDFView("Rapport", duration_guess=1)
+    def get_output_report(self) -> PDFResult:
+        """
+        Generates a PDF report for the bridge design.
+
+        Args:
+            params (BridgeParametrization): Input parameters for the bridge dimensions.
+            **kwargs: Additional arguments.
+
+        Returns:
+            File: A PDF file containing the report.
+
+        """
+        # using File object
+        file1 = File.from_path(OUTPUT_REPORT_PATH)
+        with file1.open_binary() as f1:
+            pdf = convert_word_to_pdf(f1)
+
+        return PDFResult(file=pdf)
+

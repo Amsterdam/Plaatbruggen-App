@@ -13,6 +13,7 @@ PROJECT_PATH = Path(__file__).parent.parent
 README_PATH = PROJECT_PATH / "README.md"
 CHANGELOG_PATH = PROJECT_PATH / "CHANGELOG.md"
 CSS_PATH = PROJECT_PATH / "resources" / "style.css"
+OUTPUT_REPORT_PATH = PROJECT_PATH / "resources" / "template_eindrapport.docx"
 
 # ===================================================================================================================
 # Docs - Readme
