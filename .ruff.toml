@@ -89,6 +89,10 @@ quote-style = "double"
 indent-style = "space"
 docstring-code-format = true
 
+# Maximum number of statements allowed for a function or method body default was 50
+[lint.pylint]
+max-statements = 75
+
 [lint.per-file-ignores]
 # Allow unused imports in __init__.py files within the app directory
 # This is common for making symbols available at the package level.
