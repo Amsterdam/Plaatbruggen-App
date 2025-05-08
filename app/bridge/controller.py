@@ -21,8 +21,6 @@ from src.geometry.model_creator import (
     create_3d_model,  # Updated import
     create_cross_section,  # Import for cross-section creation
 )
-from viktor.core import File, ViktorController
-from viktor.views import GeometryResult, GeometryView, PlotlyResult, PlotlyView
 
 # Import parametrization from the separate file
 from .parametrization import BridgeParametrization
@@ -283,7 +281,7 @@ class BridgeController(ViktorController):
         return GeometryResult(geometry, geometry_type="gltf")
 
     @PDFView("Rapport", duration_guess=1)
-    def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:
+    def get_output_report(self) -> PDFResult:
         """
         Generates a PDF report for the bridge design.
 
@@ -300,5 +298,5 @@ class BridgeController(ViktorController):
         with file1.open_binary() as f1:
             pdf = convert_word_to_pdf(f1)
 
-        return PDFResult(pdf, filename="bridge_report.pdf")
+        return PDFResult(file=pdf)
 

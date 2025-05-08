@@ -107,4 +107,4 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     # --- Added Pages ---
     scia = Page("SCIA")
     berekening = Page("Berekening")
-    rapport = Page("Rapport")
+    rapport = Page("Rapport", views="get_output_report")
