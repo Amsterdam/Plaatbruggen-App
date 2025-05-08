@@ -1,12 +1,14 @@
 """Module for the Bridge entity controller."""
-
-
+import shapely
 import trimesh
 from viktor.core import File, ViktorController
 from viktor.views import (
     GeometryResult,
     GeometryView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
 )
+import plotly.graph_objects as go  # Import Plotly graph objects
 
 from src.geometry.model_creator import (
     create_3d_model,  # Updated import
@@ -121,6 +123,64 @@ class BridgeController(ViktorController):
         with geometry.open_binary() as w:
             w.write(trimesh.exchange.gltf.export_glb(combined_scene_2d))
         return GeometryResult(geometry, geometry_type="gltf")
+
+    @PlotlyView("Plotly Chart", duration_guess=1)
+    def get_plotly_chart(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
+        """
+        Generates a Plotly chart for visualizing a trimesh cross-section.
+
+        Args:
+            params (BridgeParametrization): Input parameters for the bridge dimensions.
+            **kwargs: Additional arguments.
+
+        Returns:
+            PlotlyResult: A Plotly chart visualization.
+        """
+        # Generate the 3D model
+        scene = create_3d_model(params)
+        combined_mesh = trimesh.util.concatenate(scene.geometry.values())
+
+        # Define the slicing plane (horizontal plane at z=0)
+        plane_origin = [0, 0, params.input.dimensions.top_view_loc]  # Origin of the plane
+        plane_normal = [0, 0, 1]  # Normal vector of the plane (z-axis)
+
+        # Slice the mesh with the specified plane
+        cross_section = combined_mesh.section(plane_origin=plane_origin, plane_normal=plane_normal)
+
+        # Create a Plotly figure
+        fig = go.Figure()
+
+        # Convert the cross-section to 2D
+        cross_section_2d, _ = cross_section.to_2D()
+        # print("cross_section_2d", cross_section_2d)
+        # for shape in cross_section_2d:
+        #     print("shape", shape)
+        # cross_section_2d.show()
+
+
+        # Extract polygons
+        polygons = cross_section_2d.polygons_closed[0]
+
+
+
+        # # Create a Plotly figure
+        # print("polygon", polygons)
+        for coord in polygons.exterior.coords:
+            print("polygons", coord[0], coord[1])
+            x_data = []
+            y_data = []
+
+            x_data.append(coord[0])
+            y_data.append(coord[1])
+
+            fig.add_trace(go.Scatter(x=x_data, y=y_data, mode='lines', name='Cross-Section'))
+
+
+
+        fig.update_layout(title="Bridge Cross-Section", xaxis_title="X-axis", yaxis_title="Y-axis")
+
+        # Return the Plotly figure
+        return PlotlyResult(fig.to_json())
 
 
 
