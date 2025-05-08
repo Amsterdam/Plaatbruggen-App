@@ -1,15 +1,20 @@
 """Module for the Bridge entity controller."""
-import shapely
+import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
+from viktor import convert_word_to_pdf
 from viktor.core import File, ViktorController
 from viktor.views import (
     GeometryResult,
     GeometryView,
+    PDFResult,
+    PDFView,
     PlotlyResult,  # Import PlotlyResult
     PlotlyView,  # Import PlotlyView
 )
-import plotly.graph_objects as go  # Import Plotly graph objects
 
+from app.constants import (  # Replace relative imports with absolute imports
+    OUTPUT_REPORT_PATH,
+)
 from src.geometry.model_creator import (
     create_3d_model,  # Updated import
     create_cross_section,  # Import for cross-section creation
@@ -135,6 +140,7 @@ class BridgeController(ViktorController):
 
         Returns:
             PlotlyResult: A Plotly chart visualization.
+
         """
         # Generate the 3D model
         scene = create_3d_model(params)
@@ -173,7 +179,7 @@ class BridgeController(ViktorController):
             x_data.append(coord[0])
             y_data.append(coord[1])
 
-            fig.add_trace(go.Scatter(x=x_data, y=y_data, mode='lines', name='Cross-Section'))
+            fig.add_trace(go.Scatter(x=x_data, y=y_data, mode="lines", name="Cross-Section"))
 
 
 
@@ -182,5 +188,24 @@ class BridgeController(ViktorController):
         # Return the Plotly figure
         return PlotlyResult(fig.to_json())
 
+    @PDFView("Rapport", duration_guess=1)
+    def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:
+        """
+        Generates a PDF report for the bridge design.
+
+        Args:
+            params (BridgeParametrization): Input parameters for the bridge dimensions.
+            **kwargs: Additional arguments.
+
+        Returns:
+            File: A PDF file containing the report.
+
+        """
+        # using File object
+        file1 = File.from_path(OUTPUT_REPORT_PATH)
+        with file1.open_binary() as f1:
+            pdf = convert_word_to_pdf(f1)
+
+        return PDFResult(pdf, filename="bridge_report.pdf")
 
 
