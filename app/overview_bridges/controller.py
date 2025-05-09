@@ -46,8 +46,8 @@ class OverviewBridgesController(ViktorController):
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             resources_dir = os.path.join(current_dir, "..", "..", "resources")
-            shapefile_path = os.path.join(resources_dir, "Bruggenkaart.shp")
-            allowed_bridges_path = os.path.join(resources_dir, "filtered_bridges.json")
+            shapefile_path = os.path.join(resources_dir, "gis", "Bruggenkaart.shp")
+            allowed_bridges_path = os.path.join(resources_dir, "data", "bridges", "filtered_bridges.json")
 
             # Using shared utility function to validate shapefile existence
             validate_shapefile_exists(shapefile_path)
@@ -99,8 +99,8 @@ class OverviewBridgesController(ViktorController):
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             resources_dir = os.path.join(current_dir, "..", "..", "resources")
-            shapefile_path = os.path.join(resources_dir, "Bruggenkaart.shp")
-            filtered_bridges_path = os.path.join(resources_dir, "filtered_bridges.json")
+            shapefile_path = os.path.join(resources_dir, "gis", "Bruggenkaart.shp")
+            filtered_bridges_path = os.path.join(resources_dir, "data", "bridges", "filtered_bridges.json")
 
             # Basic file existence check using shared utility
             try:

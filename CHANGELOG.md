@@ -9,6 +9,20 @@ Semantic versioning is used to denote different versions of this project.
 ### Added
 - Added `wapening_buigstraal.csv` containing minimum bending radii specifications for different reinforcement bar diameters (6mm to 40mm) according to Eurocode 2.
 
+### Changed
+- Reorganized resources directory structure for better organization:
+  - Created subdirectories for different resource types: `data/materials`, `data/bridges`, `gis`, `templates`, `styles`, `images`, and `symbols`
+  - Moved material CSV files to `resources/data/materials/`
+  - Moved bridge data files to `resources/data/bridges/`
+  - Moved GIS files to `resources/gis/`
+  - Moved document templates to `resources/templates/`
+  - Moved style files to `resources/styles/`
+- Renamed map view from "Kaart Huidige Brug" to "Locatie Brug" in bridge entity
+
+### Fixed
+- Ensured `DeprecationWarning` from `geopandas._compat` (related to `shapely.geos`) is consistently suppressed by adjusting the position of `warnings.filterwarnings` in `app/__init__.py`.
+- Resolved Ruff `E402` (module level import not at top of file) errors in `app/__init__.py` by adding `# noqa: E402` to specific import lines, maintaining necessary import order for warning suppression.
+
 ## [`v0.0.4`] - 2025-05-08
 
 ### Added

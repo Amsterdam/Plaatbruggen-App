@@ -70,7 +70,7 @@ class BridgeController(ViktorController):
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             resources_dir = os.path.join(current_dir, "..", "..", "resources")
-            shapefile_path = os.path.join(resources_dir, "Bruggenkaart.shp")
+            shapefile_path = os.path.join(resources_dir, "gis", "Bruggenkaart.shp")
 
             # Using a nested try/except with else to properly handle validation errors
             try:
@@ -105,7 +105,7 @@ class BridgeController(ViktorController):
         except Exception as e:
             return None, MapResult([MapPoint(52.37, 4.89, description=f"Fout bij verwerken shapefile: {e}")])
 
-    @MapView("Kaart Huidige Brug", duration_guess=2)
+    @MapView("Locatie Brug", duration_guess=2)
     def get_bridge_map_view(self, params: BridgeParametrization, **kwargs) -> MapResult:  # noqa: ARG002, PLR0911
         """Displays the current bridge polygon from the shapefile in the resources folder."""
         entity_id = kwargs.get("entity_id")
