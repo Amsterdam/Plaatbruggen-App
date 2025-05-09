@@ -92,9 +92,78 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     )
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
-    input.geometrie_wapening.diameter = NumberField("Diameter", default=12.0, suffix="mm")
-    input.geometrie_wapening.spacing = NumberField("h.o.h. Afstand", default=150.0, suffix="mm")
-    input.geometrie_wapening.cover = NumberField("Dekking", default=30.0, suffix="mm")
+    input.geometrie_wapening.explanation = Text(
+        """Op deze pagina kan de wapening van de brug worden ingevoerd. De wapening moet ingevoerd worden per zone. 
+Eerst wordt er gevraagd naar de eigenschappen van de hoofdwapening in langs- en dwarsrichting. 
+Vervolgens kan er per veld aangeklikt worden, of er extra bijlegwapening aanwezig is in de zone. 
+Wanneer dit wordt aangevinkt, verschijnen dezelfde invoervelden nogmaals, om deze bijlegwapening te definiëren. 
+In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwapeningsnet gelegd."""
+    )
+
+    input.geometrie_wapening.zones = DynamicArray(
+        "Wapening per zone",
+        min=1,
+        name="reinforcement_zones_array",
+    )
+
+    # Main reinforcement - Longitudinal
+    input.geometrie_wapening.zones.hoofdwapening_langs = Tab("Hoofdwapening langsrichting")
+    input.geometrie_wapening.zones.hoofdwapening_langs.diameter = NumberField(
+        "Diameter", default=12.0, suffix="mm"
+    )
+    input.geometrie_wapening.zones.hoofdwapening_langs.hart_op_hart = NumberField(
+        "Hart-op-hart afstand", default=150.0, suffix="mm"
+    )
+    input.geometrie_wapening.zones.hoofdwapening_langs.dekking = NumberField(
+        "Dekking", default=35.0, suffix="mm"
+    )
+
+    # Main reinforcement - Transverse
+    input.geometrie_wapening.zones.hoofdwapening_dwars = Tab("Hoofdwapening dwarsrichting")
+    input.geometrie_wapening.zones.hoofdwapening_dwars.diameter = NumberField(
+        "Diameter", default=12.0, suffix="mm"
+    )
+    input.geometrie_wapening.zones.hoofdwapening_dwars.hart_op_hart = NumberField(
+        "Hart-op-hart afstand", default=150.0, suffix="mm"
+    )
+    input.geometrie_wapening.zones.hoofdwapening_dwars.dekking = NumberField(
+        "Dekking", default=50.0, suffix="mm"  # Bigger because it's above longitudinal
+    )
+
+    # Additional reinforcement toggle
+    input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField(
+        "Bijlegwapening aanwezig?", default=False
+    )
+
+    # Additional reinforcement fields - only visible when heeft_bijlegwapening is True
+    _bijleg_visibility = DynamicArrayConstraint(
+        dynamic_array_name="reinforcement_zones_array",
+        operand=Lookup("$row.heeft_bijlegwapening"),
+    )
+
+    # Additional reinforcement - Longitudinal
+    input.geometrie_wapening.zones.bijlegwapening_langs = Tab(
+        "Bijlegwapening langsrichting", 
+        visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.bijlegwapening_langs.diameter = NumberField(
+        "Diameter", default=12.0, suffix="mm", visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.bijlegwapening_langs.hart_op_hart = NumberField(
+        "Hart-op-hart afstand", default=150.0, suffix="mm", visible=_bijleg_visibility
+    )
+
+    # Additional reinforcement - Transverse
+    input.geometrie_wapening.zones.bijlegwapening_dwars = Tab(
+        "Bijlegwapening dwarsrichting",
+        visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.bijlegwapening_dwars.diameter = NumberField(
+        "Diameter", default=12.0, suffix="mm", visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.bijlegwapening_dwars.hart_op_hart = NumberField(
+        "Hart-op-hart afstand", default=150.0, suffix="mm", visible=_bijleg_visibility
+    )
 
     # --- Load Zones (in belastingzones tab) ---
     input.belastingzones.zone_breedte = NumberField("Zone Breedte", default=1.0, suffix="m")
