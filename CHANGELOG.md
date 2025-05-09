@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
+## [`v0.0.5`] - 2025-05-09
+
+### Added
+- Added `wapening_buigstraal.csv` containing minimum bending radii specifications for different reinforcement bar diameters (6mm to 40mm) according to Eurocode 2.
+
 ## [`v0.0.4`] - 2025-05-08
 
 ### Added
