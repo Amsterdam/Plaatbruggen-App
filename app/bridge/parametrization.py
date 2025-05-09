@@ -11,11 +11,18 @@ from viktor.parametrization import (
     Parametrization,
     Tab,
     Text,
+    TextField,
 )
 
 
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
+
+    info = Page("Info", views=["get_bridge_map_view"])
+
+    # Hidden fields to store bridge identifiers, moved under the 'info' page
+    info.bridge_objectnumm = TextField("Bridge OBJECTNUMM", visible=False)
+    info.bridge_name = TextField("Bridge Name", visible=False)
 
     input = Page(
         "Invoer",
