@@ -19,7 +19,10 @@ class BridgeParametrization(Parametrization):
 
     input = Page(
         "Invoer",
-        views=["get_top_view", "get_3d_view", "get_longitudinal_section", "get_cross_section"],
+        views=["get_top_view", "get_3d_view",
+               "get_2d_horizontal_section",
+               "get_2d_longitudinal_section",
+               "get_2d_cross_section",], 
     )
 
     # --- Tabs within Invoer Page ---
@@ -29,7 +32,7 @@ class BridgeParametrization(Parametrization):
     input.belastingcombinaties = Tab("Belastingcombinaties")
 
     # --- Bridge Geometry (moved to geometrie_brug tab) ---
-    input.dimensions.top_view_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
+    input.dimensions.horizontal_section_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
     input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
     input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
 
@@ -46,6 +49,7 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     )
     input.dimensions.array = DynamicArray(
         "Brug dimensies",
+        row_label="D-",
         min=2,
         name="bridge_segments_array",
         default=[

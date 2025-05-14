@@ -115,7 +115,7 @@ def create_black_dot(radius: float = 0.2) -> trimesh.Trimesh:
     return dot
 
 
-def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray, plane_normal: list | np.ndarray) -> trimesh.Scene:
+def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray, plane_normal: list | np.ndarray, axes: bool = True) -> trimesh.Scene:
     """
     Create a cross-section of a 3D mesh by slicing it with a plane.
 
@@ -137,18 +137,19 @@ def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray,
 
     combined_scene_2d = trimesh.Scene(cross_section)
 
-    # Add the X, Y, Z axes to the scene
-    axes_scene = create_axes()
-    combined_scene_2d.add_geometry(axes_scene)
+    if axes:
+        # Add the X, Y, Z axes to the scene
+        axes_scene = create_axes()
+        combined_scene_2d.add_geometry(axes_scene)
 
-    # Add the black dot at the origin to the scene
-    black_dot = create_black_dot(radius=0.1)
-    combined_scene_2d.add_geometry(black_dot)
+        # Add the black dot at the origin to the scene
+        black_dot = create_black_dot(radius=0.1)
+        combined_scene_2d.add_geometry(black_dot)
 
     return combined_scene_2d
 
 
-def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
+def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
     """
     Generates a 3D representation of a bridge deck based on input parameters.
 
@@ -294,13 +295,14 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
 
         combined_scene.add_geometry(combined_mesh)
 
-    # Add the X, Y, Z axes to the scene
-    axes_scene = create_axes()
-    combined_scene.add_geometry(axes_scene)
+    if axes:
+        # Add the X, Y, Z axes to the scene
+        axes_scene = create_axes()
+        combined_scene.add_geometry(axes_scene)
 
-    # Add the black dot at the origin to the scene
-    black_dot = create_black_dot(radius=0.1)
-    combined_scene.add_geometry(black_dot)
+        # Add the black dot at the origin to the scene
+        black_dot = create_black_dot(radius=0.1)
+        combined_scene.add_geometry(black_dot)
 
     return combined_scene
 
