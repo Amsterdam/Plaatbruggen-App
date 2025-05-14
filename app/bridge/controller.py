@@ -301,17 +301,23 @@ class BridgeController(ViktorController):
         all_annotations = []
 
         # Create lists for row_labels and l values
+        # Create lists for row_labels and l values
         row_labels = list(range(len(params.bridge_segments_array)))
         l_values = []
         l_values_cumulative = []
         l_cumulative = 0
+        h_values = []
+        h_values_extra_hight = []
+        h_values_output = []
+        h_center_y = []
         for segment in params.bridge_segments_array:
             l_values.append(segment.l)
             l_cumulative += segment.l
             l_values_cumulative.append(l_cumulative)
+            h_values.append(segment.dz)
+            h_values_extra_hight.append(segment.dze)
         
         zone_center_x = [cum + val/2 for cum, val in zip(l_values_cumulative, l_values[1:])]
-        print(zone_center_x)
 
         # Add cross-section labels
         cross_section_labels = [
