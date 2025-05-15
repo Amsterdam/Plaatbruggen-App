@@ -11,15 +11,25 @@ from viktor.parametrization import (
     Parametrization,
     Tab,
     Text,
+    TextField,
 )
 
 
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
 
+    info = Page("Info", views=["get_bridge_map_view"])
+
+    # Hidden fields to store bridge identifiers, moved under the 'info' page
+    info.bridge_objectnumm = TextField("Bridge OBJECTNUMM", visible=False)
+    info.bridge_name = TextField("Bridge Name", visible=False)
+
     input = Page(
         "Invoer",
-        views=["get_top_view", "get_3d_view", "get_longitudinal_section", "get_cross_section"],
+        views=["get_top_view", "get_3d_view",
+               "get_2d_horizontal_section",
+               "get_2d_longitudinal_section",
+               "get_2d_cross_section"],
     )
 
     # --- Tabs within Invoer Page ---
@@ -29,7 +39,7 @@ class BridgeParametrization(Parametrization):
     input.belastingcombinaties = Tab("Belastingcombinaties")
 
     # --- Bridge Geometry (moved to geometrie_brug tab) ---
-    input.dimensions.top_view_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
+    input.dimensions.horizontal_section_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
     input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
     input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
 
@@ -40,12 +50,14 @@ Elk item in de lijst hieronder representeert een dwarsdoorsnede.
 - Elk **volgend item** definieert de geometrie van de *volgende* dwarsdoorsnede (D2, D3, etc.).
 - Het veld '**Afstand tot vorige snede**' (`l`) geeft de lengte van het brugsegment *tussen* de voorgaande en de huidige snede.
   Dit veld is niet zichtbaar voor de eerste snede.
-- De overige dimensievelden (zoals `bz1`, `bz2`, `dz`) beschrijven de eigenschappen van de *huidige* dwarsdoorsnede.
+- De overige dimensievelden (zoals `bz1`, `bz2`, `dz` voor de dikte van zone 1 en 3, en `dz_2` voor de dikte van zone 2)
+  beschrijven de eigenschappen van de *huidige* dwarsdoorsnede.
 Standaard zijn twee dwarsdoorsneden (D1 en D2) voorgedefinieerd, wat resulteert in één brugsegment.
 Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en '-' knoppen."""
     )
     input.dimensions.array = DynamicArray(
         "Brug dimensies",
+        row_label="D-",
         min=2,
         name="bridge_segments_array",
         default=[
@@ -54,7 +66,7 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
                 "bz2": 5.0,
                 "bz3": 15.0,
                 "dz": 2.0,
-                "dze": 1.0,
+                "dz_2": 3.0,
                 "col_6": 0.0,
                 "l": 0,
                 "is_first_segment": True,
@@ -64,7 +76,7 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
                 "bz2": 5.0,
                 "bz3": 15.0,
                 "dz": 2.0,
-                "dze": 1.0,
+                "dz_2": 3.0,
                 "col_6": 0.0,
                 "l": 10,
                 "is_first_segment": False,
@@ -77,7 +89,7 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.dimensions.array.bz2 = NumberField("Breedte zone 2", default=5.0, suffix="m")
     input.dimensions.array.bz3 = NumberField("Breedte zone 3", default=15.0, suffix="m")
     input.dimensions.array.dz = NumberField("Dikte zone 1 en 3", default=2.0, suffix="m")
-    input.dimensions.array.dze = NumberField("Extra dikte zone 2", default=1.0, suffix="m")
+    input.dimensions.array.dz_2 = NumberField("Dikte zone 2", default=3.0, suffix="m")
     input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden")
 
     _l_field_visibility_constraint = DynamicArrayConstraint(
