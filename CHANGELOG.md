@@ -9,6 +9,15 @@ Semantic versioning is used to denote different versions of this project.
 ### Added
 - Added `wapening_buigstraal.csv` containing minimum bending radii specifications for different reinforcement bar diameters (6mm to 40mm) according to Eurocode 2.
 - Added "Info" page to the `Bridge` entity, displaying a map view of the specific bridge.
+- Dynamic zone numbering system in reinforcement tab:
+  - Automatic zone number generation based on bridge segments
+  - Format "location-segment" (e.g., "1-1", "2-1", "3-1", "1-2", etc.)
+  - First number indicates location (1=left, 2=middle, 3=right)
+  - Second number indicates segment number
+- New OptionField for zone selection in reinforcement input:
+  - Options dynamically generated based on number of bridge segments
+  - Options list updates automatically when segments are added/removed
+  - Proper zone labeling helps users identify reinforcement locations
 
 ### Changed
 - Reorganized resources directory structure for better organization:
@@ -37,7 +46,6 @@ Semantic versioning is used to denote different versions of this project.
     - Making parameter access in `BridgeController` more robust using `params.get("info")`.
     - Updating `OverviewBridgesController` (`_create_missing_children` method) to correctly structure parameters under an "info" key when creating new bridge entities.
 - Corrected various Ruff linter errors in `BridgeController` and `app/common/map_utils.py`, including `ERA001` (commented-out code), `TRY301` (abstract `raise`), `C901`/`PLR0911`/`PLR0912` (complexity/branches/returns), `TRY300` (consider `else`), `W293` (whitespace), `RUF013` (implicit `Optional`), `ANN202` (missing return type), and `RET505` (unnecessary `else`).
-
 
 ## [`v0.0.4`] - 2025-05-08
 
