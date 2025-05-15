@@ -5,6 +5,12 @@ import os  # Add import for os
 import geopandas as gpd  # Add import for geopandas
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
+import trimesh.transformations as tf
+import numpy as np
+from src.geometry.model_creator import create_axes
+from src.geometry.longitudinal_section import create_longitudinal_section
+from src.geometry.cross_section import create_cross_section_view
+from src.geometry.horizontal_section import create_horizontal_section_view
 
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
 from app.common.map_utils import (
@@ -150,6 +156,10 @@ class BridgeController(ViktorController):
 
         # Success case
         return MapResult(features)
+
+    # ============================================================================================================
+    # input - Dimension
+    # ============================================================================================================
 
     @GeometryView("3D Model", duration_guess=1, x_axis_to_right=False)
     def get_3d_view(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
@@ -341,63 +351,70 @@ class BridgeController(ViktorController):
             error_fig.add_annotation(text=f"Error: {e}. Check application logs.", showarrow=False)
             return PlotlyResult(error_fig.to_json())
 
-    @GeometryView("Langsdoorsnede", duration_guess=1, x_axis_to_right=True)
-    def get_longitudinal_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
-        """
-        Generates a longitudinal section of the bridge deck by slicing the 3D model with a vertical plane.
 
+    @PlotlyView("Horizontale doorsnede", duration_guess=1)
+    def get_2d_horizontal_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
+        """
+        Generates a 2D horizontal section view of the bridge using Plotly.
+        
+        This function creates a 2D representation of the bridge's horizontal section by:
+        1. Creating a 3D model of the bridge
+        2. Slicing it with a horizontal plane at the specified height
+        3. Converting the resulting section into a 2D plot showing length (x) vs width (y)
+        
         Args:
             params (BridgeParametrization): Input parameters for the bridge dimensions.
             **kwargs: Additional arguments.
 
         Returns:
-            GeometryResult: A 2D representation of the longitudinal section in GLTF format.
-
+            PlotlyResult: A 2D representation of the horizontal section.
         """
-        # Generate the 3D model
-        scene = create_3d_model(params)
-        combined_mesh = trimesh.util.concatenate(scene.geometry.values())
+        fig = create_horizontal_section_view(params, params.input.dimensions.horizontal_section_loc)
+        return PlotlyResult(fig.to_json())
 
-        # Define the slicing plane (horizontal plane at y=0)
-        plane_origin = [0, params.input.dimensions.longitudinal_section_loc, 0]  # Origin of the plane
-        plane_normal = [0, 1, 0]  # Normal vector of the plane (y-axis)
-
-        # Create the cross-section
-        combined_scene_2d = create_cross_section(combined_mesh, plane_origin, plane_normal)
-
-        geometry = File()
-        with geometry.open_binary() as w:
-            w.write(trimesh.exchange.gltf.export_glb(combined_scene_2d))
-        return GeometryResult(geometry, geometry_type="gltf")
-
-    @GeometryView("Dwarsdoorsnede", duration_guess=1, x_axis_to_right=True)
-    def get_cross_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+    @PlotlyView("Langsdoorsnede", duration_guess=1)
+    def get_2d_longitudinal_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
         """
-        Generates a cross-section of the bridge deck by slicing the 3D model with a vertical plane perpendicular to the longitudinal axis.
-
+        Generates a 2D longitudinal section view of the bridge using Plotly.
+        
+        This function creates a 2D representation of the bridge's longitudinal section by:
+        1. Creating a 3D model of the bridge
+        2. Slicing it with a vertical plane parallel to the x-z plane
+        3. Converting the resulting cross-section into a 2D plot showing length (x) vs height (z)
+        
         Args:
             params (BridgeParametrization): Input parameters for the bridge dimensions.
             **kwargs: Additional arguments.
 
         Returns:
-            GeometryResult: A 2D representation of the cross-section in GLTF format.
-
+            PlotlyResult: A 2D representation of the longitudinal section.
         """
-        # Generate the 3D model
-        scene = create_3d_model(params)
-        combined_mesh = trimesh.util.concatenate(scene.geometry.values())
+        fig = create_longitudinal_section(params, params.input.dimensions.longitudinal_section_loc)
+        return PlotlyResult(fig.to_json())
+    
+    @PlotlyView("Dwarsdoorsnede", duration_guess=1)
+    def get_2d_cross_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
+        """
+        Generates a 2D cross-section view of the bridge using Plotly.
+        
+        This function creates a 2D representation of the bridge's cross-section by:
+        1. Creating a 3D model of the bridge
+        2. Slicing it with a vertical plane parallel to the y-z plane
+        3. Converting the resulting cross-section into a 2D plot showing width (y) vs height (z)
+        
+        Args:
+            params (BridgeParametrization): Input parameters for the bridge dimensions.
+            **kwargs: Additional arguments.
 
-        # Define the slicing plane (horizontal plane at x=0)
-        plane_origin = [params.input.dimensions.cross_section_loc, 0, 0]  # Origin of the plane
-        plane_normal = [1, 0, 0]  # Normal vector of the plane (x-axis)
-
-        # Create the cross-section
-        combined_scene_2d = create_cross_section(combined_mesh, plane_origin, plane_normal)
-
-        geometry = File()
-        with geometry.open_binary() as w:
-            w.write(trimesh.exchange.gltf.export_glb(combined_scene_2d))
-        return GeometryResult(geometry, geometry_type="gltf")
+        Returns:
+            PlotlyResult: A 2D representation of the cross-section.
+        """
+        fig = create_cross_section_view(params, params.input.dimensions.cross_section_loc)
+        return PlotlyResult(fig.to_json())
+    
+    # ============================================================================================================
+    # output - Rapport
+    # ============================================================================================================
 
     @PDFView("Rapport", duration_guess=1)
     def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:  # noqa: ARG002

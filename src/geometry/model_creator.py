@@ -115,7 +115,7 @@ def create_black_dot(radius: float = 0.2) -> trimesh.Trimesh:
     return dot
 
 
-def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray, plane_normal: list | np.ndarray) -> trimesh.Scene:
+def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray, plane_normal: list | np.ndarray, axes: bool = True) -> trimesh.Scene:
     """
     Create a cross-section of a 3D mesh by slicing it with a plane.
 
@@ -137,18 +137,19 @@ def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray,
 
     combined_scene_2d = trimesh.Scene(cross_section)
 
-    # Add the X, Y, Z axes to the scene
-    axes_scene = create_axes()
-    combined_scene_2d.add_geometry(axes_scene)
+    if axes:
+        # Add the X, Y, Z axes to the scene
+        axes_scene = create_axes()
+        combined_scene_2d.add_geometry(axes_scene)
 
-    # Add the black dot at the origin to the scene
-    black_dot = create_black_dot(radius=0.1)
-    combined_scene_2d.add_geometry(black_dot)
+        # Add the black dot at the origin to the scene
+        black_dot = create_black_dot(radius=0.1)
+        combined_scene_2d.add_geometry(black_dot)
 
     return combined_scene_2d
 
 
-def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
+def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
     """
     Generates a 3D representation of a bridge deck based on input parameters.
 
@@ -261,47 +262,66 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
 
         # Define colors for each box in RGBA format
         box_colors = [
-            [255, clist[dynamic_array], clist[dynamic_array], 255],  # Box 1: Red
-            [clist[dynamic_array], clist[dynamic_array], 255, 255],  # Box 2: Blue
-            [clist[dynamic_array], 255, clist[dynamic_array], 255],  # Box 3: Green
+            [255, clist[dynamic_array], clist[dynamic_array], 255],  # Box 1: Red with varying intensity
+            [clist[dynamic_array], clist[dynamic_array], 255, 255],  # Box 2: Blue with varying intensity
+            [clist[dynamic_array], 255, clist[dynamic_array], 255],  # Box 3: Green with varying intensity
         ]
 
         # Create individual box meshes with assigned colors
         box_meshes = []
         for vertices, color in zip(boxes_vertices, box_colors):
-            box_mesh = create_box(vertices, color)  # Use updated create_box
+            box_mesh = create_box(vertices, color)
+            # Ensure the mesh is solid
+            box_mesh.visual.face_colors = np.tile(color, (len(box_mesh.faces), 1))
+            box_mesh.visual.vertex_colors = np.tile(color, (len(box_mesh.vertices), 1))
             box_meshes.append(box_mesh)
 
         # Combine all box meshes into a single mesh
         combined_vertices = []
         combined_faces = []
+        combined_colors = []
         vertex_offset = 0
 
         for mesh in box_meshes:
+            # Process mesh before combining
+            mesh.process()  # Merges duplicate vertices
+            mesh.fix_normals()  # Ensures consistent face orientation
             # Append vertices
             combined_vertices.append(mesh.vertices)
             # Append faces, adjusting indices by the current vertex offset
             combined_faces.append(mesh.faces + vertex_offset)
+            # Append face colors
+            combined_colors.append(mesh.visual.face_colors)
             # Update vertex offset for the next mesh
             vertex_offset += len(mesh.vertices)
 
-        # Stack all vertices and faces into single arrays
+        # Stack all vertices, faces and colors into single arrays
         final_vertices = np.vstack(combined_vertices)
         final_faces = np.vstack(combined_faces)
+        final_colors = np.vstack(combined_colors)
 
         # Create the final combined mesh
         combined_mesh = trimesh.Trimesh(vertices=final_vertices, faces=final_faces)
+        # Process the combined mesh
+        combined_mesh.process()  # Merges duplicate vertices
+        combined_mesh.update_faces(combined_mesh.unique_faces())  # Removes any duplicate faces using the new recommended method
+        combined_mesh.fix_normals()  # Ensures consistent face orientation
+        # Set the face colors for the combined mesh, adjusting for potentially merged faces
+        combined_mesh.visual.face_colors = final_colors[:len(combined_mesh.faces)]
 
+        # Add the mesh to the scene
         combined_scene.add_geometry(combined_mesh)
 
-    # Add the X, Y, Z axes to the scene
-    axes_scene = create_axes()
-    combined_scene.add_geometry(axes_scene)
+    if axes:
+        # Add the X, Y, Z axes to the scene
+        axes_scene = create_axes()
+        combined_scene.add_geometry(axes_scene)
 
-    # Add the black dot at the origin to the scene
-    black_dot = create_black_dot(radius=0.1)
-    combined_scene.add_geometry(black_dot)
+        # Add the black dot at the origin to the scene
+        black_dot = create_black_dot(radius=0.1)
+        combined_scene.add_geometry(black_dot)
 
+    # combined_scene.show()
     return combined_scene
 
 

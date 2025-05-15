@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure Overview
+
+This project follows a layered architecture to ensure separation of concerns, testability, and maintainability.
+
+## Main Project Directory
+
+The main project folder is **`automatisch-toetsmodel-plaatbruggen/`** and all work should be done within this directory.
+
+## Key Directories
+
+Within the `automatisch-toetsmodel-plaatbruggen/` folder:
+
+*   **`app/`**: Contains all code related to the VIKTOR SDK interface. **No core calculation logic should reside here.** Organized by feature/entity type.
+    *   `app/overview_bridges/`: Logic related to the batch calculation entity.
+        *   `controller.py`: Controller and Views for the batch entity.
+        *   `parametrization.py`: Parametrization for the batch entity.
+        *   `utils.py`: Utility functions specific to the batch entity UI/logic (optional).
+    *   `app/bridge/`: Logic related to the individual bridge entity.
+        *   `controller.py`: Controller and Views for the bridge entity.
+        *   `parametrization.py`: Parametrization for the bridge entity.
+        *   `utils.py`: Utility functions specific to the bridge entity UI/logic (optional).
+*   **`src/`**: Contains the core calculation logic, domain models, and external tool integrations. **This layer must NOT import the `viktor` SDK.**
+    *   `src/bridge_analysis/`: Main logic for bridge calculations.
+        *   `src/bridge_analysis/calculators/`: Modules for specific calculation types (loads, checks).
+        *   `src/bridge_analysis/models/`: Data structures (Pydantic recommended) for bridges, loads, results.
+        *   `src/bridge_analysis/types/`: Logic specific to different bridge types.
+        *   `src/bridge_analysis/utils.py`: Utility functions for analysis.
+    *   `src/common/`: Shared utilities/models across `src/` modules.
+    *   `src/integrations/`: Code for interacting with external software like SCIA Engineer ([scia_interface.py](mdc:automatisch-toetsmodel-plaatbruggen/src/integrations/scia_interface.py)).
+    *   `src/constants/`: Stores shared configuration data like materials ([materials.json](mdc:automatisch-toetsmodel-plaatbruggen/src/config/materials.json)).
+*   **`tests/`**: Contains all tests.
+    *   `tests/test_app/`: Tests for the `app` layer (viktor layer).
+    *   `tests/test_src/`: High-priority unit tests for the core logic in `src/`.
+*   **`doc/`**: Contains project documentation.
+    *   [architecture.md](mdc:automatisch-toetsmodel-plaatbruggen/doc/architecture.md): Detailed description of the project architecture.
+
+## Core Principle
+
+The strict separation between the VIKTOR interface (`app/`) and the core logic (`src/`) is crucial. The `app` layer handles user interaction and calls the `src/` layer, which performs the calculations independently of VIKTOR.
+
+
