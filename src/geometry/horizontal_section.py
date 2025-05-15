@@ -76,15 +76,35 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
     # Prepare annotations
     all_annotations = []
 
+    only_zone2 = False
+    # check if the crossection is only in zone 2
+    if 0 <= params.input.dimensions.horizontal_section_loc:
+        only_zone2 = True
+
     # Create lists for row_labels and l values
     row_labels = list(range(len(params.bridge_segments_array)))
     l_values = []
     l_values_cumulative = []
     l_cumulative = 0
+
+    b_values_1 = []
+    b_values_2 = []
+    b_values_3 = []
+    zone1_center_y = []
+    zone2_center_y = []
+    zone3_center_y = []
+
     for segment in params.bridge_segments_array:
         l_values.append(segment.l)
         l_cumulative += segment.l
         l_values_cumulative.append(l_cumulative)
+
+        b_values_1.append(segment.bz1)
+        b_values_2.append(segment.bz2)
+        b_values_3.append(segment.bz3)
+        zone1_center_y.append(segment.bz2/2 + segment.bz1/2)
+        zone2_center_y.append(0)
+        zone3_center_y.append(-segment.bz2/2 - segment.bz3/2)
 
     zone_center_x = [cum + val/2 for cum, val in zip(l_values_cumulative, l_values[1:])]
 
@@ -107,6 +127,70 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
     ]
     all_annotations.extend(cross_section_labels)
 
+    # Add zone labels
+    zone_labels = []
+    
+    if not only_zone2:
+    # Zone 1 labels (top)
+        zone1_labels = [
+            go.layout.Annotation(
+                x=zcx,
+                y=cz1,
+                text=f"<b>Z1-{i+1}</b>",
+                showarrow=False,
+                font={"size": 12, "color": "black"},
+                align="center",
+                xanchor="center",
+                yanchor="middle",
+                textangle=0,
+                ax=0,
+                ay=0,
+            )
+            for i, zcx, cz1 in zip(row_labels, zone_center_x, zone1_center_y)
+        ]
+        zone_labels.extend(zone1_labels)
+
+    # Zone 2 labels (middle)
+    zone2_labels = [
+        go.layout.Annotation(
+            x=zcx,
+            y=cz2,
+            text=f"<b>Z2-{i+1}</b>",
+            showarrow=False,
+            font={"size": 12, "color": "black"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        )
+        for i, zcx, cz2 in zip(row_labels, zone_center_x, zone2_center_y)
+    ]
+    zone_labels.extend(zone2_labels)
+
+    if not only_zone2:
+    # Zone 3 labels (bottom)
+        zone3_labels = [
+            go.layout.Annotation(
+                x=zcx,
+                y=cz3,
+                text=f"<b>Z3-{i+1}</b>",
+                showarrow=False,
+                font={"size": 12, "color": "black"},
+                align="center",
+                xanchor="center",
+                yanchor="middle",
+                textangle=0,
+                ax=0,
+                ay=0,
+            )
+            for i, zcx, cz3 in zip(row_labels, zone_center_x, zone3_center_y)
+        ]
+        zone_labels.extend(zone3_labels)
+
+    all_annotations.extend(zone_labels)
+
     # Add dimension annotations
     dimension_annotations = [
         # Length dimension
@@ -125,7 +209,67 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
         )
         for length, zcx in zip(l_values[1:], zone_center_x)  # Use the extracted lists
     ]
+
     all_annotations.extend(dimension_annotations)
+
+    if not only_zone2:
+    # Add width dimension annotations for each zone
+        width_annotations_zone1 = [
+            go.layout.Annotation(
+            x=zcx - 1,
+            y=cz1,  # Zone 1 center
+            text=f"<b>b = {bz1}m</b>",  # Width of zone 1
+            showarrow=False,
+            font={"size": 12, "color": "green"},
+            align="center",
+            xanchor="center", 
+            yanchor="middle",
+            textangle=-90,  # Vertical text
+            ax=0,
+            ay=0,
+        )
+        for zcx, cz1, bz1 in zip(l_values_cumulative, zone1_center_y, b_values_1)
+        ]
+        all_annotations.extend(width_annotations_zone1)
+
+    width_annotations_zone2 = [
+        go.layout.Annotation(
+            x=zcx - 1,
+            y=cz2,  # Zone 2 center
+            text=f"<b>b = {bz2}m</b>",  # Width of zone 2
+            showarrow=False,
+            font={"size": 12, "color": "green"},
+            align="center",
+            xanchor="center",
+            yanchor="middle", 
+            textangle=-90,  # Vertical text
+            ax=0,
+            ay=0,
+        )
+        for zcx, cz2, bz2 in zip(l_values_cumulative, zone2_center_y, b_values_2)
+    ]
+
+    if not only_zone2:
+    # Add width dimension annotations for each zone
+        width_annotations_zone3 = [
+            go.layout.Annotation(
+            x=zcx - 1,
+            y=cz3,  # Zone 3 center
+            text=f"<b>b = {bz3}m</b>",  # Width of zone 3
+            showarrow=False,
+            font={"size": 12, "color": "green"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=-90,  # Vertical text
+            ax=0,
+            ay=0,
+        )
+        for zcx, cz3, bz3 in zip(l_values_cumulative, zone3_center_y, b_values_3)
+        ]
+        all_annotations.extend(width_annotations_zone3)
+
+    all_annotations.extend(width_annotations_zone2)
 
     # Configure the plot layout with appropriate ranges and labels
     fig.update_layout(

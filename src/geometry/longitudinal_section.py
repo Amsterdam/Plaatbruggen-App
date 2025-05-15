@@ -177,7 +177,7 @@ def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.
             y=ch_y,
             text=f"<b>h = {ch}m</b>",
             showarrow=False,
-            font={"size": 12, "color": "red"},
+            font={"size": 12, "color": "blue"},
             align="center",
             xanchor="right",
             yanchor="middle",
