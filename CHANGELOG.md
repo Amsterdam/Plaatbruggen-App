@@ -26,6 +26,8 @@ Semantic versioning is used to denote different versions of this project.
 - Updated `BridgeController` and `OverviewBridgesController` to utilize the new shared map utilities.
 - Modified `BridgeController`'s `get_bridge_map_view` method to fetch `last_saved_params` using `viktor.api_v1` for improved robustness in retrieving entity parameters.
 - Performed internal refactoring of `BridgeController`'s `get_bridge_map_view` and related helper methods to enhance structure and address linter warnings.
+- Simplified shapefile path retrieval in `BridgeController` by inlining the `_get_shapefile_path` helper method into `get_bridge_map_view`.
+- Centralized individual bridge shapefile loading and filtering by moving logic from `BridgeController`._load_and_filter_geodataframe` to a new `load_and_filter_bridge_shapefile` function in `app/common/map_utils.py`.
 
 ### Fixed
 - Resolved issues where `OBJECTNUMM` was not found in `Bridge` entity parameters by:
