@@ -1,0 +1,45 @@
+---
+description: VIKTOR SDK 3D Modeling Tips & Tricks
+globs: 
+alwaysApply: false
+---
+# VIKTOR SDK 3D Modeling Tips & Tricks
+
+This document summarizes lessons learned while creating 3D geometry using the VIKTOR SDK, particularly focusing on potential pitfalls and recommended practices observed in [automatisch-toetsmodel-plaatbruggen/app/bridge/controller.py](mdc:automatisch-toetsmodel-plaatbruggen/app/bridge/controller.py).
+
+## Geometry Creation Issues & Recommendations
+
+### `SquareBeam` and `RectangularExtrusion` Constructors
+
+*   **Problem**: Both `vkt.SquareBeam` and `vkt.geometry.RectangularExtrusion` constructors caused numerous `TypeError` exceptions related to the number of arguments (e.g., `__init__() takes exactly 4 positional arguments (5 given)` or `__init__() takes at least 4 positional arguments (3 given)`). Attempts to use keyword arguments (`width=`, `depth=`, etc.) or providing `material` or `start_point` arguments often failed unpredictably.
+*   **Recommendation**: For creating simple rectangular prisms (cuboids), reliably use `vkt.SquareBeam` with exactly **three positional arguments**: `vkt.SquareBeam(width, depth, height)`.
+    *   `width` corresponds to the X-dimension.
+    *   `depth` corresponds to the Y-dimension.
+    *   `height` corresponds to the Z-dimension.
+*   Avoid passing `material` or `start_point` directly to these constructors if encountering issues. Assign materials or position objects *after* creation using methods like `.material = my_material` or `.translate(my_vector)`. `RectangularExtrusion` seemed particularly problematic and might be best avoided for simple cases.
+
+### `Polygon` Constructor
+
+*   **Problem**: The `vkt.geometry.Polygon` constructor expects vertices as a single iterable. Passing points as separate arguments (e.g., `Polygon(p1, p2, p3, p4)`) results in `TypeError: __init__() takes exactly 2 positional arguments (5 given)`.
+*   **Recommendation**: Always pass the list or tuple of `Point` objects to the `Polygon` constructor: `Polygon([p1, p2, p3, p4])`.
+
+### `Extrusion` Class
+
+*   **Problem**: Using the generic `vkt.geometry.Extrusion` with a `Polygon` profile also led to errors (`TypeError: 'Polygon' object is not subscriptable`, `AttributeError: 'Polygon' object has no attribute 'z'`).
+*   **Recommendation**: Be cautious when using the generic `Extrusion` class. For simple shapes like cuboids, prefer specialized classes like `SquareBeam` or `CircularExtrusion`. If using `Extrusion`, ensure the profile object(s) are passed correctly (potentially within a list, e.g., `Extrusion([my_polygon], vector)`), but be aware of potential internal issues.
+
+## Positioning and Assembly
+
+*   **Problem**: Positioning multiple geometric elements (like a deck and pillars) separately using absolute coordinates can lead to subtle alignment issues, making objects appear disconnected.
+*   **Recommendation**: For assembling multiple components:
+    1.  Create all individual components centered at or relative to the origin (z=0).
+    2.  Group the components together using `vkt.Group()`.
+    3.  Translate the entire `Group` to its final position using a single `.translate()` operation.
+    *   This ensures all relative positions are maintained correctly during the final placement.
+
+See [automatisch-toetsmodel-plaatbruggen/app/bridge/controller.py](mdc:automatisch-toetsmodel-plaatbruggen/app/bridge/controller.py) for examples of applying these principles.
+
+
+This cursor rule may need updating as the codebase has undergone signigficant reactoring...
+
+

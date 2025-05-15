@@ -14,7 +14,14 @@ import geopandas as gpd
 import markdown
 
 import viktor.api_v1 as api  # Import VIKTOR API
-from app.common.map_utils import load_and_prepare_shapefile, process_all_bridges_geometries, validate_shapefile_exists  # Import shared utilities
+from app.common.map_utils import (  # Import shared utilities
+    get_default_shapefile_path,
+    get_filtered_bridges_json_path,
+    get_resources_dir,
+    load_and_prepare_shapefile,
+    process_all_bridges_geometries,
+    validate_shapefile_exists,
+)
 from app.constants import (  # Replace relative imports with absolute imports
     CHANGELOG_PATH,
     CSS_PATH,
@@ -44,13 +51,12 @@ class OverviewBridgesController(ViktorController):
         """Displays bridge polygons from the shapefile in the resources folder."""
         # 1. Define Paths
         try:
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            resources_dir = os.path.join(current_dir, "..", "..", "resources")
-            shapefile_path = os.path.join(resources_dir, "gis", "Bruggenkaart.shp")
-            allowed_bridges_path = os.path.join(resources_dir, "data", "bridges", "filtered_bridges.json")
+            shapefile_path = get_default_shapefile_path()
+            allowed_bridges_path = get_filtered_bridges_json_path()
 
             # Using shared utility function to validate shapefile existence
-            validate_shapefile_exists(shapefile_path)
+            # validate_shapefile_exists now returns the path, so we use it directly
+            shapefile_path = validate_shapefile_exists(shapefile_path)
 
             if not os.path.exists(allowed_bridges_path):
                 raise UserError(f"Filter bestand niet gevonden op verwachtte locatie: {allowed_bridges_path}")  # noqa: TRY301
@@ -97,14 +103,14 @@ class OverviewBridgesController(ViktorController):
             raise UserError(f"Filter bestand niet gevonden: {path}")
 
         try:
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            resources_dir = os.path.join(current_dir, "..", "..", "resources")
-            shapefile_path = os.path.join(resources_dir, "gis", "Bruggenkaart.shp")
-            filtered_bridges_path = os.path.join(resources_dir, "data", "bridges", "filtered_bridges.json")
+            resources_dir = get_resources_dir()  # Use new helper
+            shapefile_path = get_default_shapefile_path()  # Use new helper
+            filtered_bridges_path = get_filtered_bridges_json_path()  # Use new helper
 
             # Basic file existence check using shared utility
+            # validate_shapefile_exists now returns the path
             try:
-                validate_shapefile_exists(shapefile_path)
+                shapefile_path = validate_shapefile_exists(shapefile_path)
             except UserError as ue:
                 raise UserError(f"Shapefile validatie fout: {ue}")
 
