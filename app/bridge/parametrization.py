@@ -4,10 +4,12 @@ from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
     DynamicArrayConstraint,
+    FunctionLookup,
     IsFalse,
     LineBreak,
     Lookup,
     NumberField,
+    OptionField,
     OutputField,
     Page,
     Parametrization,
@@ -15,7 +17,7 @@ from viktor.parametrization import (
     Text,
 )
 
-from .geometry_functions import calculate_zone_number
+from .geometry_functions import calculate_zone_number, get_steel_qualities
 
 
 class BridgeParametrization(Parametrization):
@@ -108,9 +110,14 @@ Eerst wordt er gevraagd naar de eigenschappen van de hoofdwapening in langs- en 
 Vervolgens kan er per veld aangeklikt worden, of er extra bijlegwapening aanwezig is in de zone. 
 Wanneer dit wordt aangevinkt, verschijnen dezelfde invoervelden nogmaals, om deze bijlegwapening te definiëren. 
 In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwapeningsnet gelegd."""
+    )    # General reinforcement parameters
+    input.geometrie_wapening.staalsoort = OptionField(
+        "Staalsoort",
+        options=get_steel_qualities(),
+        default="B500B",  # Changed to more modern default
+        description="De kwaliteit van het betonstaal dat wordt toegepast in de brug."
     )
-
-    # General reinforcement parameters
+    
     input.geometrie_wapening.dekking = NumberField(
         "Betondekking", 
         default=55.0, 
@@ -128,7 +135,6 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         name="reinforcement_zones_array",
         default=[
             {
-            "zone_number": "1-1",
             "hoofdwapening_langs_boven_diameter": 12.0,
             "hoofdwapening_langs_boven_hart_op_hart": 150.0,
             "hoofdwapening_langs_onder_diameter": 12.0,
@@ -138,7 +144,6 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
             "heeft_bijlegwapening": False,
             },
             {
-            "zone_number": "2-1",
             "heeft_bijlegwapening": False,
             "hoofdwapening_langs_boven_diameter": 12.0,
             "hoofdwapening_langs_boven_hart_op_hart": 150.0,
@@ -148,7 +153,6 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
             "hoofdwapening_dwars_hart_op_hart": 150.0,
             },
             {
-            "zone_number": "3-1",
             "heeft_bijlegwapening": False,
             "hoofdwapening_langs_boven_diameter": 12.0,
             "hoofdwapening_langs_boven_hart_op_hart": 150.0,
@@ -156,15 +160,16 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
             "hoofdwapening_langs_onder_hart_op_hart": 150.0,
             "hoofdwapening_dwars_diameter": 12.0,
             "hoofdwapening_dwars_hart_op_hart": 150.0,
-            }        
+            },        
             ],    
     )    
     
     # Zone number display
-    input.geometrie_wapening.zones.zone_number = OutputField(
-    "Zone nummer",
-    value=calculate_zone_number(Lookup("$row.index")),
-    ) 
+    #input.geometrie_wapening.zones.zone_number = OutputField(
+    #"Zone nummer",
+    #value=FunctionLookup(calculate_zone_number,len("$reinforcement_zones_array")),
+    #description="Dit is het zone nummer dat correspondeert met de zone in de brug.",
+    #) 
 
     # Main reinforcement - Longitudinal top
     input.geometrie_wapening.zones.hoofdwapening_langs_boven_diameter = NumberField(
