@@ -1,11 +1,14 @@
 """Module for creating horizontal section views of the bridge."""
 
+from typing import TYPE_CHECKING
+
 import plotly.graph_objects as go
 import trimesh
-from munch import Munch  # type: ignore[import-untyped]
 
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
+if TYPE_CHECKING:
+    from app.bridge.parametrization import BridgeParametrization
 
 def create_horizontal_section_annotations(
     params: dict | Munch, all_y: list[float]
@@ -198,6 +201,7 @@ def create_horizontal_section_annotations(
 
 
 def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> go.Figure:
+
     """
     Creates a 2D horizontal section view of the bridge using Plotly.
     This function creates a 2D representation of the bridge's horizontal section by:
@@ -256,12 +260,14 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
             y.append(vertices[point][1])
 
         # Add each line segment to the plot
-        fig.add_trace(go.Scatter(
-            x=x,
-            y=y,
-            mode="lines",
-            line={"color": "black"}  # Consistent black color for all lines
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="lines",
+                line={"color": "black"},  # Consistent black color for all lines
+            )
+        )
 
     # Prepare annotations using the new function
     all_annotations = create_horizontal_section_annotations(params, all_y)
@@ -271,19 +277,10 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
         title="Horizontale doorsnede (Horizontal Section)",
         showlegend=False,
         autosize=True,
-        xaxis={
-            "range": x_range,
-            "constrain": "domain",
-            "title": "X-as - Lengte [m]"
-        },
-        yaxis={
-            "range": y_range,
-            "scaleanchor": "x",
-            "scaleratio": 1,
-            "title": "Y-as - Breedte [m]"
-        },
+        xaxis={"range": x_range, "constrain": "domain", "title": "X-as - Lengte [m]"},
+        yaxis={"range": y_range, "scaleanchor": "x", "scaleratio": 1, "title": "Y-as - Breedte [m]"},
         margin={"l": 50, "r": 50, "t": 50, "b": 50},
-        annotations=all_annotations
+        annotations=all_annotations,
     )
 
     return fig

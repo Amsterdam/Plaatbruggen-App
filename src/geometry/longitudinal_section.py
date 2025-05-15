@@ -1,13 +1,17 @@
 """Module for creating longitudinal section views of the bridge."""
 
+from typing import TYPE_CHECKING
+
 import plotly.graph_objects as go
 import trimesh
-from munch import Munch  # type: ignore[import-untyped]
 
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
+if TYPE_CHECKING:
+    from app.bridge.parametrization import BridgeParametrization
 
-def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.Figure:
+
+def create_longitudinal_section(params: "BridgeParametrization", section_loc: float) -> go.Figure:
     """
     Creates a 2D longitudinal section view of the bridge using Plotly.
     This function creates a 2D representation of the bridge's longitudinal section by:
@@ -66,18 +70,20 @@ def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.
             z.append(vertices[point][2])
 
         # Add each line segment to the plot
-        fig.add_trace(go.Scatter(
-            x=x,
-            y=z,
-            mode="lines",
-            line={"color": "black"}  # Consistent black color for all lines
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=z,
+                mode="lines",
+                line={"color": "black"},  # Consistent black color for all lines
+            )
+        )
 
     # Prepare annotations
     all_annotations = []
 
     # Create lists for row_labels and l values
-    row_labels = list(range(len(params.bridge_segments_array)))
+    row_labels = list(range(len(params.input.dimensions.bridge_segments_array)))
     l_values = []
     l_values_cumulative = []
     l_cumulative = 0
@@ -85,21 +91,21 @@ def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.
     h_values_extra_hight = []
     h_values_output = []
     h_center_y = []
-    for segment in params.bridge_segments_array:
+    for segment in params.input.dimensions.bridge_segments_array:
         l_values.append(segment.l)
         l_cumulative += segment.l
         l_values_cumulative.append(l_cumulative)
         h_values.append(segment.dz)
-        h_values_extra_hight.append(segment.dz_2-segment.dz)
+        h_values_extra_hight.append(segment.dz_2 - segment.dz)
 
-    zone_center_x = [cum + val/2 for cum, val in zip(l_values_cumulative, l_values[1:])]
+    zone_center_x = [cum + val / 2 for cum, val in zip(l_values_cumulative, l_values[1:])]
 
     # find in which zone the section is located
     zone_nr = 0
     # Check zone based on section location relative to the first cross-section
-    if params.bridge_segments_array[0].bz2/2 < section_loc:
+    if params.input.dimensions.bridge_segments_array[0].bz2 / 2 < section_loc:
         zone_nr = 1
-    elif section_loc < -params.bridge_segments_array[0].bz2/2:
+    elif section_loc < -params.input.dimensions.bridge_segments_array[0].bz2 / 2:
         zone_nr = 3
     else:
         zone_nr = 2
@@ -107,17 +113,17 @@ def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.
     # check if extra height if so add the extra height to the height
     if max(all_z) > 0:
         h_values_output = [h + h_extra for h, h_extra in zip(h_values, h_values_extra_hight)]
-        h_center_y = [((-h + h_extra)/2) for h, h_extra in zip(h_values, h_values_extra_hight)]
+        h_center_y = [((-h + h_extra) / 2) for h, h_extra in zip(h_values, h_values_extra_hight)]
     else:
         h_values_output = h_values
-        h_center_y = [-h/2 for h in h_values]
+        h_center_y = [-h / 2 for h in h_values]
 
     # Add cross-section labels
     cross_section_labels = [
         go.layout.Annotation(
             x=cs_x,
             y=max(all_z) + 0.5,  # Position above the highest point
-            text=f"<b>D-{i+1}</b>",
+            text=f"<b>D-{i + 1}</b>",
             showarrow=False,
             font={"size": 15, "color": "black"},
             align="center",
@@ -127,7 +133,7 @@ def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.
             ax=0,
             ay=0,
         )
-        for i, cs_x in zip(row_labels, l_values_cumulative) # Use the extracted lists
+        for i, cs_x in zip(row_labels, l_values_cumulative)  # Use the extracted lists
     ]
 
     all_annotations.extend(cross_section_labels)
@@ -147,7 +153,7 @@ def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.
             ax=0,
             ay=0,
         )
-        for zcx, ch_y, sub_zone_nr in zip(zone_center_x, h_center_y[1:], row_labels[1:]) # Use the extracted lists
+        for zcx, ch_y, sub_zone_nr in zip(zone_center_x, h_center_y[1:], row_labels[1:])  # Use the extracted lists
     ]
     all_annotations.extend(zone_labels)
 
@@ -165,47 +171,45 @@ def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.
             yanchor="top",
             textangle=0,
             ax=0,
-            ay=0
+            ay=0,
         )
         for length, zcx in zip(l_values[1:], zone_center_x)  # Use the extracted lists
     ]
 
-    dimension_annotations.extend([
-        # Height dimension
-        go.layout.Annotation(
-            x=cs_x - 0.5,
-            y=ch_y,
-            text=f"<b>h = {ch}m</b>",
-            showarrow=False,
-            font={"size": 12, "color": "blue"},
-            align="center",
-            xanchor="right",
-            yanchor="middle",
-            textangle=-90,
-            ax=0,
-            ay=0
-        )
-        for ch, ch_y, cs_x in zip(h_values_output, h_center_y, l_values_cumulative)  # Use the extracted lists
-    ])
+    dimension_annotations.extend(
+        [
+            # Height dimension
+            go.layout.Annotation(
+                x=cs_x - 0.5,
+                y=ch_y,
+                text=f"<b>h = {ch}m</b>",
+                showarrow=False,
+                font={"size": 12, "color": "red"},
+                align="center",
+                xanchor="right",
+                yanchor="middle",
+                textangle=-90,
+                ax=0,
+                ay=0,
+            )
+            for ch, ch_y, cs_x in zip(h_values_output, h_center_y, l_values_cumulative)  # Use the extracted lists
+        ]
+    )
 
     all_annotations.extend(dimension_annotations)
 
     # Configure the plot layout with appropriate ranges and labels
     fig.update_layout(
         title="Langsdoorsnede (Longitudinal Section)",
-        xaxis={
-            "range": x_range,
-            "constrain": "domain",
-            "title": "X-as - Lengte [m]"
-        },
+        xaxis={"range": x_range, "constrain": "domain", "title": "X-as - Lengte [m]"},
         yaxis={
             "range": z_range,
             "scaleanchor": "x",
             "scaleratio": 2,  # Maintain aspect ratio for proper visualization
-            "title": "Z-as - Hoogte [m]" # Z-as is the vertical axis shown as Y-axis in the plot
+            "title": "Z-as - Hoogte [m]",  # Z-as is the vertical axis shown as Y-axis in the plot
         },
         annotations=all_annotations,
-        showlegend=False
+        showlegend=False,
     )
 
     return fig
