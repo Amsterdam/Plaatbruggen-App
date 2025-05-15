@@ -1,5 +1,5 @@
 ---
-description: 
+description: VIKTOR SDK 3D Modeling Tips & Tricks
 globs: 
 alwaysApply: false
 ---
@@ -38,4 +38,8 @@ This document summarizes lessons learned while creating 3D geometry using the VI
     *   This ensures all relative positions are maintained correctly during the final placement.
 
 See [automatisch-toetsmodel-plaatbruggen/app/bridge/controller.py](mdc:automatisch-toetsmodel-plaatbruggen/app/bridge/controller.py) for examples of applying these principles.
+
+
+This cursor rule may need updating as the codebase has undergone signigficant reactoring...
+
 

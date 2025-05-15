@@ -1,13 +1,17 @@
 """Module for creating horizontal section views of the bridge."""
 
+from typing import TYPE_CHECKING
+
 import plotly.graph_objects as go
 import trimesh
-from munch import Munch  # type: ignore[import-untyped]
 
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
+if TYPE_CHECKING:
+    from app.bridge.parametrization import BridgeParametrization
 
-def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> go.Figure:
+
+def create_horizontal_section_view(params: "BridgeParametrization", section_loc: float) -> go.Figure:
     """
     Creates a 2D horizontal section view of the bridge using Plotly.
     This function creates a 2D representation of the bridge's horizontal section by:
@@ -66,12 +70,14 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
             y.append(vertices[point][1])
 
         # Add each line segment to the plot
-        fig.add_trace(go.Scatter(
-            x=x,
-            y=y,
-            mode="lines",
-            line={"color": "black"}  # Consistent black color for all lines
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="lines",
+                line={"color": "black"},  # Consistent black color for all lines
+            )
+        )
 
     # Prepare annotations
     all_annotations = []
@@ -82,7 +88,7 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
         only_zone2 = True
 
     # Create lists for row_labels and l values
-    row_labels = list(range(len(params.bridge_segments_array)))
+    row_labels = list(range(len(params.input.dimensions.bridge_segments_array)))
     l_values = []
     l_values_cumulative = []
     l_cumulative = 0
@@ -95,6 +101,7 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
     zone3_center_y = []
 
     for segment in params.bridge_segments_array:
+      
         l_values.append(segment.l)
         l_cumulative += segment.l
         l_values_cumulative.append(l_cumulative)
@@ -106,14 +113,14 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
         zone2_center_y.append(0)
         zone3_center_y.append(-segment.bz2/2 - segment.bz3/2)
 
-    zone_center_x = [cum + val/2 for cum, val in zip(l_values_cumulative, l_values[1:])]
+    zone_center_x = [cum + val / 2 for cum, val in zip(l_values_cumulative, l_values[1:])]
 
     # Add cross-section labels
     cross_section_labels = [
         go.layout.Annotation(
             x=cs_x,
             y=max(all_y) + 0.5,  # Position above the highest point
-            text=f"<b>D-{i+1}</b>",
+            text=f"<b>D-{i + 1}</b>",
             showarrow=False,
             font={"size": 15, "color": "black"},
             align="center",
@@ -123,7 +130,7 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
             ax=0,
             ay=0,
         )
-        for i, cs_x in zip(row_labels, l_values_cumulative) # Use the extracted lists
+        for i, cs_x in zip(row_labels, l_values_cumulative)  # Use the extracted lists
     ]
     all_annotations.extend(cross_section_labels)
 
@@ -276,19 +283,10 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
         title="Horizontale doorsnede (Horizontal Section)",
         showlegend=False,
         autosize=True,
-        xaxis={
-            "range": x_range,
-            "constrain": "domain",
-            "title": "X-as - Lengte [m]"
-        },
-        yaxis={
-            "range": y_range,
-            "scaleanchor": "x",
-            "scaleratio": 1,
-            "title": "Y-as - Breedte [m]"
-        },
+        xaxis={"range": x_range, "constrain": "domain", "title": "X-as - Lengte [m]"},
+        yaxis={"range": y_range, "scaleanchor": "x", "scaleratio": 1, "title": "Y-as - Breedte [m]"},
         margin={"l": 50, "r": 50, "t": 50, "b": 50},
-        annotations=all_annotations
+        annotations=all_annotations,
     )
 
     return fig
