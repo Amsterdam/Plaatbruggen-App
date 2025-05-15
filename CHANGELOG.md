@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
+## [`v0.0.5`] - 2025-05-15
+
+### Added
+- Dynamic zone numbering system in reinforcement tab:
+  - Automatic zone number generation based on bridge segments
+  - Format "location-segment" (e.g., "1-1", "2-1", "3-1", "1-2", etc.)
+  - First number indicates location (1=left, 2=middle, 3=right)
+  - Second number indicates segment number
+- New OptionField for zone selection in reinforcement input:
+  - Options dynamically generated based on number of bridge segments
+  - Options list updates automatically when segments are added/removed
+  - Proper zone labeling helps users identify reinforcement locations
+
 ## [`v0.0.4`] - 2025-05-08
 
 ### Added
