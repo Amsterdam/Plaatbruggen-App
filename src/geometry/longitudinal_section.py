@@ -88,7 +88,7 @@ def create_longitudinal_section(params, section_loc):
         l_cumulative += segment.l
         l_values_cumulative.append(l_cumulative)
         h_values.append(segment.dz)
-        h_values_extra_hight.append(segment.dze)
+        h_values_extra_hight.append(segment.dz_2-segment.dz)
 
     zone_center_x = [cum + val/2 for cum, val in zip(l_values_cumulative, l_values[1:])]
 
