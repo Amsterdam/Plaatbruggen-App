@@ -190,7 +190,7 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
         # Zone 2
         z2d0l = params.bridge_segments_array[dynamic_array - 1].bz2 / 2
         z2d0r = -params.bridge_segments_array[dynamic_array - 1].bz2 / 2
-        z2d0t = params.bridge_segments_array[dynamic_array - 1].dze
+        z2d0t = params.bridge_segments_array[dynamic_array - 1].dz_2 - params.bridge_segments_array[dynamic_array - 1].dz
         z2d0b = -params.bridge_segments_array[dynamic_array - 1].dz
         # Zone 3
         z3d0l = -params.bridge_segments_array[dynamic_array - 1].bz2 / 2
@@ -208,7 +208,7 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
         # Zone 2
         z2d1l = params.bridge_segments_array[dynamic_array].bz2 / 2
         z2d1r = -params.bridge_segments_array[dynamic_array].bz2 / 2
-        z2d1t = params.bridge_segments_array[dynamic_array].dze
+        z2d1t = params.bridge_segments_array[dynamic_array].dz_2 - params.bridge_segments_array[dynamic_array].dz
         z2d1b = -params.bridge_segments_array[dynamic_array].dz
         # Zone 3
         z3d1l = -params.bridge_segments_array[dynamic_array].bz2 / 2
