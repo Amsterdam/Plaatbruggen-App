@@ -73,6 +73,177 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
             line={"color": "black"}  # Consistent black color for all lines
         ))
 
+    # Initialize annotations list
+    all_annotations = []
+
+    # Create lists for row_labels and l values
+    row_labels = list(range(len(params.bridge_segments_array)))
+    l_values = []
+    l_values_cumulative = []
+    l_cumulative = 0
+    b_values_1 = []
+    b_values_2 = []
+    b_values_3 = []
+    zone1_center_y = []
+    zone2_center_y = []
+    zone3_center_y = []
+    zone1_h = []
+    zone2_h = []
+    zone3_h = []
+    zone1_h_center_y = []
+    zone2_h_center_y = []
+    zone3_h_center_y = []
+
+    for segment in params.bridge_segments_array:
+        l_values.append(segment.l)
+        l_cumulative += segment.l
+        l_values_cumulative.append(l_cumulative)
+
+        b_values_1.append(segment.bz1)
+        b_values_2.append(segment.bz2)
+        b_values_3.append(segment.bz3)
+        zone1_center_y.append(segment.bz2/2 + segment.bz1/2)
+        zone2_center_y.append(0)
+        zone3_center_y.append(-segment.bz2/2 - segment.bz3/2)
+
+        zone1_h.append(segment.dz)
+        zone2_h.append(segment.dz_2)
+        zone3_h.append(segment.dz)
+
+        zone1_h_center_y.append(-segment.dz/2)
+        zone2_h_center_y.append(-segment.dz + segment.dz_2/2)
+        zone3_h_center_y.append(-segment.dz/2)
+
+
+    # Find which segment the cross section is located in
+    section_loc = params.input.dimensions.cross_section_loc
+    segment_index = 0
+    for i, cumulative_length in enumerate(l_values_cumulative):
+        if section_loc <= cumulative_length:
+            segment_index = i
+            break
+    segment_index
+
+    # Add zone labels
+    zone_labels = []
+    
+# Zone 1 labels (top)
+    zone1_labels = [
+        go.layout.Annotation(
+            x=zone1_center_y[segment_index],
+            y=zone1_h_center_y[segment_index],
+            text=f"<b>Z1-{segment_index}</b>",
+            showarrow=False,
+            font={"size": 12, "color": "black"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        )
+    ]
+    zone_labels.extend(zone1_labels)
+
+    # Zone 2 labels (middle)
+    zone2_labels = [
+        go.layout.Annotation(
+            x=zone2_center_y[segment_index],
+            y=zone2_h_center_y[segment_index],
+            text=f"<b>Z2-{segment_index}</b>",
+            showarrow=False,
+            font={"size": 12, "color": "black"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        )
+    ]
+    zone_labels.extend(zone2_labels)
+
+    # Zone 3 labels (bottom)
+    zone3_labels = [
+        go.layout.Annotation(
+            x=zone3_center_y[segment_index],
+            y=zone3_h_center_y[segment_index],
+            text=f"<b>Z3-{segment_index}</b>",
+            showarrow=False,
+            font={"size": 12, "color": "black"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        )
+    ]
+    zone_labels.extend(zone3_labels)
+
+    all_annotations.extend(zone_labels)
+
+    zone_width_annotations = []
+
+# Add width dimension annotations for each zone
+    width_annotations_zone1 = [
+        go.layout.Annotation(
+        x=zone1_center_y[segment_index],
+        y=min(all_z) - 1.0,  # Zone 1 center
+        text=f"<b>b = {b_values_1[segment_index]}m</b>",  # Width of zone 1
+        showarrow=False,
+        font={"size": 12, "color": "green"},
+        align="center",
+        xanchor="center", 
+        yanchor="middle",
+        textangle=0,  # Vertical text
+        ax=0,
+        ay=0,
+    )
+    ]
+    zone_width_annotations.extend(width_annotations_zone1)
+
+    width_annotations_zone2 = [
+        go.layout.Annotation(
+            x=zone2_center_y[segment_index],
+            y=min(all_z) - 1.0,  # Zone 2 center
+            text=f"<b>b = {b_values_2[segment_index]}m</b>",  # Width of zone 2
+            showarrow=False,
+            font={"size": 12, "color": "green"},
+            align="center",
+            xanchor="center",
+            yanchor="middle", 
+            textangle=0,  # Vertical text
+            ax=0,
+            ay=0,
+        )
+    ]
+    zone_width_annotations.extend(width_annotations_zone2)
+
+    # Add width dimension annotations for each zone
+    width_annotations_zone3 = [
+        go.layout.Annotation(
+        x=zone3_center_y[segment_index],
+        y=min(all_z) - 1.0,  # Zone 3 center
+        text=f"<b>b = {b_values_3[segment_index]}m</b>",  # Width of zone 3
+        showarrow=False,
+        font={"size": 12, "color": "green"},
+        align="center",
+        xanchor="center",
+        yanchor="middle",
+        textangle=0,  # Vertical text
+        ax=0,
+        ay=0,
+    )
+
+    ]
+    zone_width_annotations.extend(width_annotations_zone3)
+
+    all_annotations.extend(zone_width_annotations)
+    
+    # Add annotations to layout
+    fig.update_layout(annotations=all_annotations)
+
     # Configure the plot layout with appropriate ranges and labels
     fig.update_layout(
         title="Dwarsdoorsnede (Cross Section)",
