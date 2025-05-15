@@ -83,7 +83,7 @@ def create_longitudinal_section(params: "BridgeParametrization", section_loc: fl
     all_annotations = []
 
     # Create lists for row_labels and l values
-    row_labels = list(range(len(params.input.dimensions.bridge_segments_array)))
+    row_labels = list(range(len(params.bridge_segments_array)))
     l_values = []
     l_values_cumulative = []
     l_cumulative = 0
@@ -91,7 +91,7 @@ def create_longitudinal_section(params: "BridgeParametrization", section_loc: fl
     h_values_extra_hight = []
     h_values_output = []
     h_center_y = []
-    for segment in params.input.dimensions.bridge_segments_array:
+    for segment in params.bridge_segments_array:
         l_values.append(segment.l)
         l_cumulative += segment.l
         l_values_cumulative.append(l_cumulative)
@@ -103,9 +103,9 @@ def create_longitudinal_section(params: "BridgeParametrization", section_loc: fl
     # find in which zone the section is located
     zone_nr = 0
     # Check zone based on section location relative to the first cross-section
-    if params.input.dimensions.bridge_segments_array[0].bz2 / 2 < section_loc:
+    if params.bridge_segments_array[0].bz2 / 2 < section_loc:
         zone_nr = 1
-    elif section_loc < -params.input.dimensions.bridge_segments_array[0].bz2 / 2:
+    elif section_loc < -params.bridge_segments_array[0].bz2 / 2:
         zone_nr = 3
     else:
         zone_nr = 2
@@ -184,7 +184,7 @@ def create_longitudinal_section(params: "BridgeParametrization", section_loc: fl
                 y=ch_y,
                 text=f"<b>h = {ch}m</b>",
                 showarrow=False,
-                font={"size": 12, "color": "red"},
+                font={"size": 12, "color": "blue"},
                 align="center",
                 xanchor="right",
                 yanchor="middle",

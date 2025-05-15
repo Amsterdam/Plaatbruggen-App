@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import plotly.graph_objects as go
 import trimesh
 
+from munch import Munch
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
 if TYPE_CHECKING:
