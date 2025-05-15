@@ -2,24 +2,26 @@
 
 import plotly.graph_objects as go
 import trimesh
+from munch import Munch  # type: ignore[import-untyped]
+
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
 
-def create_longitudinal_section(params, section_loc):
+def create_longitudinal_section(params: dict | Munch, section_loc: float) -> go.Figure:
     """
     Creates a 2D longitudinal section view of the bridge using Plotly.
-    
     This function creates a 2D representation of the bridge's longitudinal section by:
     1. Creating a 3D model of the bridge
     2. Slicing it with a vertical plane parallel to the x-z plane
-    3. Converting the resulting cross-section into a 2D plot showing length (x) vs height (z)
-    
+    3. Converting the resulting cross-section into a 2D plot showing length (x) vs height (z).
+
     Args:
-        params: Input parameters for the bridge dimensions.
-        section_loc: Location of the longitudinal section along the y-axis.
+        params (dict | Munch): Input parameters for the bridge dimensions.
+        section_loc (float): Location of the longitudinal section along the y-axis.
 
     Returns:
-        PlotlyResult: A 2D representation of the longitudinal section.
+        go.Figure: A 2D representation of the longitudinal section.
+
     """
     # Generate the 3D model without coordinate axes
     scene = create_3d_model(params, axes=False)
@@ -67,10 +69,10 @@ def create_longitudinal_section(params, section_loc):
         fig.add_trace(go.Scatter(
             x=x,
             y=z,
-            mode='lines',
-            line=dict(color='black')  # Consistent black color for all lines
+            mode="lines",
+            line={"color": "black"}  # Consistent black color for all lines
         ))
-    
+
     # Prepare annotations
     all_annotations = []
 
@@ -94,7 +96,8 @@ def create_longitudinal_section(params, section_loc):
 
     # find in which zone the section is located
     zone_nr = 0
-    if params.bridge_segments_array[0].bz2/2 < section_loc:    #TODO it now only checks the first cross section D = 1
+    # Check zone based on section location relative to the first cross-section
+    if params.bridge_segments_array[0].bz2/2 < section_loc:
         zone_nr = 1
     elif section_loc < -params.bridge_segments_array[0].bz2/2:
         zone_nr = 3
@@ -154,7 +157,7 @@ def create_longitudinal_section(params, section_loc):
         go.layout.Annotation(
             x=zcx,
             y=min(all_z) - 1.0,
-            text=f"<b>l = {l}m</b>",
+            text=f"<b>l = {length}m</b>",
             showarrow=False,
             font={"size": 12, "color": "red"},
             align="center",
@@ -164,7 +167,7 @@ def create_longitudinal_section(params, section_loc):
             ax=0,
             ay=0
         )
-        for l, zcx in zip(l_values[1:], zone_center_x)  # Use the extracted lists
+        for length, zcx in zip(l_values[1:], zone_center_x)  # Use the extracted lists
     ]
 
     dimension_annotations.extend([
@@ -190,19 +193,19 @@ def create_longitudinal_section(params, section_loc):
     # Configure the plot layout with appropriate ranges and labels
     fig.update_layout(
         title="Langsdoorsnede (Longitudinal Section)",
-        xaxis=dict(
-            range=x_range,
-            constrain='domain',
-            title="X-as - Lengte [m]"
-        ),
-        yaxis=dict(
-            range=z_range,
-            scaleanchor='x',
-            scaleratio=2,  # Maintain aspect ratio for proper visualization
-            title="Z-as - Hoogte [m]" # Z-as is the vertical axis shown as Y-axis in the plot
-        ),
+        xaxis={
+            "range": x_range,
+            "constrain": "domain",
+            "title": "X-as - Lengte [m]"
+        },
+        yaxis={
+            "range": z_range,
+            "scaleanchor": "x",
+            "scaleratio": 2,  # Maintain aspect ratio for proper visualization
+            "title": "Z-as - Hoogte [m]" # Z-as is the vertical axis shown as Y-axis in the plot
+        },
         annotations=all_annotations,
         showlegend=False
     )
 
-    return fig 
+    return fig

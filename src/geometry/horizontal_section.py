@@ -2,24 +2,26 @@
 
 import plotly.graph_objects as go
 import trimesh
+from munch import Munch  # type: ignore[import-untyped]
+
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
 
-def create_horizontal_section_view(params, section_loc):
+def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> go.Figure:
     """
     Creates a 2D horizontal section view of the bridge using Plotly.
-    
     This function creates a 2D representation of the bridge's horizontal section by:
     1. Creating a 3D model of the bridge
     2. Slicing it with a horizontal plane at the specified height
-    3. Converting the resulting section into a 2D plot showing length (x) vs width (y)
-    
+    3. Converting the resulting section into a 2D plot showing length (x) vs width (y).
+
     Args:
-        params: Input parameters for the bridge dimensions.
-        section_loc: Location of the horizontal section along the z-axis.
+        params (dict | Munch): Input parameters for the bridge dimensions.
+        section_loc (float): Location of the horizontal section along the z-axis.
 
     Returns:
-        PlotlyResult: A 2D representation of the horizontal section.
+        go.Figure: A 2D representation of the horizontal section.
+
     """
     # Generate the 3D model without coordinate axes
     scene = create_3d_model(params, axes=False)
@@ -67,8 +69,8 @@ def create_horizontal_section_view(params, section_loc):
         fig.add_trace(go.Scatter(
             x=x,
             y=y,
-            mode='lines',
-            line=dict(color='black')  # Consistent black color for all lines
+            mode="lines",
+            line={"color": "black"}  # Consistent black color for all lines
         ))
 
     # Prepare annotations
@@ -111,7 +113,7 @@ def create_horizontal_section_view(params, section_loc):
         go.layout.Annotation(
             x=zcx,
             y=min(all_y) - 1.0,
-            text=f"<b>l = {l}m</b>",
+            text=f"<b>l = {length}m</b>",
             showarrow=False,
             font={"size": 12, "color": "red"},
             align="center",
@@ -121,7 +123,7 @@ def create_horizontal_section_view(params, section_loc):
             ax=0,
             ay=0,
         )
-        for l, zcx in zip(l_values[1:], zone_center_x) ## Use the extracted lists
+        for length, zcx in zip(l_values[1:], zone_center_x)  # Use the extracted lists
     ]
     all_annotations.extend(dimension_annotations)
 
@@ -130,20 +132,19 @@ def create_horizontal_section_view(params, section_loc):
         title="Horizontale doorsnede (Horizontal Section)",
         showlegend=False,
         autosize=True,
-        xaxis=dict(
-            range=x_range,
-            constrain='domain',
-            title="X-as - Lengte [m]"
-        ),
-        yaxis=dict(
-            range=y_range,
-            scaleanchor='x',
-            scaleratio=1,
-            title="Y-as - Breedte [m]"
-        ),
+        xaxis={
+            "range": x_range,
+            "constrain": "domain",
+            "title": "X-as - Lengte [m]"
+        },
+        yaxis={
+            "range": y_range,
+            "scaleanchor": "x",
+            "scaleratio": 1,
+            "title": "Y-as - Breedte [m]"
+        },
         margin={"l": 50, "r": 50, "t": 50, "b": 50},
-        plot_bgcolor="white",
         annotations=all_annotations
     )
 
-    return fig 
+    return fig

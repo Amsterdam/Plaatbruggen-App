@@ -123,6 +123,7 @@ def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray,
         mesh (trimesh.Trimesh): The 3D mesh to slice.
         plane_origin (list or np.ndarray): A point on the slicing plane [x, y, z].
         plane_normal (list or np.ndarray): The normal vector of the slicing plane [nx, ny, nz].
+        axes (bool, optional): Whether to include coordinate axes and origin point in the scene. Defaults to True.
 
     Returns:
         trimesh.path.Path3D: A 3D path representing the cross-section.
@@ -158,6 +159,7 @@ def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
             - params.bridge_segments_array: A list of dictionaries, where each dictionary
               defines the dimensions and properties of a sub-zone. Each dictionary should
               include keys such as 'l', 'bz1', 'bz2', 'bz3', 'dz', and 'dze'.
+        axes (bool, optional): Whether to include coordinate axes and origin point in the scene. Defaults to True.
 
     Returns:
         trimesh.Scene: A 3D scene containing the bridge deck model, including sub-zone boxes,
@@ -321,7 +323,6 @@ def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
         black_dot = create_black_dot(radius=0.1)
         combined_scene.add_geometry(black_dot)
 
-    # combined_scene.show()
     return combined_scene
 
 

@@ -2,24 +2,26 @@
 
 import plotly.graph_objects as go
 import trimesh
+from munch import Munch  # type: ignore[import-untyped]
+
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
 
-def create_cross_section_view(params, section_loc):
+def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Figure:
     """
     Creates a 2D cross-section view of the bridge using Plotly.
-    
     This function creates a 2D representation of the bridge's cross-section by:
     1. Creating a 3D model of the bridge
     2. Slicing it with a vertical plane parallel to the y-z plane
-    3. Converting the resulting cross-section into a 2D plot showing width (y) vs height (z)
-    
+    3. Converting the resulting cross-section into a 2D plot showing width (y) vs height (z).
+
     Args:
-        params: Input parameters for the bridge dimensions.
-        section_loc: Location of the cross-section along the x-axis.
+        params (dict | Munch): Input parameters for the bridge dimensions.
+        section_loc (float): Location of the cross-section along the x-axis.
 
     Returns:
-        PlotlyResult: A 2D representation of the cross-section.
+        go.Figure: A 2D representation of the cross-section.
+
     """
     # Generate the 3D model without coordinate axes
     scene = create_3d_model(params, axes=False)
@@ -67,24 +69,24 @@ def create_cross_section_view(params, section_loc):
         fig.add_trace(go.Scatter(
             x=y,
             y=z,
-            mode='lines',
-            line=dict(color='black')  # Consistent black color for all lines
+            mode="lines",
+            line={"color": "black"}  # Consistent black color for all lines
         ))
 
     # Configure the plot layout with appropriate ranges and labels
     fig.update_layout(
         title="Dwarsdoorsnede (Cross Section)",
-        xaxis=dict(
-            range=y_range,
-            constrain='domain',
-            title="Y-as - Breedte [m]"
-        ),
-        yaxis=dict(
-            range=z_range,
-            scaleanchor='x',
-            scaleratio=2,  # Maintain aspect ratio for proper visualization
-            title="Z-as - Hoogte [m]" # Z-as is the vertical axis shown as Y-axis in the plot
-        ),
+        xaxis={
+            "range": y_range,
+            "constrain": "domain",
+            "title": "Y-as - Breedte [m]"
+        },
+        yaxis={
+            "range": z_range,
+            "scaleanchor": "x",
+            "scaleratio": 2,  # Maintain aspect ratio for proper visualization
+            "title": "Z-as - Hoogte [m]" # Z-as is the vertical axis shown as Y-axis in the plot
+        }
     )
 
-    return fig 
+    return fig

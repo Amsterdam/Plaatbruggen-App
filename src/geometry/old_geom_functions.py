@@ -1,5 +1,5 @@
     # @GeometryView("3D - Horizontale doorsnede", duration_guess=1, x_axis_to_right=True)
-    # def get_3d_horizontal_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+    # def get_3d_horizontal_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:
     #     """
     #     Generates a horizontal section of the bridge deck by slicing the 3D model with a horizontal plane.
 
@@ -34,7 +34,7 @@
     #     return GeometryResult(geometry, geometry_type="gltf")
 
     # @GeometryView("3D - Langsdoorsnede", duration_guess=1, x_axis_to_right=True)
-    # def get_3d_longitudinal_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+    # def get_3d_longitudinal_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:
     #     """
     #     Generates a longitudinal section of the bridge deck by slicing the 3D model with a vertical plane.
 
@@ -63,7 +63,7 @@
     #     return GeometryResult(geometry, geometry_type="gltf")
 
     # @GeometryView("3D - Dwarsdoorsnede", duration_guess=1, x_axis_to_right=True)
-    # def get_3d_cross_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+    # def get_3d_cross_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:
     #     """
     #     Generates a cross-section of the bridge deck by slicing the 3D model with a vertical plane perpendicular to the longitudinal axis.
 

@@ -5,28 +5,7 @@ import os  # Add import for os
 import geopandas as gpd  # Add import for geopandas
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
-import trimesh.transformations as tf
-import numpy as np
-from src.geometry.model_creator import create_axes
-from src.geometry.longitudinal_section import create_longitudinal_section
-from src.geometry.cross_section import create_cross_section_view
-from src.geometry.horizontal_section import create_horizontal_section_view
-
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
-from app.common.map_utils import (
-    process_bridge_geometries,
-    validate_gdf_columns,
-    validate_gdf_crs,
-    validate_shapefile_exists,
-)
-from app.constants import (  # Replace relative imports with absolute imports
-    OUTPUT_REPORT_PATH,
-)
-from src.geometry.model_creator import (
-    create_2d_top_view,
-    create_3d_model,
-    create_cross_section,
-)
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
 from viktor.utils import convert_word_to_pdf
@@ -40,6 +19,23 @@ from viktor.views import (
     PDFView,
     PlotlyResult,  # Import PlotlyResult
     PlotlyView,  # Import PlotlyView
+)
+
+from app.common.map_utils import (
+    process_bridge_geometries,
+    validate_gdf_columns,
+    validate_gdf_crs,
+    validate_shapefile_exists,
+)
+from app.constants import (  # Replace relative imports with absolute imports
+    OUTPUT_REPORT_PATH,
+)
+from src.geometry.cross_section import create_cross_section_view
+from src.geometry.horizontal_section import create_horizontal_section_view
+from src.geometry.longitudinal_section import create_longitudinal_section
+from src.geometry.model_creator import (
+    create_2d_top_view,
+    create_3d_model,
 )
 
 # Import parametrization from the separate file
@@ -356,18 +352,18 @@ class BridgeController(ViktorController):
     def get_2d_horizontal_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
         """
         Generates a 2D horizontal section view of the bridge using Plotly.
-        
         This function creates a 2D representation of the bridge's horizontal section by:
         1. Creating a 3D model of the bridge
         2. Slicing it with a horizontal plane at the specified height
-        3. Converting the resulting section into a 2D plot showing length (x) vs width (y)
-        
+        3. Converting the resulting section into a 2D plot showing length (x) vs width (y).
+
         Args:
             params (BridgeParametrization): Input parameters for the bridge dimensions.
             **kwargs: Additional arguments.
 
         Returns:
             PlotlyResult: A 2D representation of the horizontal section.
+
         """
         fig = create_horizontal_section_view(params, params.input.dimensions.horizontal_section_loc)
         return PlotlyResult(fig.to_json())
@@ -376,42 +372,42 @@ class BridgeController(ViktorController):
     def get_2d_longitudinal_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
         """
         Generates a 2D longitudinal section view of the bridge using Plotly.
-        
         This function creates a 2D representation of the bridge's longitudinal section by:
         1. Creating a 3D model of the bridge
         2. Slicing it with a vertical plane parallel to the x-z plane
-        3. Converting the resulting cross-section into a 2D plot showing length (x) vs height (z)
-        
+        3. Converting the resulting cross-section into a 2D plot showing length (x) vs height (z).
+
         Args:
             params (BridgeParametrization): Input parameters for the bridge dimensions.
             **kwargs: Additional arguments.
 
         Returns:
             PlotlyResult: A 2D representation of the longitudinal section.
+
         """
         fig = create_longitudinal_section(params, params.input.dimensions.longitudinal_section_loc)
         return PlotlyResult(fig.to_json())
-    
+
     @PlotlyView("Dwarsdoorsnede", duration_guess=1)
     def get_2d_cross_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
         """
         Generates a 2D cross-section view of the bridge using Plotly.
-        
         This function creates a 2D representation of the bridge's cross-section by:
         1. Creating a 3D model of the bridge
         2. Slicing it with a vertical plane parallel to the y-z plane
-        3. Converting the resulting cross-section into a 2D plot showing width (y) vs height (z)
-        
+        3. Converting the resulting cross-section into a 2D plot showing width (y) vs height (z).
+
         Args:
             params (BridgeParametrization): Input parameters for the bridge dimensions.
             **kwargs: Additional arguments.
 
         Returns:
             PlotlyResult: A 2D representation of the cross-section.
+
         """
         fig = create_cross_section_view(params, params.input.dimensions.cross_section_loc)
         return PlotlyResult(fig.to_json())
-    
+
     # ============================================================================================================
     # output - Rapport
     # ============================================================================================================

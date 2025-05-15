@@ -29,7 +29,7 @@ class BridgeParametrization(Parametrization):
         views=["get_top_view", "get_3d_view",
                "get_2d_horizontal_section",
                "get_2d_longitudinal_section",
-               "get_2d_cross_section",], 
+               "get_2d_cross_section"],
     )
 
     # --- Tabs within Invoer Page ---
