@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 import plotly.graph_objects as go
 import trimesh
-
 from munch import Munch
+
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
 if TYPE_CHECKING:
-    from app.bridge.parametrization import BridgeParametrization
+    pass
 
 def create_horizontal_section_annotations(
     params: dict | Munch, all_y: list[float]
@@ -202,7 +202,6 @@ def create_horizontal_section_annotations(
 
 
 def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> go.Figure:
-
     """
     Creates a 2D horizontal section view of the bridge using Plotly.
     This function creates a 2D representation of the bridge's horizontal section by:
