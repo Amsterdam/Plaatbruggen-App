@@ -108,7 +108,7 @@ class BridgeController(ViktorController):
     @GeometryView("3D Model", duration_guess=1, x_axis_to_right=False)
     def get_3d_view(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
         """Generates a 3D representation of the bridge deck."""
-        combined_scene = create_3d_model(params)
+        combined_scene = create_3d_model(params, section_planes=True)
         # Export the scene as a GLTF file and return it as a GeometryResult
         geometry = File()
         with geometry.open_binary() as w:

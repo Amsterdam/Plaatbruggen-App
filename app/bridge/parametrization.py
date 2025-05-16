@@ -18,36 +18,39 @@ from viktor.parametrization import (
 
 from .geometry_functions import get_steel_qualities
 
-def calculate_max_array(params, **kwargs) -> int:
+
+def calculate_max_array(params: object) -> int:
+    """Calculate the maximum number of reinforcement zones based on the number of bridge segments."""
     sections = len(params.bridge_segments_array)
-    max = 3 * (sections - 1)
+    return 3 * (sections - 1)
 
-    return max
+def define_options_numbering(params: object) -> list:
+    """
+    Define options for zone numbering based on the number of segments.
 
-def define_options_numbering(params, **kwargs) -> list:
-    """Define options for zone numbering based on the number of segments.
-    
     Args:
         params: Parameters containing bridge_segments_array
-        **kwargs: Additional keyword arguments
-        
+
     Returns:
         list: List of zone numbers in format "location-segment" (e.g., ["1-1", "2-1", "3-1", "1-2", "2-2", "3-2"])
+
     """
     option_list = []
     num_segments = len(params.bridge_segments_array) - 1
-    
     # For each segment
     for segment in range(num_segments):
         # For each zone (left, middle, right)
         for zone in range(3):
             zone_number = f"{zone + 1}-{segment + 1}"
             option_list.append(zone_number)
-            
     return option_list
 
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
+
+    ###############################################
+    ## Info Page
+    ##############################################
 
     info = Page("Info", views=["get_bridge_map_view"])
 
@@ -63,16 +66,19 @@ class BridgeParametrization(Parametrization):
                "get_2d_cross_section"],
     )
 
+    ###############################################
+    ## Invoer Page
+    ##############################################
+
     # --- Tabs within Invoer Page ---
     input.dimensions = Tab("Dimensies")
     input.geometrie_wapening = Tab("Wapening")
     input.belastingzones = Tab("Belastingzones")
     input.belastingcombinaties = Tab("Belastingcombinaties")
 
-    # --- Bridge Geometry (moved to geometrie_brug tab) ---
-    input.dimensions.horizontal_section_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
-    input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
-    input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
+    #----------------------------------------
+    ## Dimensions tab
+    #----------------------------------------
 
     input.dimensions.segment_explanation = Text(
         """Definieer hier de dwarsdoorsneden (snedes) van de brug.
@@ -86,6 +92,7 @@ Elk item in de lijst hieronder representeert een dwarsdoorsnede.
 Standaard zijn twee dwarsdoorsneden (D1 en D2) voorgedefinieerd, wat resulteert in één brugsegment.
 Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en '-' knoppen."""
     )
+
     input.dimensions.array = DynamicArray(
         "Brug dimensies",
         row_label="D-",
@@ -121,7 +128,7 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.dimensions.array.bz3 = NumberField("Breedte zone 3", default=15.0, suffix="m")
     input.dimensions.array.dz = NumberField("Dikte zone 1 en 3", default=2.0, suffix="m")
     input.dimensions.array.dz_2 = NumberField("Dikte zone 2", default=3.0, suffix="m")
-    input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden")
+    input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden", visible=False)
 
     _l_field_visibility_constraint = DynamicArrayConstraint(
         dynamic_array_name="bridge_segments_array",
@@ -134,6 +141,30 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         visible=_l_field_visibility_constraint,
     )
 
+    # --- Bridge Geometry (moved to geometrie_brug tab) ---
+    input.dimensions.lb1 = LineBreak()
+    input.dimensions.text_sections = Text("Met onderstaande instellingen kan de locatie van de doorsneden worden ingesteld.")
+    input.dimensions.toggle_sections = BooleanField("Toon locaties van de doorsneden in het 3D model", default=False, flex=100)
+    input.dimensions.lb2 = LineBreak()
+    input.dimensions.horizontal_section_loc = NumberField(
+        "Doorsnede bovenaanzicht z =",
+        default=-1.0,
+        suffix="m",
+        visible=Lookup("input.dimensions.toggle_sections")
+    )
+    input.dimensions.longitudinal_section_loc = NumberField(
+        "Doorsnede langsdoorsnede y =",
+        default=0.0,
+        suffix="m",
+        visible=Lookup("input.dimensions.toggle_sections")
+    )
+    input.dimensions.cross_section_loc = NumberField(
+        "Doorsnede dwarsdoorsnede x =",
+        default=0.0,
+        suffix="m",
+        visible=Lookup("input.dimensions.toggle_sections")
+    )
+
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
     input.geometrie_wapening.explanation = Text(
         """Op deze pagina kan de wapening van de brug worden ingevoerd. De wapening moet ingevoerd worden per zone.
@@ -143,9 +174,9 @@ De zones corresponderen met de plaatzones die worden gegenereerd op basis van de
 - Het getal voor het streepje correspondeert met de zone (1=links, 2=midden, 3=rechts)
 - Het getal na het streepje geeft aan bij welk segment de zone hoort
 
-Eerst wordt er gevraagd naar de eigenschappen van de hoofdwapening in langs- en dwarsrichting. 
-Vervolgens kan er per veld aangeklikt worden, of er extra bijlegwapening aanwezig is in de zone. 
-Wanneer dit wordt aangevinkt, verschijnen dezelfde invoervelden nogmaals, om deze bijlegwapening te definiëren. 
+Eerst wordt er gevraagd naar de eigenschappen van de hoofdwapening in langs- en dwarsrichting.
+Vervolgens kan er per veld aangeklikt worden, of er extra bijlegwapening aanwezig is in de zone.
+Wanneer dit wordt aangevinkt, verschijnen dezelfde invoervelden nogmaals, om deze bijlegwapening te definiëren.
 In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwapeningsnet gelegd."""
     )    # General reinforcement parameters
     input.geometrie_wapening.staalsoort = OptionField(
@@ -154,17 +185,20 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         default="B500B",  # Changed to more modern default
         description="De kwaliteit van het betonstaal dat wordt toegepast in de brug."
     )
-    
+
     input.geometrie_wapening.dekking = NumberField(
-        "Betondekking", 
-        default=55.0, 
+        "Betondekking",
+        default=55.0,
         suffix="mm",
         description="De betondekking is de afstand tussen de buitenkant van het beton en de buitenste wapeningslaag."
-    )    
+    )
     input.geometrie_wapening.langswapening_buiten = BooleanField(
-        "Langswapening aan buitenzijde?", 
+        "Langswapening aan buitenzijde?",
         default=True,
-        description="Indien aangevinkt ligt de langswapening aan de buitenzijde van het beton. Indien uitgevinkt ligt de dwarswapening aan de buitenzijde."
+        description=(
+            "Indien aangevinkt ligt de langswapening aan de buitenzijde van het beton. "
+            "Indien uitgevinkt ligt de dwarswapening aan de buitenzijde."
+        )
     )
 
     input.geometrie_wapening.zones = DynamicArray(
@@ -202,9 +236,9 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
                     "hoofdwapening_dwars_hart_op_hart": 150.0,
                     "heeft_bijlegwapening": False,
                 },
-        ]    
+        ]
     )
-    
+
     # Zone number display
     input.geometrie_wapening.zones.zone_number = OptionField(
         "Zone nummer",

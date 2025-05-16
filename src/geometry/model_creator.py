@@ -149,8 +149,85 @@ def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray,
 
     return combined_scene_2d
 
+def create_section_planes(params: dict | Munch) -> trimesh.Scene:
+    """
+    Creates transparent grey planes representing the horizontal, longitudinal and cross sections.
 
-def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
+    Args:
+        params (dict | Munch): Input parameters containing section locations and bridge dimensions.
+
+    Returns:
+        trimesh.Scene: Scene containing the three section planes.
+
+    """
+    # Get section locations from params
+    h_loc = params.input.dimensions.horizontal_section_loc
+    l_loc = params.input.dimensions.longitudinal_section_loc
+    c_loc = params.input.dimensions.cross_section_loc
+
+    # Calculate model bounds based on bridge dimensions
+    original_length = sum(segment.l for segment in params.bridge_segments_array)
+
+    max_width_z1 = max(
+        segment.bz1 for segment in params.bridge_segments_array
+    )
+    max_width_z2 = max(
+        segment.bz2 for segment in params.bridge_segments_array
+    )
+    max_width_z3 = max(
+        segment.bz3 for segment in params.bridge_segments_array
+    )
+
+    original_width = max_width_z1 + max_width_z2 + max_width_z3
+
+    max_hight_dz_2 = max(
+        segment.dz_2 for segment in params.bridge_segments_array
+    )
+
+    # Add some padding to bounds
+    padding = 5
+    length = original_length + padding
+    max_width = original_width + padding
+    max_height = max_hight_dz_2 + padding
+
+    # Create planes with appropriate dimensions and positions
+    # Planes start at -padding/2 and extend to original_length + padding/2
+    horizontal_plane = trimesh.creation.box(
+        extents=[length, max_width, 0.01]
+    )
+    horizontal_plane.apply_translation([original_length/2, -padding/2, h_loc])
+
+    longitudinal_plane = trimesh.creation.box(
+        extents=[length, 0.01, max_height]
+    )
+    longitudinal_plane.apply_translation([original_length/2, l_loc, -padding/2])
+
+    cross_plane = trimesh.creation.box(
+        extents=[0.01, max_width, max_height]
+    )
+    cross_plane.apply_translation([c_loc, -padding/2, -padding/2])
+
+    # Set transparent grey color for all planes and use PBRMaterial with alphaMode='BLEND'
+    grey_color = [128, 128, 128, 150]  # RGBA with alpha=30 for higher transparency (less visible)
+    from trimesh.visual.material import PBRMaterial
+    material = PBRMaterial(
+        baseColorFactor=[128/255, 128/255, 128/255, 150/255],
+        alphaMode="BLEND"
+    )
+    for plane in [horizontal_plane, longitudinal_plane, cross_plane]:
+        plane.visual.face_colors = grey_color
+        plane.visual.material = material
+
+    # Add planes to scene
+    scene = trimesh.Scene()
+    scene.add_geometry(horizontal_plane)
+    scene.add_geometry(longitudinal_plane)
+    scene.add_geometry(cross_plane)
+
+    return scene
+
+
+def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: bool = False) -> trimesh.Scene:
     """
     Generates a 3D representation of a bridge deck based on input parameters.
 
@@ -160,10 +237,11 @@ def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
               defines the dimensions and properties of a sub-zone. Each dictionary should
               include keys such as 'l', 'bz1', 'bz2', 'bz3', 'dz', and 'dze'.
         axes (bool, optional): Whether to include coordinate axes and origin point in the scene. Defaults to True.
+        section_planes (bool, optional): Whether to include transparent section planes in the scene. Defaults to False.
 
     Returns:
         trimesh.Scene: A 3D scene containing the bridge deck model, including sub-zone boxes,
-        axes, and a black dot at the origin.
+        axes, a black dot at the origin, and optionally section planes.
 
     """
     # Determine the number of sub-zones based on input dimensions
@@ -309,7 +387,7 @@ def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
         combined_mesh.update_faces(combined_mesh.unique_faces())  # Removes any duplicate faces using the new recommended method
         combined_mesh.fix_normals()  # Ensures consistent face orientation
         # Set the face colors for the combined mesh, adjusting for potentially merged faces
-        combined_mesh.visual.face_colors = final_colors[:len(combined_mesh.faces)]
+        combined_mesh.visual.face_colors = final_colors[: len(combined_mesh.faces)]
 
         # Add the mesh to the scene
         combined_scene.add_geometry(combined_mesh)
@@ -322,6 +400,13 @@ def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
         # Add the black dot at the origin to the scene
         black_dot = create_black_dot(radius=0.1)
         combined_scene.add_geometry(black_dot)
+
+
+    # Add transparent section planes to visualize where the 2D sections will be taken
+    # These planes help users understand the location of horizontal, longitudinal, and cross sections
+    if params.input.dimensions.toggle_sections and section_planes:
+            section_planes_scene = create_section_planes(params)
+            combined_scene.add_geometry(section_planes_scene)
 
     return combined_scene
 

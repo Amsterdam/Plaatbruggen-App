@@ -18,6 +18,8 @@ Semantic versioning is used to denote different versions of this project.
   - Options dynamically generated based on number of bridge segments
   - Options list updates automatically when segments are added/removed
   - Proper zone labeling helps users identify reinforcement locations
+  - added annotations for the horizontal, longitudinal and cross sections.
+  - added toggleable cross section planes in 3d model
 
 ### Changed
 - Reorganized resources directory structure for better organization:
@@ -37,6 +39,7 @@ Semantic versioning is used to denote different versions of this project.
 - Performed internal refactoring of `BridgeController`'s `get_bridge_map_view` and related helper methods to enhance structure and address linter warnings.
 - Simplified shapefile path retrieval in `BridgeController` by inlining the `_get_shapefile_path` helper method into `get_bridge_map_view`.
 - Centralized individual bridge shapefile loading and filtering by moving logic from `BridgeController`._load_and_filter_geodataframe` to a new `load_and_filter_bridge_shapefile` function in `app/common/map_utils.py`.
+- adjusted the cross section input fields
 
 ### Fixed
 - Resolved issues where `OBJECTNUMM` was not found in `Bridge` entity parameters by:

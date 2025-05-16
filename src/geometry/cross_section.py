@@ -35,6 +35,9 @@ def create_cross_section_annotations(
     zone1_h_center_y = []
     zone2_h_center_y = []
     zone3_h_center_y = []
+    zone1_h_location = []
+    zone2_h_location = []
+    zone3_h_location = []
 
     for segment in params.bridge_segments_array:
         l_values.append(segment.l)
@@ -55,6 +58,10 @@ def create_cross_section_annotations(
         zone1_h_center_y.append(-segment.dz / 2)
         zone2_h_center_y.append(-segment.dz + segment.dz_2 / 2)
         zone3_h_center_y.append(-segment.dz / 2)
+
+        zone1_h_location.append(segment.bz2 / 2)
+        zone2_h_location.append(-segment.bz2 / 2)
+        zone3_h_location.append(-segment.bz2 / 2 - segment.bz3)
 
     # Find which segment the cross section is located in
     section_loc_param = params.input.dimensions.cross_section_loc
@@ -155,6 +162,50 @@ def create_cross_section_annotations(
     ]
     all_annotations.extend(zone_width_annotations)
 
+    # Height dimension annotations for each zone
+    zone_height_annotations = [
+        go.layout.Annotation(
+            x=zone1_h_location[segment_index],
+            y=zone1_h_center_y[segment_index],
+            text=f"<b>h = {zone1_h[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "blue"},
+            align="center",
+            xanchor="right",
+            yanchor="middle",
+            textangle=-90,
+            ax=0,
+            ay=0,
+        ),
+        go.layout.Annotation(
+            x=zone2_h_location[segment_index],
+            y=zone2_h_center_y[segment_index],
+            text=f"<b>h = {zone2_h[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "blue"},
+            align="center",
+            xanchor="right",
+            yanchor="middle",
+            textangle=-90,
+            ax=0,
+            ay=0,
+        ),
+        go.layout.Annotation(
+            x=zone3_h_location[segment_index],
+            y=zone3_h_center_y[segment_index],
+            text=f"<b>h = {zone3_h[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "blue"},
+            align="center",
+            xanchor="right",
+            yanchor="middle",
+            textangle=-90,
+            ax=0,
+            ay=0,
+        ),
+    ]
+    all_annotations.extend(zone_height_annotations)
+
     return all_annotations
 
 
@@ -239,9 +290,10 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
         yaxis={
             "range": z_range,
             "scaleanchor": "x",
-            "scaleratio": 2,  # Maintain aspect ratio for proper visualization
+            "scaleratio": 1,  # Maintain aspect ratio for proper visualization
             "title": "Z-as - Hoogte [m]" # Z-as is the vertical axis shown as Y-axis in the plot
-        }
+        },
+        showlegend=False
     )
 
     return fig
