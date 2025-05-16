@@ -14,7 +14,6 @@ README_PATH = PROJECT_PATH / "README.md"
 CHANGELOG_PATH = PROJECT_PATH / "CHANGELOG.md"
 CSS_PATH = PROJECT_PATH / "resources" / "styles" / "style.css"
 OUTPUT_REPORT_PATH = PROJECT_PATH / "resources" / "templates" / "template_eindrapport.docx"
-REINFORCEMENT_PATH = PROJECT_PATH / "resources" / "data" / "materials" / "betonstaalkwaliteit.csv"
 
 # ===================================================================================================================
 # Docs - Readme
