@@ -1,7 +1,5 @@
 """Module for the Bridge entity parametrization."""
 
-import functools
-
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -36,10 +34,57 @@ def _get_current_num_segments(params_obj: "BridgeParametrization") -> int:
         return 0
 
 
-def dx_width_visible_callback(params: "BridgeParametrization", *, x_threshold: int) -> bool:
-    """Callback for visibility of dX_width fields."""
-    num_segments = _get_current_num_segments(params)
-    return num_segments >= x_threshold
+# Define specific visibility functions for each D-width field from D3 to D15
+def d3_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 3
+
+
+def d4_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 4
+
+
+def d5_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 5
+
+
+def d6_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 6
+
+
+def d7_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 7
+
+
+def d8_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 8
+
+
+def d9_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 9
+
+
+def d10_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 10
+
+
+def d11_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 11
+
+
+def d12_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 12
+
+
+def d13_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 13
+
+
+def d14_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 14
+
+
+def d15_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
+    return _get_current_num_segments(params) >= 15
 
 
 # Remove old helper functions if they exist (e.g., _get_dimension_array_length, d3_width_visible, etc.)
@@ -208,91 +253,91 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         "Breedte zone bij D3",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=3),
+        visible=d3_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D3.",
     )
     input.belastingzones.load_zones_array.d4_width = NumberField(
         "Breedte zone bij D4",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=4),
+        visible=d4_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D4.",
     )
     input.belastingzones.load_zones_array.d5_width = NumberField(
         "Breedte zone bij D5",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=5),
+        visible=d5_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D5.",
     )
     input.belastingzones.load_zones_array.d6_width = NumberField(
         "Breedte zone bij D6",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=6),
+        visible=d6_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D6.",
     )
     input.belastingzones.load_zones_array.d7_width = NumberField(
         "Breedte zone bij D7",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=7),
+        visible=d7_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D7.",
     )
     input.belastingzones.load_zones_array.d8_width = NumberField(
         "Breedte zone bij D8",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=8),
+        visible=d8_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D8.",
     )
     input.belastingzones.load_zones_array.d9_width = NumberField(
         "Breedte zone bij D9",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=9),
+        visible=d9_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D9.",
     )
     input.belastingzones.load_zones_array.d10_width = NumberField(
         "Breedte zone bij D10",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=10),
+        visible=d10_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D10.",
     )
     input.belastingzones.load_zones_array.d11_width = NumberField(
         "Breedte zone bij D11",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=11),
+        visible=d11_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D11.",
     )
     input.belastingzones.load_zones_array.d12_width = NumberField(
         "Breedte zone bij D12",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=12),
+        visible=d12_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D12.",
     )
     input.belastingzones.load_zones_array.d13_width = NumberField(
         "Breedte zone bij D13",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=13),
+        visible=d13_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D13.",
     )
     input.belastingzones.load_zones_array.d14_width = NumberField(
         "Breedte zone bij D14",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=14),
+        visible=d14_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D14.",
     )
     input.belastingzones.load_zones_array.d15_width = NumberField(
         "Breedte zone bij D15",
         default=0.0,
         suffix="m",
-        visible=functools.partial(dx_width_visible_callback, x_threshold=15),
+        visible=d15_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D15.",
     )
 
