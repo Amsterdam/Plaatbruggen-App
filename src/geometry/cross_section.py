@@ -7,9 +7,7 @@ from munch import Munch  # type: ignore[import-untyped]
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
 
-def create_cross_section_annotations(
-    params: dict | Munch, all_z: list[float]
-) -> list[go.layout.Annotation]:
+def create_cross_section_annotations(params: dict | Munch, all_z: list[float]) -> list[go.layout.Annotation]:
     """
     Create Plotly annotation objects for the cross-section view.
 
@@ -20,6 +18,8 @@ def create_cross_section_annotations(
     :returns: List of Plotly annotation objects for the cross-section.
     :rtype: list[go.layout.Annotation]
     """
+    if isinstance(params, dict) and not isinstance(params, Munch):
+        params = Munch.fromDict(params)
     l_values = []
     l_values_cumulative = []
     l_cumulative = 0
@@ -225,6 +225,8 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
         go.Figure: A 2D representation of the cross-section.
 
     """
+    if isinstance(params, dict) and not isinstance(params, Munch):
+        params = Munch.fromDict(params)
     # Generate the 3D model without coordinate axes
     scene = create_3d_model(params, axes=False)
     combined_mesh = trimesh.util.concatenate(scene.geometry.values())
@@ -268,12 +270,14 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
             z.append(vertices[point][2])
 
         # Add each line segment to the plot
-        fig.add_trace(go.Scatter(
-            x=y,
-            y=z,
-            mode="lines",
-            line={"color": "black"}  # Consistent black color for all lines
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=y,
+                y=z,
+                mode="lines",
+                line={"color": "black"},  # Consistent black color for all lines
+            )
+        )
 
     # Add annotations to layout using the new function
     all_annotations = create_cross_section_annotations(params, all_z)
@@ -282,18 +286,19 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
     # Configure the plot layout with appropriate ranges and labels
     fig.update_layout(
         title="Dwarsdoorsnede (Cross Section)",
-        xaxis={
-            "range": y_range,
-            "constrain": "domain",
-            "title": "Y-as - Breedte [m]"
-        },
+        xaxis={"range": y_range, "constrain": "domain", "title": "Y-as - Breedte [m]"},
         yaxis={
             "range": z_range,
             "scaleanchor": "x",
             "scaleratio": 1,  # Maintain aspect ratio for proper visualization
-            "title": "Z-as - Hoogte [m]" # Z-as is the vertical axis shown as Y-axis in the plot
+            "title": "Z-as - Hoogte [m]",  # Z-as is the vertical axis shown as Y-axis in the plot
         },
-        showlegend=False
+        showlegend=False,
     )
 
     return fig
+
+def calculate_max_array(params: object, **kwargs) -> int:  # noqa: ARG001
+    """Calculate the maximum number of reinforcement zones based on the number of bridge segments."""
+    sections = len(params.bridge_segments_array)    # type: ignore[attr-defined]
+    return 3 * (sections - 1)
