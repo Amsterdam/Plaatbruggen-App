@@ -3,19 +3,31 @@
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
 
+import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
+from app.common.map_utils import (
+    load_and_filter_bridge_shapefile,  # Import the new function
+    process_bridge_geometries,
+    validate_shapefile_exists,
+)
 from app.constants import (  # Replace relative imports with absolute imports
     OUTPUT_REPORT_PATH,
 )
+from src.geometry.cross_section import create_cross_section_view
+from src.geometry.horizontal_section import create_horizontal_section_view
+from src.geometry.longitudinal_section import create_longitudinal_section
 from src.geometry.model_creator import (
     create_2d_top_view,
-    create_3d_model,  # Updated import
-    create_cross_section,  # Import for cross-section creation
+    create_3d_model,
 )
 from viktor.core import File, ViktorController
+from viktor.errors import UserError  # Add UserError
 from viktor.utils import convert_word_to_pdf
 from viktor.views import (
     GeometryResult,
     GeometryView,
+    MapPoint,  # Add MapPoint
+    MapResult,  # Add MapResult
+    MapView,  # Add MapView
     PDFResult,
     PDFView,
     PlotlyResult,  # Import PlotlyResult
@@ -30,7 +42,68 @@ class BridgeController(ViktorController):
     """Controller for the individual Bridge entity."""
 
     label = "Brug"
-    parametrization = BridgeParametrization  # type: ignore[assignment] # Ignore potential complex assignment MyPy error
+    parametrization = BridgeParametrization  # type: ignore[assignment]
+
+    def _get_bridge_entity_data(self, entity_id: int) -> tuple[str | None, str | None, MapResult | None]:
+        """Fetches bridge entity data (OBJECTNUMM and name) using the VIKTOR API."""
+        if not entity_id:
+            return None, None, MapResult([MapPoint(52.37, 4.89, description="Entity ID niet gevonden.")])
+        try:
+            viktor_api = api_sdk.API()
+            current_entity = viktor_api.get_entity(entity_id)
+            last_params = current_entity.last_saved_params
+            info_page_params = last_params.get("info")
+
+            objectnumm = info_page_params.bridge_objectnumm if info_page_params and hasattr(info_page_params, "bridge_objectnumm") else None
+            name = info_page_params.bridge_name if info_page_params and hasattr(info_page_params, "bridge_name") else ""
+            if objectnumm is None:
+                return None, None, MapResult([MapPoint(52.37, 4.89, description="OBJECTNUMM van brug niet gevonden in opgeslagen parameters.")])
+            # Using explicit else to satisfy linter
+            return objectnumm, name, None  # noqa: TRY300
+        except Exception as e:
+            return None, None, MapResult([MapPoint(52.37, 4.89, description=f"Fout bij ophalen entity data: {e}")])
+
+    @MapView("Locatie Brug", duration_guess=2)
+    def get_bridge_map_view(self, params: BridgeParametrization, **kwargs) -> MapResult:  # noqa: ARG002
+        """Displays the current bridge polygon from the shapefile in the resources folder."""
+        entity_id = kwargs.get("entity_id")
+
+        if not isinstance(entity_id, int):
+            return MapResult([MapPoint(52.37, 4.89, description="Ongeldige entity ID ontvangen.")])
+
+        current_objectnumm, bridge_name_from_params, error_result = self._get_bridge_entity_data(entity_id)
+        if error_result:
+            return error_result
+
+        if current_objectnumm is None:
+            return MapResult([MapPoint(52.37, 4.89, description="Interne fout: OBJECTNUMM onbekend na API call.")])
+
+        if bridge_name_from_params is None:
+            bridge_name_from_params = ""
+
+        try:
+            shapefile_path = validate_shapefile_exists()  # Uses default path, raises UserError
+            # Call the new utility function from map_utils.
+            # This function also raises UserError for various issues (file not found, bridge not found, CRS/column issues).
+            target_bridge_gdf = load_and_filter_bridge_shapefile(shapefile_path, current_objectnumm)
+        except UserError as ue:
+            return MapResult([MapPoint(52.37, 4.89, description=str(ue))])
+
+        # If we reach here, target_bridge_gdf is a GeoDataFrame with the bridge data.
+        # The old error_result from _load_and_filter_geodataframe is no longer needed.
+
+        # Process bridge geometries using the utility function.
+        # target_bridge_gdf should contain the single row for the bridge.
+        features, error_point = process_bridge_geometries(target_bridge_gdf.iloc[0], current_objectnumm, bridge_name_from_params)
+
+        if error_point:
+            return MapResult([error_point])
+
+        return MapResult(features)
+
+    # ============================================================================================================
+    # input - Dimension
+    # ============================================================================================================
 
     @GeometryView("3D Model", duration_guess=1, x_axis_to_right=False)
     def get_3d_view(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
@@ -222,63 +295,69 @@ class BridgeController(ViktorController):
             error_fig.add_annotation(text=f"Error: {e}. Check application logs.", showarrow=False)
             return PlotlyResult(error_fig.to_json())
 
-    @GeometryView("Langsdoorsnede", duration_guess=1, x_axis_to_right=True)
-    def get_longitudinal_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+    @PlotlyView("Horizontale doorsnede", duration_guess=1)
+    def get_2d_horizontal_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
         """
-        Generates a longitudinal section of the bridge deck by slicing the 3D model with a vertical plane.
+        Generates a 2D horizontal section view of the bridge using Plotly.
+        This function creates a 2D representation of the bridge's horizontal section by:
+        1. Creating a 3D model of the bridge
+        2. Slicing it with a horizontal plane at the specified height
+        3. Converting the resulting section into a 2D plot showing length (x) vs width (y).
 
         Args:
             params (BridgeParametrization): Input parameters for the bridge dimensions.
             **kwargs: Additional arguments.
 
         Returns:
-            GeometryResult: A 2D representation of the longitudinal section in GLTF format.
+            PlotlyResult: A 2D representation of the horizontal section.
 
         """
-        # Generate the 3D model
-        scene = create_3d_model(params)
-        combined_mesh = trimesh.util.concatenate(scene.geometry.values())
+        fig = create_horizontal_section_view(params, params.input.dimensions.horizontal_section_loc)
+        return PlotlyResult(fig.to_json())
 
-        # Define the slicing plane (horizontal plane at y=0)
-        plane_origin = [0, params.input.dimensions.longitudinal_section_loc, 0]  # Origin of the plane
-        plane_normal = [0, 1, 0]  # Normal vector of the plane (y-axis)
-
-        # Create the cross-section
-        combined_scene_2d = create_cross_section(combined_mesh, plane_origin, plane_normal)
-
-        geometry = File()
-        with geometry.open_binary() as w:
-            w.write(trimesh.exchange.gltf.export_glb(combined_scene_2d))
-        return GeometryResult(geometry, geometry_type="gltf")
-
-    @GeometryView("Dwarsdoorsnede", duration_guess=1, x_axis_to_right=True)
-    def get_cross_section(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+    @PlotlyView("Langsdoorsnede", duration_guess=1)
+    def get_2d_longitudinal_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
         """
-        Generates a cross-section of the bridge deck by slicing the 3D model with a vertical plane perpendicular to the longitudinal axis.
+        Generates a 2D longitudinal section view of the bridge using Plotly.
+        This function creates a 2D representation of the bridge's longitudinal section by:
+        1. Creating a 3D model of the bridge
+        2. Slicing it with a vertical plane parallel to the x-z plane
+        3. Converting the resulting cross-section into a 2D plot showing length (x) vs height (z).
 
         Args:
             params (BridgeParametrization): Input parameters for the bridge dimensions.
             **kwargs: Additional arguments.
 
         Returns:
-            GeometryResult: A 2D representation of the cross-section in GLTF format.
+            PlotlyResult: A 2D representation of the longitudinal section.
 
         """
-        # Generate the 3D model
-        scene = create_3d_model(params)
-        combined_mesh = trimesh.util.concatenate(scene.geometry.values())
+        fig = create_longitudinal_section(params, params.input.dimensions.longitudinal_section_loc)
+        return PlotlyResult(fig.to_json())
 
-        # Define the slicing plane (horizontal plane at x=0)
-        plane_origin = [params.input.dimensions.cross_section_loc, 0, 0]  # Origin of the plane
-        plane_normal = [1, 0, 0]  # Normal vector of the plane (x-axis)
+    @PlotlyView("Dwarsdoorsnede", duration_guess=1)
+    def get_2d_cross_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
+        """
+        Generates a 2D cross-section view of the bridge using Plotly.
+        This function creates a 2D representation of the bridge's cross-section by:
+        1. Creating a 3D model of the bridge
+        2. Slicing it with a vertical plane parallel to the y-z plane
+        3. Converting the resulting cross-section into a 2D plot showing width (y) vs height (z).
 
-        # Create the cross-section
-        combined_scene_2d = create_cross_section(combined_mesh, plane_origin, plane_normal)
+        Args:
+            params (BridgeParametrization): Input parameters for the bridge dimensions.
+            **kwargs: Additional arguments.
 
-        geometry = File()
-        with geometry.open_binary() as w:
-            w.write(trimesh.exchange.gltf.export_glb(combined_scene_2d))
-        return GeometryResult(geometry, geometry_type="gltf")
+        Returns:
+            PlotlyResult: A 2D representation of the cross-section.
+
+        """
+        fig = create_cross_section_view(params, params.input.dimensions.cross_section_loc)
+        return PlotlyResult(fig.to_json())
+
+    # ============================================================================================================
+    # output - Rapport
+    # ============================================================================================================
 
     @PDFView("Rapport", duration_guess=1)
     def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:  # noqa: ARG002
