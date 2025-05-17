@@ -70,7 +70,7 @@ instance/
 
 # Cursor stuff
 .cursor/
-.cursor/rules
+
 
 # Sphinx documentation
 docs/_build/

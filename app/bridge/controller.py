@@ -1,7 +1,5 @@
 """Module for the Bridge entity controller."""
 
-from typing import Any
-
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
 
@@ -20,6 +18,7 @@ from src.geometry.longitudinal_section import create_longitudinal_section
 from src.geometry.model_creator import (
     create_2d_top_view,
     create_3d_model,
+    prepare_load_zone_geometry_data,
 )
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
@@ -37,128 +36,13 @@ from viktor.views import (
 )
 
 # Import parametrization from the separate file
-from .parametrization import BridgeParametrization
-
-
-def _prepare_load_zone_geometry_data(bridge_dimensions_array: list) -> tuple[list[float], list[float], list[float], list[float], int]:
-    """Calculates geometric data needed for load zone visualization."""
-    num_defined_d_points = len(bridge_dimensions_array)
-    x_coords_d_points = []
-    y_top_structural_edge_at_d_points = []
-    total_widths_at_d_points = []
-    current_x = 0.0
-
-    if num_defined_d_points == 0:
-        return [], [], [], [], 0
-
-    for i in range(num_defined_d_points):
-        segment_params = bridge_dimensions_array[i]
-        if i == 0:
-            x_coords_d_points.append(current_x)
-        else:
-            current_x += segment_params.l  # Assuming .l is length to previous
-            x_coords_d_points.append(current_x)
-
-        current_total_width_at_di = segment_params.bz1 + segment_params.bz2 + segment_params.bz3
-        total_widths_at_d_points.append(current_total_width_at_di)
-        y_top_structural_edge_at_d_points.append(current_total_width_at_di / 2.0 - 2.5)
-
-    y_bridge_bottom_at_d_points = [
-        y_top_structural_edge_at_d_points[d_idx] - total_widths_at_d_points[d_idx] for d_idx in range(num_defined_d_points)
-    ]
-    return x_coords_d_points, y_top_structural_edge_at_d_points, total_widths_at_d_points, y_bridge_bottom_at_d_points, num_defined_d_points
-
-
-def _create_d_point_annotations(
-    x_coords_d_points: list[float], y_top_structural_edge_at_d_points: list[float], num_defined_d_points: int
-) -> list[go.layout.Annotation]:
-    """Creates annotations for D-points (D1, D2, etc.)."""
-    return [
-        go.layout.Annotation(
-            x=x_coords_d_points[d_idx],
-            y=y_top_structural_edge_at_d_points[d_idx] + 1.5,  # Position above the top bridge line
-            text=f"<b>D{d_idx + 1}</b>",
-            showarrow=False,
-            font={"size": 12, "color": "black"},
-            xanchor="center",
-            yanchor="bottom",
-        )
-        for d_idx in range(num_defined_d_points)
-    ]
-
-
-def _add_load_zone_visuals(
-    fig: go.Figure,
-    load_zones_data: list,
-    geometry_data: dict[str, Any],
-) -> list[go.layout.Annotation]:
-    """Adds load zone lines and type annotations to the figure."""
-    zone_annotations: list[go.layout.Annotation] = []
-
-    # Unpack geometry data
-    x_coords_d_points = geometry_data.get("x_coords", [])
-    y_top_structural_edge_at_d_points = geometry_data.get("y_top_edge", [])
-    y_bridge_bottom_at_d_points = geometry_data.get("y_bottom_edge", [])
-    num_defined_d_points = geometry_data.get("num_points", 0)
-
-    if not load_zones_data or num_defined_d_points == 0:
-        return zone_annotations
-
-    y_coords_for_line_to_plot = list(y_top_structural_edge_at_d_points)
-    zone_colors = ["indigo", "darkorange", "red", "saddlebrown", "darkgreen", "blueviolet"]
-
-    fig.add_trace(
-        go.Scatter(
-            x=x_coords_d_points,
-            y=y_coords_for_line_to_plot,
-            mode="lines",
-            line={"color": zone_colors[0 % len(zone_colors)], "width": 2.5},
-            showlegend=False,
-        )
-    )
-
-    for zone_idx, zone_param_data in enumerate(load_zones_data):
-        current_zone_bottom_y = []
-        y_top_of_current_zone_at_end = y_coords_for_line_to_plot[-1]
-
-        if zone_idx == len(load_zones_data) - 1:
-            current_zone_bottom_y = list(y_bridge_bottom_at_d_points)
-        else:
-            for d_idx in range(num_defined_d_points):
-                d_field_name = f"d{d_idx + 1}_width"
-                zone_width_at_this_d_point = getattr(zone_param_data, d_field_name, 0.0)
-                y_bottom = y_coords_for_line_to_plot[d_idx] - zone_width_at_this_d_point
-                current_zone_bottom_y.append(y_bottom)
-
-        current_zone_color = zone_colors[zone_idx % len(zone_colors)]
-        fig.add_trace(
-            go.Scatter(
-                x=list(x_coords_d_points),
-                y=current_zone_bottom_y,
-                mode="lines",
-                line={"color": current_zone_color, "width": 2.5},
-                showlegend=False,
-            )
-        )
-
-        zone_type_text = getattr(zone_param_data, "zone_type", "N/A")
-        y_bottom_of_current_zone_at_end = current_zone_bottom_y[-1]
-        annotation_y_pos = (y_top_of_current_zone_at_end + y_bottom_of_current_zone_at_end) / 2
-        annotation_x_pos = x_coords_d_points[-1] + 0.5
-
-        zone_annotations.append(
-            go.layout.Annotation(
-                x=annotation_x_pos,
-                y=annotation_y_pos,
-                text=f"<i>{zone_type_text}</i>",
-                showarrow=False,
-                font={"size": 10, "color": "black"},
-                xanchor="left",
-                yanchor="middle",
-            )
-        )
-        y_coords_for_line_to_plot = list(current_zone_bottom_y)
-    return zone_annotations
+from .parametrization import (
+    BridgeParametrization,
+)
+from .utils import (
+    add_load_zone_visuals,
+    create_text_annotations_from_data,
+)  # Added imports
 
 
 class BridgeController(ViktorController):
@@ -239,7 +123,7 @@ class BridgeController(ViktorController):
         return GeometryResult(geometry, geometry_type="gltf")
 
     @PlotlyView("Bovenaanzicht", duration_guess=1)
-    def get_top_view(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002, C901
+    def get_top_view(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002, C901, PLR0912
         """
         Generates a 2D top view of the bridge deck with dimensions.
 
@@ -312,19 +196,19 @@ class BridgeController(ViktorController):
         all_annotations = []
 
         # Zone labels comprehension
-        zone_annotations = [
+        zone_annotations_plotly = [
             go.layout.Annotation(
                 x=ann["x"],
                 y=ann["y"],
                 text=f"<b>{ann['text']}</b>",
                 showarrow=False,
-                font={"size": 14, "color": "DarkSlateGray"},  # Use literal dict
+                font={"size": 14, "color": "DarkSlateGray"},
                 ax=0,
                 ay=0,
             )
             for ann in zone_annotations_data
         ]
-        all_annotations.extend(zone_annotations)
+        all_annotations.extend(zone_annotations_plotly)
 
         # Dimension value labels comprehension
         dimension_annotations = []
@@ -368,24 +252,17 @@ class BridgeController(ViktorController):
             )
         all_annotations.extend(dimension_annotations)
 
-        # Cross-section labels comprehension
-        cs_label_annotations = [
-            go.layout.Annotation(
-                x=cs_label["x"],
-                y=cs_label["y"],
-                text=f"<b>{cs_label['text']}</b>",
-                showarrow=False,
-                font={"size": 15, "color": "black"},  # Use literal dict
-                align="center",
+        # Cross-section labels (D-points) using the new utility
+        if cross_section_labels_data:  # Ensure data exists
+            cs_label_annotations = create_text_annotations_from_data(
+                label_data=cross_section_labels_data,
+                font_size=15,  # Specific font size for top view D-labels
+                font_color="black",
+                align="center",  # align is not a direct go.layout.Annotation prop, will be caught by kwargs
                 xanchor="center",
                 yanchor="bottom",
-                textangle=0,
-                ax=0,
-                ay=0,
             )
-            for cs_label in cross_section_labels_data
-        ]
-        all_annotations.extend(cs_label_annotations)
+            all_annotations.extend(cs_label_annotations)
         # --- End Annotation Preparation ---
 
         fig.update_layout(
@@ -511,7 +388,7 @@ class BridgeController(ViktorController):
                         y=y_coords_poly,
                         mode="lines",
                         fill="toself",
-                        fillcolor=poly.get("color", "rgba(200,200,200,0.1)"),
+                        fillcolor="rgba(220,220,220,0.4)",
                         line={"width": 0},
                         hoverinfo="skip",
                         showlegend=False,
@@ -525,7 +402,7 @@ class BridgeController(ViktorController):
                     x=[line_segment["start"][0], line_segment["end"][0]],
                     y=[line_segment["start"][1], line_segment["end"][1]],
                     mode="lines",
-                    line={"color": "grey", "width": 2},
+                    line={"color": "grey", "width": 1},
                     hoverinfo="none",
                     showlegend=False,
                 )
@@ -541,24 +418,32 @@ class BridgeController(ViktorController):
                 _,  # total_widths_at_d_points is not directly needed here
                 y_bridge_bottom_at_d_points,
                 num_defined_d_points,
-            ) = _prepare_load_zone_geometry_data(bridge_dimensions_array)
+                d_point_label_data,  # New variable from prepare_load_zone_geometry_data
+            ) = prepare_load_zone_geometry_data(bridge_dimensions_array)
 
             if num_defined_d_points > 0:
-                d_point_annotations = _create_d_point_annotations(x_coords_d_points, y_top_structural_edge_at_d_points, num_defined_d_points)
-                all_annotations.extend(d_point_annotations)
+                # d_point_annotations = create_d_point_annotations( # Old call
+                #     x_coords_d_points, y_top_structural_edge_at_d_points, num_defined_d_points
+                # New call for D-point labels in load_zones_view
+                if d_point_label_data:
+                    d_point_annotations = create_text_annotations_from_data(
+                        label_data=d_point_label_data,
+                        font_size=12,  # Specific font size for load_zones view D-labels
+                        # Other params will use defaults from create_text_annotations_from_data
+                    )
+                    all_annotations.extend(d_point_annotations)
 
                 if load_zones_data:
-                    # Group geometry data for the helper function
                     geometry_data_for_helper = {
                         "x_coords": x_coords_d_points,
                         "y_top_edge": y_top_structural_edge_at_d_points,
                         "y_bottom_edge": y_bridge_bottom_at_d_points,
                         "num_points": num_defined_d_points,
                     }
-                    load_zone_type_annotations = _add_load_zone_visuals(
+                    load_zone_type_annotations = add_load_zone_visuals(
                         fig,
                         load_zones_data,
-                        geometry_data_for_helper,  # Pass the dictionary
+                        geometry_data_for_helper,
                     )
                     all_annotations.extend(load_zone_type_annotations)
 

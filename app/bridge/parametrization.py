@@ -18,77 +18,286 @@ from viktor.parametrization import (
 # Define helper functions at the module level
 
 
+def _get_current_num_load_zones(params_obj: "BridgeParametrization") -> int:
+    """Helper to get the current number of load zones from params.input.belastingzones.load_zones_array."""
+    try:
+        if (
+            params_obj is None
+            or not hasattr(params_obj, "input")
+            or params_obj.input is None
+            or not hasattr(params_obj.input, "belastingzones")
+            or params_obj.input.belastingzones is None
+            or not hasattr(params_obj.input.belastingzones, "load_zones_array")
+        ):
+            return 0
+        load_zones_array = params_obj.input.belastingzones.load_zones_array
+        if load_zones_array is None or not isinstance(load_zones_array, list | tuple):
+            return 0
+        return len(load_zones_array)
+    except Exception:
+        return 0
+
+
 def _get_current_num_segments(params_obj: "BridgeParametrization") -> int:
     """Helper to get the current number of segments from params.bridge_segments_array."""
     try:
         if params_obj is None or not hasattr(params_obj, "bridge_segments_array"):
             return 0
-
         dimension_array = params_obj.bridge_segments_array
-
         if dimension_array is None or not isinstance(dimension_array, list | tuple):
             return 0
-
         return len(dimension_array)
     except Exception:
         return 0
 
 
-# Define specific visibility functions for each D-width field from D3 to D15
-def d3_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 3
+# Load zone field visibility functions
+def d1_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """
+    Visibility function for d1_width in load_zones_array.
+
+    Returns list of booleans, one for each row, indicating if the field should be visible.
+    A row's field is visible if:
+    1. There are at least 1 bridge segments defined
+    2. The row is not the last row in the array
+    """
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 1) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d4_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 4
+def d2_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d2_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 2) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d5_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 5
+def d3_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d3_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 3) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d6_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 6
+def d4_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d4_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 4) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d7_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 7
+def d5_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d5_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 5) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d8_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 8
+def d6_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d6_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 6) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d9_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 9
+def d7_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d7_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 7) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d10_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 10
+def d8_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d8_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 8) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d11_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 11
+def d9_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d9_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 9) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d12_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 12
+def d10_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d10_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 10) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d13_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 13
+def d11_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d11_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 11) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d14_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 14
+def d12_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d12_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 12) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-def d15_width_visible(params: "BridgeParametrization", **kwargs) -> bool:  # noqa: D103, ARG001
-    return _get_current_num_segments(params) >= 15
+def d13_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d13_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 13) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
 
 
-# Remove old helper functions if they exist (e.g., _get_dimension_array_length, d3_width_visible, etc.)
-# The class definitions below will use the new dX_width_visible_callback
+def d14_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d14_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 14) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
+
+
+def d15_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+    """Visibility function for d15_width in load_zones_array."""
+    num_segments = _get_current_num_segments(params)
+    num_load_zones = _get_current_num_load_zones(params)
+
+    if num_load_zones <= 0:
+        return []
+
+    visibility_list = []
+    for i in range(num_load_zones):
+        is_visible = (num_segments >= 15) and (i < num_load_zones - 1)
+        visibility_list.append(is_visible)
+
+    return visibility_list
+
 
 LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto"]
 MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
@@ -165,7 +374,6 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
                 "is_first_segment": False,
             },
         ],
-        # Removed on_update=_update_helper_visibility_fields
     )
     input.dimensions.array.is_first_segment = BooleanField("Is First Segment Marker", default=False, visible=False)
 
@@ -196,149 +404,176 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.belastingzones.info_text = Text(
         "Definieer hier de belastingzones. Elke zone wordt gestapeld vanaf één zijde van de brug. "
         "Vul alleen breedtes in voor de daadwerkelijk gedefinieerde brugsegmenten (D-nummers) "
-        "onder de tab 'Dimensies'."
+        "onder de tab 'Dimensies'. De laatste belastingzone loopt automatisch door tot het einde van de brug; "
+        "hiervoor hoeven dus geen segmentbreedtes (D-waardes) ingevuld te worden."
     )
 
     input.belastingzones.load_zones_array = DynamicArray(
         "Belastingzones",
-        row_label="Zone",
+        row_label="Belasting Zone",
         default=[
             {
-                "zone_type": LOAD_ZONE_TYPES[0],
-                "d1_width": 1.0,
-                "d2_width": 1.0,
-                "d3_width": 0.0,
-                "d4_width": 0.0,
-                "d5_width": 0.0,
-                "d6_width": 0.0,
-                "d7_width": 0.0,
-                "d8_width": 0.0,
-                "d9_width": 0.0,
-                "d10_width": 0.0,
-                "d11_width": 0.0,
-                "d12_width": 0.0,
-                "d13_width": 0.0,
-                "d14_width": 0.0,
-                "d15_width": 0.0,
+                "zone_type": LOAD_ZONE_TYPES[0],  # Voetgangers
+                "d1_width": 1.5,
+                "d2_width": 1.5,
+                "d3_width": 1.5,
+                "d4_width": 1.5,
+                "d5_width": 1.5,
+                "d6_width": 1.5,
+                "d7_width": 1.5,
+                "d8_width": 1.5,
+                "d9_width": 1.5,
+                "d10_width": 1.5,
+                "d11_width": 1.5,
+                "d12_width": 1.5,
+                "d13_width": 1.5,
+                "d14_width": 1.5,
+                "d15_width": 1.5,
             },
             {
-                "zone_type": LOAD_ZONE_TYPES[1] if len(LOAD_ZONE_TYPES) > 1 else LOAD_ZONE_TYPES[0],
-                "d1_width": 1.0,
-                "d2_width": 1.0,
-                "d3_width": 0.0,
-                "d4_width": 0.0,
-                "d5_width": 0.0,
-                "d6_width": 0.0,
-                "d7_width": 0.0,
-                "d8_width": 0.0,
-                "d9_width": 0.0,
-                "d10_width": 0.0,
-                "d11_width": 0.0,
-                "d12_width": 0.0,
-                "d13_width": 0.0,
-                "d14_width": 0.0,
-                "d15_width": 0.0,
+                "zone_type": LOAD_ZONE_TYPES[1],  # Fietsers
+                "d1_width": 3.0,
+                "d2_width": 3.0,
+                "d3_width": 3.0,
+                "d4_width": 3.0,
+                "d5_width": 3.0,
+                "d6_width": 3.0,
+                "d7_width": 3.0,
+                "d8_width": 3.0,
+                "d9_width": 3.0,
+                "d10_width": 3.0,
+                "d11_width": 3.0,
+                "d12_width": 3.0,
+                "d13_width": 3.0,
+                "d14_width": 3.0,
+                "d15_width": 3.0,
+            },
+            {
+                "zone_type": LOAD_ZONE_TYPES[2],  # Auto (Rijbaan)
+                "d1_width": 20.5,
+                "d2_width": 20.5,
+                "d3_width": 20.5,
+                "d4_width": 20.5,
+                "d5_width": 20.5,
+                "d6_width": 20.5,
+                "d7_width": 20.5,
+                "d8_width": 20.5,
+                "d9_width": 20.5,
+                "d10_width": 20.5,
+                "d11_width": 20.5,
+                "d12_width": 20.5,
+                "d13_width": 20.5,
+                "d14_width": 20.5,
+                "d15_width": 20.5,
             },
         ],
     )
     input.belastingzones.load_zones_array.zone_type = OptionField("Type belastingzone", options=LOAD_ZONE_TYPES, default=LOAD_ZONE_TYPES[0])
+
     input.belastingzones.load_zones_array.d1_width = NumberField(
-        "Breedte zone bij D1", default=1.0, suffix="m", description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D1."
+        "Breedte zone bij D1",
+        default=1.0,
+        suffix="m",
+        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D1.",
+        visible=d1_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d2_width = NumberField(
-        "Breedte zone bij D2", default=1.0, suffix="m", description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D2."
+        "Breedte zone bij D2",
+        default=1.0,
+        suffix="m",
+        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D2.",
+        visible=d2_width_visible_in_load_zones,
     )
-
     input.belastingzones.load_zones_array.d3_width = NumberField(
         "Breedte zone bij D3",
         default=0.0,
         suffix="m",
-        visible=d3_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D3.",
+        visible=d3_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d4_width = NumberField(
         "Breedte zone bij D4",
         default=0.0,
         suffix="m",
-        visible=d4_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D4.",
+        visible=d4_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d5_width = NumberField(
         "Breedte zone bij D5",
         default=0.0,
         suffix="m",
-        visible=d5_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D5.",
+        visible=d5_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d6_width = NumberField(
         "Breedte zone bij D6",
         default=0.0,
         suffix="m",
-        visible=d6_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D6.",
+        visible=d6_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d7_width = NumberField(
         "Breedte zone bij D7",
         default=0.0,
         suffix="m",
-        visible=d7_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D7.",
+        visible=d7_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d8_width = NumberField(
         "Breedte zone bij D8",
         default=0.0,
         suffix="m",
-        visible=d8_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D8.",
+        visible=d8_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d9_width = NumberField(
         "Breedte zone bij D9",
         default=0.0,
         suffix="m",
-        visible=d9_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D9.",
+        visible=d9_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d10_width = NumberField(
         "Breedte zone bij D10",
         default=0.0,
         suffix="m",
-        visible=d10_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D10.",
+        visible=d10_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d11_width = NumberField(
         "Breedte zone bij D11",
         default=0.0,
         suffix="m",
-        visible=d11_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D11.",
+        visible=d11_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d12_width = NumberField(
         "Breedte zone bij D12",
         default=0.0,
         suffix="m",
-        visible=d12_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D12.",
+        visible=d12_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d13_width = NumberField(
         "Breedte zone bij D13",
         default=0.0,
         suffix="m",
-        visible=d13_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D13.",
+        visible=d13_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d14_width = NumberField(
         "Breedte zone bij D14",
         default=0.0,
         suffix="m",
-        visible=d14_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D14.",
+        visible=d14_width_visible_in_load_zones,
     )
     input.belastingzones.load_zones_array.d15_width = NumberField(
         "Breedte zone bij D15",
         default=0.0,
         suffix="m",
-        visible=d15_width_visible,
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D15.",
+        visible=d15_width_visible_in_load_zones,
     )
 
     # --- Load Combinations (in belastingcombinaties tab) ---

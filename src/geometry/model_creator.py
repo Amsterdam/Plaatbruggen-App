@@ -4,6 +4,8 @@ and cross-sections, using the `trimesh` library. It also includes functionality 
 generating a 3D representation of a bridge deck based on input parameters.
 """
 
+from typing import Any
+
 import numpy as np
 import trimesh
 from munch import Munch  # type: ignore[import-untyped]
@@ -309,7 +311,7 @@ def create_3d_model(params: (dict | Munch), axes: bool = True) -> trimesh.Scene:
         combined_mesh.update_faces(combined_mesh.unique_faces())  # Removes any duplicate faces using the new recommended method
         combined_mesh.fix_normals()  # Ensures consistent face orientation
         # Set the face colors for the combined mesh, adjusting for potentially merged faces
-        combined_mesh.visual.face_colors = final_colors[:len(combined_mesh.faces)]
+        combined_mesh.visual.face_colors = final_colors[: len(combined_mesh.faces)]
 
         # Add the mesh to the scene
         combined_scene.add_geometry(combined_mesh)
@@ -553,3 +555,65 @@ def create_2d_top_view(viktor_params: Munch) -> dict:  # noqa: C901, PLR0912, PL
         "cross_section_labels": cross_section_labels_data,
         "zone_polygons": zone_polygons_data,
     }
+
+
+def prepare_load_zone_geometry_data(
+    bridge_dimensions_array: list,
+) -> tuple[list[float], list[float], list[float], list[float], int, list[dict[str, Any]]]:
+    """
+    Calculates geometric data needed for load zone visualization based on bridge segments.
+
+    Args:
+        bridge_dimensions_array: A list of bridge segment data (typically Munch objects from VIKTOR params)
+                                 where each item has 'bz1', 'bz2', 'bz3', and 'l' (for length to previous)
+                                 attributes.
+
+    Returns:
+        A tuple containing:
+        - x_coords_d_points: List of X-coordinates for each D-point.
+        - y_top_structural_edge_at_d_points: List of Y-coordinates for the top structural edge at each D-point.
+        - total_widths_at_d_points: List of total structural widths at each D-point.
+        - y_bridge_bottom_at_d_points: List of Y-coordinates for the bottom structural edge at each D-point.
+        - num_defined_d_points: The number of D-points defined by the input array.
+        - d_point_label_data: List of dicts for D-point labels, e.g., [{'text': 'D1', 'x': x1, 'y': y_label1}, ...]
+
+    """
+    num_defined_d_points = len(bridge_dimensions_array)
+    x_coords_d_points = []
+    y_top_structural_edge_at_d_points = []
+    total_widths_at_d_points = []
+    d_point_label_data = []  # Initialize list for label data
+    current_x = 0.0
+    label_y_offset = 1.5  # Offset for D-point labels, similar to current create_d_point_annotations
+
+    if num_defined_d_points == 0:
+        return [], [], [], [], 0, []
+
+    for i in range(num_defined_d_points):
+        segment_params = bridge_dimensions_array[i]
+        if i == 0:
+            x_coords_d_points.append(current_x)
+        else:
+            current_x += segment_params.l
+            x_coords_d_points.append(current_x)
+
+        y_top = segment_params.bz1 + (segment_params.bz2 / 2.0)
+        y_top_structural_edge_at_d_points.append(y_top)
+
+        current_total_width_at_di = segment_params.bz1 + segment_params.bz2 + segment_params.bz3
+        total_widths_at_d_points.append(current_total_width_at_di)
+
+        # Prepare data for D-point label
+        d_point_label_data.append({"text": f"D{i + 1}", "x": x_coords_d_points[i], "y": y_top + label_y_offset})
+
+    y_bridge_bottom_at_d_points = [
+        y_top_structural_edge_at_d_points[d_idx] - total_widths_at_d_points[d_idx] for d_idx in range(num_defined_d_points)
+    ]
+    return (
+        x_coords_d_points,
+        y_top_structural_edge_at_d_points,
+        total_widths_at_d_points,
+        y_bridge_bottom_at_d_points,
+        num_defined_d_points,
+        d_point_label_data,  # Add to return tuple
+    )
