@@ -52,7 +52,7 @@ def _get_current_num_segments(params_obj: "BridgeParametrization") -> int:
 
 
 # Load zone field visibility functions
-def d1_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d1_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """
     Visibility function for d1_width in load_zones_array.
 
@@ -75,7 +75,7 @@ def d1_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d2_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d2_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d2_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -91,7 +91,7 @@ def d2_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d3_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d3_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d3_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -107,7 +107,7 @@ def d3_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d4_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d4_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d4_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -123,7 +123,7 @@ def d4_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d5_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d5_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d5_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -139,7 +139,7 @@ def d5_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d6_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d6_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d6_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -155,7 +155,7 @@ def d6_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d7_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d7_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d7_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -171,7 +171,7 @@ def d7_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d8_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d8_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d8_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -187,7 +187,7 @@ def d8_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d9_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d9_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d9_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -203,7 +203,7 @@ def d9_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -
     return visibility_list
 
 
-def d10_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d10_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d10_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -219,7 +219,7 @@ def d10_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) 
     return visibility_list
 
 
-def d11_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d11_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d11_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -235,7 +235,7 @@ def d11_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) 
     return visibility_list
 
 
-def d12_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d12_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d12_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -251,7 +251,7 @@ def d12_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) 
     return visibility_list
 
 
-def d13_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d13_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d13_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -267,7 +267,7 @@ def d13_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) 
     return visibility_list
 
 
-def d14_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d14_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d14_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
@@ -283,7 +283,7 @@ def d14_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) 
     return visibility_list
 
 
-def d15_width_visible_in_load_zones(params: "BridgeParametrization", **_kwargs) -> list[bool]:
+def d15_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
     """Visibility function for d15_width in load_zones_array."""
     num_segments = _get_current_num_segments(params)
     num_load_zones = _get_current_num_load_zones(params)
