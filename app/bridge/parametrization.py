@@ -92,25 +92,11 @@ def _create_dx_width_visibility_callback(required_segment_count: int) -> Callabl
     return dx_width_visibility_function
 
 
-# Generate the 15 visibility functions using the factory
-d1_width_visible_in_load_zones = _create_dx_width_visibility_callback(1)
-d2_width_visible_in_load_zones = _create_dx_width_visibility_callback(2)
-d3_width_visible_in_load_zones = _create_dx_width_visibility_callback(3)
-d4_width_visible_in_load_zones = _create_dx_width_visibility_callback(4)
-d5_width_visible_in_load_zones = _create_dx_width_visibility_callback(5)
-d6_width_visible_in_load_zones = _create_dx_width_visibility_callback(6)
-d7_width_visible_in_load_zones = _create_dx_width_visibility_callback(7)
-d8_width_visible_in_load_zones = _create_dx_width_visibility_callback(8)
-d9_width_visible_in_load_zones = _create_dx_width_visibility_callback(9)
-d10_width_visible_in_load_zones = _create_dx_width_visibility_callback(10)
-d11_width_visible_in_load_zones = _create_dx_width_visibility_callback(11)
-d12_width_visible_in_load_zones = _create_dx_width_visibility_callback(12)
-d13_width_visible_in_load_zones = _create_dx_width_visibility_callback(13)
-d14_width_visible_in_load_zones = _create_dx_width_visibility_callback(14)
-d15_width_visible_in_load_zones = _create_dx_width_visibility_callback(15)
+# Generate the visibility callbacks using a dictionary comprehension
+MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
+DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for i in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1)}
 
 LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto"]
-MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
 
 
 class BridgeParametrization(Parametrization):
@@ -285,105 +271,105 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         default=1.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D1.",
-        visible=d1_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[1],
     )
     input.belastingzones.load_zones_array.d2_width = NumberField(
         "Breedte zone bij D2",
         default=1.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D2.",
-        visible=d2_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[2],
     )
     input.belastingzones.load_zones_array.d3_width = NumberField(
         "Breedte zone bij D3",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D3.",
-        visible=d3_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[3],
     )
     input.belastingzones.load_zones_array.d4_width = NumberField(
         "Breedte zone bij D4",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D4.",
-        visible=d4_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[4],
     )
     input.belastingzones.load_zones_array.d5_width = NumberField(
         "Breedte zone bij D5",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D5.",
-        visible=d5_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[5],
     )
     input.belastingzones.load_zones_array.d6_width = NumberField(
         "Breedte zone bij D6",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D6.",
-        visible=d6_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[6],
     )
     input.belastingzones.load_zones_array.d7_width = NumberField(
         "Breedte zone bij D7",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D7.",
-        visible=d7_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[7],
     )
     input.belastingzones.load_zones_array.d8_width = NumberField(
         "Breedte zone bij D8",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D8.",
-        visible=d8_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[8],
     )
     input.belastingzones.load_zones_array.d9_width = NumberField(
         "Breedte zone bij D9",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D9.",
-        visible=d9_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[9],
     )
     input.belastingzones.load_zones_array.d10_width = NumberField(
         "Breedte zone bij D10",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D10.",
-        visible=d10_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[10],
     )
     input.belastingzones.load_zones_array.d11_width = NumberField(
         "Breedte zone bij D11",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D11.",
-        visible=d11_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[11],
     )
     input.belastingzones.load_zones_array.d12_width = NumberField(
         "Breedte zone bij D12",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D12.",
-        visible=d12_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[12],
     )
     input.belastingzones.load_zones_array.d13_width = NumberField(
         "Breedte zone bij D13",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D13.",
-        visible=d13_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[13],
     )
     input.belastingzones.load_zones_array.d14_width = NumberField(
         "Breedte zone bij D14",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D14.",
-        visible=d14_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[14],
     )
     input.belastingzones.load_zones_array.d15_width = NumberField(
         "Breedte zone bij D15",
         default=0.0,
         suffix="m",
         description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D15.",
-        visible=d15_width_visible_in_load_zones,
+        visible=DX_WIDTH_VISIBILITY_CALLBACKS[15],
     )
 
     # --- Load Combinations (in belastingcombinaties tab) ---
