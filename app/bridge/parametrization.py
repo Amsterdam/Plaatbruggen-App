@@ -1,5 +1,7 @@
 """Module for the Bridge entity parametrization."""
 
+from collections.abc import Callable
+
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -51,253 +53,61 @@ def _get_current_num_segments(params_obj: "BridgeParametrization") -> int:
         return 0
 
 
-# Load zone field visibility functions
-def d1_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
+# Factory function to create visibility callbacks for dX_width fields
+def _create_dx_width_visibility_callback(required_segment_count: int) -> Callable[..., list[bool]]:
     """
-    Visibility function for d1_width in load_zones_array.
+    Factory function to create visibility callback functions for dX_width fields.
 
-    Returns list of booleans, one for each row, indicating if the field should be visible.
-    A row's field is visible if:
-    1. There are at least 1 bridge segments defined
-    2. The row is not the last row in the array
+    Args:
+        required_segment_count: The minimum number of bridge segments (D-sections)
+                                that must exist for the dX_width field to be
+                                potentially visible (before considering the last row rule).
+
+    Returns:
+        A callback function suitable for the 'visible' attribute of a NumberField.
+
     """
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
 
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 1) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d2_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d2_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 2) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d3_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d3_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 3) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d4_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d4_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 4) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d5_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d5_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 5) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d6_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d6_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 6) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d7_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d7_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 7) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d8_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d8_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 8) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d9_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d9_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 9) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d10_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d10_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 10) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d11_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d11_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 11) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d12_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d12_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 12) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d13_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d13_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 13) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d14_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d14_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 14) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
-
-def d15_width_visible_in_load_zones(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
-    """Visibility function for d15_width in load_zones_array."""
-    num_segments = _get_current_num_segments(params)
-    num_load_zones = _get_current_num_load_zones(params)
-
-    if num_load_zones <= 0:
-        return []
-
-    visibility_list = []
-    for i in range(num_load_zones):
-        is_visible = (num_segments >= 15) and (i < num_load_zones - 1)
-        visibility_list.append(is_visible)
-
-    return visibility_list
-
+    def dx_width_visibility_function(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
+        """
+        Determines visibility for a dX_width field in the load_zones_array.
+
+        A row's field is visible if:
+        1. The number of defined bridge segments is >= required_segment_count.
+        2. The row is not the last row in the load_zones_array.
+        """
+        num_segments = _get_current_num_segments(params)
+        num_load_zones = _get_current_num_load_zones(params)
+
+        if num_load_zones <= 0:
+            return []
+
+        visibility_list = []
+        for i in range(num_load_zones):
+            is_visible = (num_segments >= required_segment_count) and (i < num_load_zones - 1)
+            visibility_list.append(is_visible)
+
+        return visibility_list
+
+    return dx_width_visibility_function
+
+
+# Generate the 15 visibility functions using the factory
+d1_width_visible_in_load_zones = _create_dx_width_visibility_callback(1)
+d2_width_visible_in_load_zones = _create_dx_width_visibility_callback(2)
+d3_width_visible_in_load_zones = _create_dx_width_visibility_callback(3)
+d4_width_visible_in_load_zones = _create_dx_width_visibility_callback(4)
+d5_width_visible_in_load_zones = _create_dx_width_visibility_callback(5)
+d6_width_visible_in_load_zones = _create_dx_width_visibility_callback(6)
+d7_width_visible_in_load_zones = _create_dx_width_visibility_callback(7)
+d8_width_visible_in_load_zones = _create_dx_width_visibility_callback(8)
+d9_width_visible_in_load_zones = _create_dx_width_visibility_callback(9)
+d10_width_visible_in_load_zones = _create_dx_width_visibility_callback(10)
+d11_width_visible_in_load_zones = _create_dx_width_visibility_callback(11)
+d12_width_visible_in_load_zones = _create_dx_width_visibility_callback(12)
+d13_width_visible_in_load_zones = _create_dx_width_visibility_callback(13)
+d14_width_visible_in_load_zones = _create_dx_width_visibility_callback(14)
+d15_width_visible_in_load_zones = _create_dx_width_visibility_callback(15)
 
 LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto"]
 MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
