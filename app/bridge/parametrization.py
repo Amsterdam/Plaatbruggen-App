@@ -266,111 +266,16 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     )
     input.belastingzones.load_zones_array.zone_type = OptionField("Type belastingzone", options=LOAD_ZONE_TYPES, default=LOAD_ZONE_TYPES[0])
 
-    input.belastingzones.load_zones_array.d1_width = NumberField(
-        "Breedte zone bij D1",
-        default=1.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D1.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[1],
-    )
-    input.belastingzones.load_zones_array.d2_width = NumberField(
-        "Breedte zone bij D2",
-        default=1.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D2.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[2],
-    )
-    input.belastingzones.load_zones_array.d3_width = NumberField(
-        "Breedte zone bij D3",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D3.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[3],
-    )
-    input.belastingzones.load_zones_array.d4_width = NumberField(
-        "Breedte zone bij D4",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D4.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[4],
-    )
-    input.belastingzones.load_zones_array.d5_width = NumberField(
-        "Breedte zone bij D5",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D5.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[5],
-    )
-    input.belastingzones.load_zones_array.d6_width = NumberField(
-        "Breedte zone bij D6",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D6.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[6],
-    )
-    input.belastingzones.load_zones_array.d7_width = NumberField(
-        "Breedte zone bij D7",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D7.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[7],
-    )
-    input.belastingzones.load_zones_array.d8_width = NumberField(
-        "Breedte zone bij D8",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D8.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[8],
-    )
-    input.belastingzones.load_zones_array.d9_width = NumberField(
-        "Breedte zone bij D9",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D9.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[9],
-    )
-    input.belastingzones.load_zones_array.d10_width = NumberField(
-        "Breedte zone bij D10",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D10.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[10],
-    )
-    input.belastingzones.load_zones_array.d11_width = NumberField(
-        "Breedte zone bij D11",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D11.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[11],
-    )
-    input.belastingzones.load_zones_array.d12_width = NumberField(
-        "Breedte zone bij D12",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D12.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[12],
-    )
-    input.belastingzones.load_zones_array.d13_width = NumberField(
-        "Breedte zone bij D13",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D13.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[13],
-    )
-    input.belastingzones.load_zones_array.d14_width = NumberField(
-        "Breedte zone bij D14",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D14.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[14],
-    )
-    input.belastingzones.load_zones_array.d15_width = NumberField(
-        "Breedte zone bij D15",
-        default=0.0,
-        suffix="m",
-        description="Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D15.",
-        visible=DX_WIDTH_VISIBILITY_CALLBACKS[15],
-    )
+    # Dynamically create dX_width fields for the load_zones_array
+    for _idx_field in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1):
+        _field = NumberField(
+            f"Breedte zone bij D{_idx_field}",
+            default=1.0 if _idx_field <= 2 else 0.0,  # d1 and d2 default to 1.0, others to 0.0
+            suffix="m",
+            description=f"Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D{_idx_field}.",
+            visible=DX_WIDTH_VISIBILITY_CALLBACKS[_idx_field],
+        )
+        setattr(input.belastingzones.load_zones_array, f"d{_idx_field}_width", _field)
 
     # --- Load Combinations (in belastingcombinaties tab) ---
     input.belastingcombinaties.permanent_factor = NumberField("Factor Permanente Belasting", default=1.35)
