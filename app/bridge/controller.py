@@ -1,5 +1,7 @@
 """Module for the Bridge entity controller."""
 
+import traceback  # Import traceback for logging exceptions
+
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
 
@@ -16,6 +18,8 @@ from src.geometry.cross_section import create_cross_section_view
 from src.geometry.horizontal_section import create_horizontal_section_view
 from src.geometry.longitudinal_section import create_longitudinal_section
 from src.geometry.model_creator import (
+    BridgeSegmentDimensions,  # Import the dataclass
+    LoadZoneGeometryData,  # Import the dataclass
     create_2d_top_view,
     create_3d_model,
     prepare_load_zone_geometry_data,
@@ -356,7 +360,7 @@ class BridgeController(ViktorController):
         return PlotlyResult(fig.to_json())
 
     @PlotlyView("Belastingzones", duration_guess=1)
-    def get_load_zones_view(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
+    def get_load_zones_view(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002, C901
         """
         Generates a 2D top view for defining load zones.
 
@@ -408,49 +412,73 @@ class BridgeController(ViktorController):
                 )
             )
 
-        load_zones_data = params.input.belastingzones.load_zones_array
-        bridge_dimensions_array = params.bridge_segments_array
+        load_zones_data = None
+        if (
+            hasattr(params, "input")
+            and params.input
+            and hasattr(params.input, "belastingzones")
+            and params.input.belastingzones
+            and hasattr(params.input.belastingzones, "load_zones_array")
+        ):
+            load_zones_data = params.input.belastingzones.load_zones_array
+
+        bridge_dimensions_array = None
+        if hasattr(params, "bridge_segments_array"):
+            bridge_dimensions_array = params.bridge_segments_array
 
         if bridge_dimensions_array:  # Ensure bridge_dimensions_array is not None or empty
-            (
-                x_coords_d_points,
-                y_top_structural_edge_at_d_points,
-                _,  # total_widths_at_d_points is not directly needed here
-                y_bridge_bottom_at_d_points,
-                num_defined_d_points,
-                d_point_label_data,  # New variable from prepare_load_zone_geometry_data
-            ) = prepare_load_zone_geometry_data(bridge_dimensions_array)
+            try:
+                # Convert raw segment data to BridgeSegmentDimensions instances
+                typed_bridge_dimensions = [
+                    BridgeSegmentDimensions(bz1=segment.bz1, bz2=segment.bz2, bz3=segment.bz3, segment_length=segment.l)
+                    for segment in bridge_dimensions_array
+                ]
 
-            if num_defined_d_points > 0:
-                # d_point_annotations = create_d_point_annotations( # Old call
-                #     x_coords_d_points, y_top_structural_edge_at_d_points, num_defined_d_points
-                # New call for D-point labels in load_zones_view
-                if d_point_label_data:
-                    d_point_annotations = create_text_annotations_from_data(
-                        label_data=d_point_label_data,
-                        font_size=12,  # Specific font size for load_zones view D-labels
-                        # Other params will use defaults from create_text_annotations_from_data
-                    )
-                    all_annotations.extend(d_point_annotations)
+                load_zone_geom_data: LoadZoneGeometryData = prepare_load_zone_geometry_data(typed_bridge_dimensions)
 
-                if load_zones_data:
-                    geometry_data_for_helper = {
-                        "x_coords": x_coords_d_points,
-                        "y_top_edge": y_top_structural_edge_at_d_points,
-                        "y_bottom_edge": y_bridge_bottom_at_d_points,
-                        "num_points": num_defined_d_points,
-                    }
-                    load_zone_type_annotations = add_load_zone_visuals(
-                        fig,
-                        load_zones_data,
-                        geometry_data_for_helper,
-                    )
-                    all_annotations.extend(load_zone_type_annotations)
+                # Access data from the dataclass instance
+                x_coords_d_points = load_zone_geom_data.x_coords_d_points
+                y_top_structural_edge_at_d_points = load_zone_geom_data.y_top_structural_edge_at_d_points
+                # total_widths_at_d_points is available if needed: load_zone_geom_data.total_widths_at_d_points
+                y_bridge_bottom_at_d_points = load_zone_geom_data.y_bridge_bottom_at_d_points
+                num_defined_d_points = load_zone_geom_data.num_defined_d_points
+                d_point_label_data = load_zone_geom_data.d_point_label_data
+
+                if num_defined_d_points > 0:
+                    if d_point_label_data:
+                        # Convert DPointLabel objects to dicts for create_text_annotations_from_data
+                        d_point_label_dicts = [{"text": lbl.text, "x": lbl.x, "y": lbl.y} for lbl in d_point_label_data]
+                        d_point_annotations = create_text_annotations_from_data(
+                            label_data=d_point_label_dicts,  # Pass the list of dicts
+                            font_size=12,
+                        )
+                        all_annotations.extend(d_point_annotations)
+
+                    if load_zones_data:
+                        geometry_data_for_helper = {
+                            "x_coords": x_coords_d_points,
+                            "y_top_edge": y_top_structural_edge_at_d_points,
+                            "y_bottom_edge": y_bridge_bottom_at_d_points,
+                            "num_points": num_defined_d_points,
+                        }
+                        load_zone_type_annotations = add_load_zone_visuals(
+                            fig,
+                            load_zones_data,
+                            geometry_data_for_helper,
+                        )
+                        all_annotations.extend(load_zone_type_annotations)
+            except ValueError as ve:
+                # Handle validation errors from prepare_load_zone_geometry_data
+                fig = go.Figure()
+                fig.update_layout(title="Fout in brugsegmentdata", xaxis={"visible": False}, yaxis={"visible": False})
+                fig.add_annotation(text=str(ve), showarrow=False)
+                print(f"ValueError in get_load_zones_view: {ve}\n{traceback.format_exc()}")  # noqa: T201
+                return PlotlyResult(fig.to_json())
 
         fig.update_layout(
             title="Belastingzones Definitie",
-            xaxis_title="Lengte (m)",
-            yaxis_title="Breedte (m)",
+            xaxis_title="Length (m)",
+            yaxis_title="Width (m)",
             showlegend=False,  # Hide legend completely
             autosize=True,
             yaxis={
@@ -468,12 +496,15 @@ class BridgeController(ViktorController):
                 error_fig = go.Figure()
                 error_fig.update_layout(title="Error: Belastingzones Aanzicht", xaxis={"visible": False}, yaxis={"visible": False})
                 error_fig.add_annotation(text="Kan plot niet genereren. Controleer logs.", showarrow=False)
+                # The 'e' variable is not in scope here, this print is for a specific failure case.
+                print(f"Error in get_load_zones_view: Failed to serialize figure to JSON.\n{traceback.format_exc()}")  # noqa: T201
                 return PlotlyResult(error_fig.to_json())
             return PlotlyResult(figure_json)
         except Exception as e:
             error_fig = go.Figure()
             error_fig.update_layout(title="Error: Belastingzones Aanzicht", xaxis={"visible": False}, yaxis={"visible": False})
             error_fig.add_annotation(text=f"Error: {e}. Controleer logs.", showarrow=False)
+            print(f"Error in get_load_zones_view: {e}\n{traceback.format_exc()}")  # Log exception # noqa: T201
             return PlotlyResult(error_fig.to_json())
 
     # ============================================================================================================

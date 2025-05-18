@@ -1,6 +1,7 @@
 """Module for the Bridge entity parametrization."""
 
 from collections.abc import Callable
+from typing import Any
 
 from viktor import DynamicArray
 from viktor.parametrization import (
@@ -17,26 +18,48 @@ from viktor.parametrization import (
     TextField,
 )
 
-# Define helper functions at the module level
+# --- Constants for Parametrization ---
+MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
+LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto"]
 
 
+# --- Helper functions for DynamicArray Default Rows ---
+
+
+def _create_default_dimension_segment_row(l_value: int, is_first: bool) -> dict[str, Any]:
+    """Creates a dictionary for a default bridge dimension segment row."""
+    return {
+        "bz1": 10.0,
+        "bz2": 5.0,
+        "bz3": 15.0,
+        "dz": 2.0,
+        "dz_2": 3.0,
+        "col_6": 0.0,
+        "l": l_value,
+        "is_first_segment": is_first,
+    }
+
+
+def _create_default_load_zone_row(zone_type: str, default_width: float) -> dict[str, Any]:
+    """Creates a dictionary for a default load zone row."""
+    row: dict[str, Any] = {"zone_type": zone_type}
+    for i in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1):
+        row[f"d{i}_width"] = default_width
+    return row
+
+
+# --- Helper functions for Parametrization Logic (e.g., visibility callbacks) ---
 def _get_current_num_load_zones(params_obj: "BridgeParametrization") -> int:
-    """Helper to get the current number of load zones from params.input.belastingzones.load_zones_array."""
+    """Helper to get the current number of load zones from params.load_zones_data_array."""
     try:
-        if (
-            params_obj is None
-            or not hasattr(params_obj, "input")
-            or params_obj.input is None
-            or not hasattr(params_obj.input, "belastingzones")
-            or params_obj.input.belastingzones is None
-            or not hasattr(params_obj.input.belastingzones, "load_zones_array")
-        ):
+        if params_obj is None or not hasattr(params_obj, "load_zones_data_array"):
             return 0
-        load_zones_array = params_obj.input.belastingzones.load_zones_array
+        load_zones_array = params_obj.load_zones_data_array
         if load_zones_array is None or not isinstance(load_zones_array, list | tuple):
             return 0
         return len(load_zones_array)
-    except Exception:
+    except (AttributeError, TypeError):
+        # Parameters not yet fully defined during app initialization or update – treat as "0" zones
         return 0
 
 
@@ -49,7 +72,8 @@ def _get_current_num_segments(params_obj: "BridgeParametrization") -> int:
         if dimension_array is None or not isinstance(dimension_array, list | tuple):
             return 0
         return len(dimension_array)
-    except Exception:
+    except (AttributeError, TypeError):
+        # Parameters not yet fully defined during app initialization or update – treat as "0" segments
         return 0
 
 
@@ -93,10 +117,7 @@ def _create_dx_width_visibility_callback(required_segment_count: int) -> Callabl
 
 
 # Generate the visibility callbacks using a dictionary comprehension
-MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
 DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for i in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1)}
-
-LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto"]
 
 
 class BridgeParametrization(Parametrization):
@@ -149,26 +170,8 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         min=2,
         name="bridge_segments_array",
         default=[
-            {
-                "bz1": 10.0,
-                "bz2": 5.0,
-                "bz3": 15.0,
-                "dz": 2.0,
-                "dz_2": 3.0,
-                "col_6": 0.0,
-                "l": 0,
-                "is_first_segment": True,
-            },
-            {
-                "bz1": 10.0,
-                "bz2": 5.0,
-                "bz3": 15.0,
-                "dz": 2.0,
-                "dz_2": 3.0,
-                "col_6": 0.0,
-                "l": 10,
-                "is_first_segment": False,
-            },
+            _create_default_dimension_segment_row(l_value=0, is_first=True),
+            _create_default_dimension_segment_row(l_value=10, is_first=False),
         ],
     )
     input.dimensions.array.is_first_segment = BooleanField("Is First Segment Marker", default=False, visible=False)
@@ -207,61 +210,11 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.belastingzones.load_zones_array = DynamicArray(
         "Belastingzones",
         row_label="Belasting Zone",
+        name="load_zones_data_array",
         default=[
-            {
-                "zone_type": LOAD_ZONE_TYPES[0],  # Voetgangers
-                "d1_width": 1.5,
-                "d2_width": 1.5,
-                "d3_width": 1.5,
-                "d4_width": 1.5,
-                "d5_width": 1.5,
-                "d6_width": 1.5,
-                "d7_width": 1.5,
-                "d8_width": 1.5,
-                "d9_width": 1.5,
-                "d10_width": 1.5,
-                "d11_width": 1.5,
-                "d12_width": 1.5,
-                "d13_width": 1.5,
-                "d14_width": 1.5,
-                "d15_width": 1.5,
-            },
-            {
-                "zone_type": LOAD_ZONE_TYPES[1],  # Fietsers
-                "d1_width": 3.0,
-                "d2_width": 3.0,
-                "d3_width": 3.0,
-                "d4_width": 3.0,
-                "d5_width": 3.0,
-                "d6_width": 3.0,
-                "d7_width": 3.0,
-                "d8_width": 3.0,
-                "d9_width": 3.0,
-                "d10_width": 3.0,
-                "d11_width": 3.0,
-                "d12_width": 3.0,
-                "d13_width": 3.0,
-                "d14_width": 3.0,
-                "d15_width": 3.0,
-            },
-            {
-                "zone_type": LOAD_ZONE_TYPES[2],  # Auto (Rijbaan)
-                "d1_width": 20.5,
-                "d2_width": 20.5,
-                "d3_width": 20.5,
-                "d4_width": 20.5,
-                "d5_width": 20.5,
-                "d6_width": 20.5,
-                "d7_width": 20.5,
-                "d8_width": 20.5,
-                "d9_width": 20.5,
-                "d10_width": 20.5,
-                "d11_width": 20.5,
-                "d12_width": 20.5,
-                "d13_width": 20.5,
-                "d14_width": 20.5,
-                "d15_width": 20.5,
-            },
+            _create_default_load_zone_row(LOAD_ZONE_TYPES[0], 1.5),  # Voetgangers
+            _create_default_load_zone_row(LOAD_ZONE_TYPES[1], 3.0),  # Fietsers
+            _create_default_load_zone_row(LOAD_ZONE_TYPES[2], 10.5),  # Auto (Rijbaan)
         ],
     )
     input.belastingzones.load_zones_array.zone_type = OptionField("Type belastingzone", options=LOAD_ZONE_TYPES, default=LOAD_ZONE_TYPES[0])
@@ -270,7 +223,8 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     for _idx_field in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1):
         _field = NumberField(
             f"Breedte zone bij D{_idx_field}",
-            default=1.0 if _idx_field <= 2 else 0.0,  # d1 and d2 default to 1.0, others to 0.0
+            default=2.0,  # Default set to 2.0m for all fields
+            min=0.01,  # Minimum value set to 0.01m (1cm)
             suffix="m",
             description=f"Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D{_idx_field}.",
             visible=DX_WIDTH_VISIBILITY_CALLBACKS[_idx_field],
