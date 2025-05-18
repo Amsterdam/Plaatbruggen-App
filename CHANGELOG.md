@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
-## [`v0.0.5`] - 2025-05-09
+## [`v0.0.5`] - 2025-05-15
 
 ### Added
 - Added `wapening_buigstraal.csv` containing minimum bending radii specifications for different reinforcement bar diameters (6mm to 40mm) according to Eurocode 2.
@@ -27,6 +27,15 @@ Semantic versioning is used to denote different versions of this project.
         - Ensures total zone width does not exceed available bridge width at each D-point.
         - Displays clear warning annotations on "Bovenaanzicht" and "Belastingzones" views if discrepancies are found.
         - Highlights individual load zones in red on the "Belastingzones" view if they geometrically exceed bridge boundaries.
+- Dynamic zone numbering system in reinforcement tab:
+    - Automatic zone number generation based on bridge segments
+    - Format "location-segment" (e.g., "1-1", "2-1", "3-1", "1-2", etc.)
+    - First number indicates location (1=left, 2=middle, 3=right)
+    - Second number indicates segment number
+- New OptionField for zone selection in reinforcement input:
+    - Options dynamically generated based on number of bridge segments
+    - Options list updates automatically when segments are added/removed
+    - Proper zone labeling helps users identify reinforcement locations
 
 ### Changed
 - Reorganized resources directory structure for better organization:
@@ -61,7 +70,6 @@ Semantic versioning is used to denote different versions of this project.
 - Corrected various Ruff linter errors in `BridgeController` and `app/common/map_utils.py`, including `ERA001` (commented-out code), `TRY301` (abstract `raise`), `C901`/`PLR0911`/`PLR0912`/`PLR0913` (complexity/branches/returns/arguments), `TRY300` (consider `else`), `W293` (whitespace), `RUF013` (implicit `Optional`), `ANN202` (missing return type), `RET505` (unnecessary `else`), `N806` (variable naming), and `PERF401` (list append in loop).
 - Addressed Ruff and MyPy linting errors in `app/bridge/parametrization.py` related to `PLR0911` (too many returns), `ANN001`/`ANN401` (missing/disallowed type hints for `Any`), `ARG001` (unused argument), `T201` (print statements), `UP038` (isinstance with tuple), `TRY300` (consider else), `RET504` (unnecessary assignment), `N802`/`N803` (function/argument naming).
 - Resolved MyPy `var-annotated` error in `app/bridge/controller.py` by adding a type hint to `zone_annotations` in `_add_load_zone_visuals`.
-
 
 ## [`v0.0.4`] - 2025-05-08
 
@@ -130,4 +138,3 @@ Semantic versioning is used to denote different versions of this project.
 - Initial project structure
 
 ## [`v0.0.1`] - 2025-05-01
-

@@ -1,6 +1,6 @@
 """Module for the Bridge entity parametrization."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from viktor import DynamicArray
@@ -8,6 +8,7 @@ from viktor.parametrization import (
     BooleanField,
     DynamicArrayConstraint,
     IsFalse,
+    LineBreak,
     Lookup,
     NumberField,
     OptionField,
@@ -17,6 +18,8 @@ from viktor.parametrization import (
     Text,
     TextField,
 )
+
+from .geometry_functions import get_steel_qualities
 
 # --- Constants for Parametrization ---
 MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
@@ -120,6 +123,48 @@ def _create_dx_width_visibility_callback(required_segment_count: int) -> Callabl
 DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for i in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1)}
 
 
+# --- Functions for dynamic reinforcement zones ---
+def calculate_max_array(params: Mapping, **kwargs) -> int:  # noqa: ARG001
+    """
+    Calculate the maximum number of reinforcement zones based on bridge segments.
+    
+    Args:
+        params: Parameters object containing bridge_segments_array
+        **kwargs: Additional keyword arguments required by VIKTOR
+        
+    Returns:
+        The maximum number of reinforcement zones (3 per segment)
+    """
+    sections = len(params.bridge_segments_array)
+    max_zones = 3 * (sections - 1)
+
+    return max_zones
+
+
+def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
+    """
+    Define options for zone numbering based on the number of segments.
+    
+    Args:
+        params: Parameters containing bridge_segments_array
+        **kwargs: Additional keyword arguments required by VIKTOR
+        
+    Returns:
+        list: List of zone numbers in format "location-segment" (e.g., ["1-1", "2-1", "3-1", "1-2", "2-2", "3-2"])
+    """
+    option_list = []
+    num_segments = len(params.bridge_segments_array) - 1
+    
+    # For each segment
+    for segment in range(num_segments):
+        # For each zone (left, middle, right)
+        for zone in range(3):
+            zone_number = f"{zone + 1}-{segment + 1}"
+            option_list.append(zone_number)
+            
+    return option_list
+
+
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
 
@@ -195,9 +240,148 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     )
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
-    input.geometrie_wapening.diameter = NumberField("Diameter", default=12.0, suffix="mm")
-    input.geometrie_wapening.spacing = NumberField("h.o.h. Afstand", default=150.0, suffix="mm")
-    input.geometrie_wapening.cover = NumberField("Dekking", default=30.0, suffix="mm")
+    input.geometrie_wapening.explanation = Text(
+        """Op deze pagina kan de wapening van de brug worden ingevoerd. De wapening moet ingevoerd worden per zone.
+De zones corresponderen met de plaatzones die worden gegenereerd op basis van de geometrie:
+- Bij de minimale geometrie (2 doorsnedes) ontstaan er 3 zones: "1-1", "2-1" en "3-1"
+- Voor elke extra doorsnede komen er 3 nieuwe zones bij: "1-2", "2-2", "3-2", etc.
+- Het getal voor het streepje correspondeert met de zone (1=links, 2=midden, 3=rechts)
+- Het getal na het streepje geeft aan bij welk segment de zone hoort
+
+Eerst wordt er gevraagd naar de eigenschappen van de hoofdwapening in langs- en dwarsrichting.
+Vervolgens kan er per veld aangeklikt worden, of er extra bijlegwapening aanwezig is in de zone.
+Wanneer dit wordt aangevinkt, verschijnen dezelfde invoervelden nogmaals, om deze bijlegwapening te definiëren.
+In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwapeningsnet gelegd."""
+    )    # General reinforcement parameters
+    input.geometrie_wapening.staalsoort = OptionField(
+        "Staalsoort",
+        options=get_steel_qualities(),
+        default="B500B",  # Changed to more modern default
+        description="De kwaliteit van het betonstaal dat wordt toegepast in de brug.",
+    )
+
+    input.geometrie_wapening.dekking = NumberField(
+        "Betondekking",
+        default=55.0,
+        suffix="mm",
+        description="De betondekking is de afstand tussen de buitenkant van het beton en de buitenste wapeningslaag.",
+    )
+    input.geometrie_wapening.langswapening_buiten = BooleanField(
+        "Langswapening aan buitenzijde?",
+        default=True,
+        description="Indien aangevinkt ligt de langswapening aan de buitenzijde van het beton. Indien uitgevinkt ligt de dwarswapening aan de buitenzijde.",
+    )
+
+    input.geometrie_wapening.zones = DynamicArray(
+        "Wapening per zone",
+        min=3,
+        max=calculate_max_array,
+        name="reinforcement_zones_array",
+        default=[
+            {
+                "zone_number": "1-1",
+                "hoofdwapening_langs_boven_diameter": 12.0,
+                "hoofdwapening_langs_boven_hart_op_hart": 150.0,
+                "hoofdwapening_langs_onder_diameter": 12.0,
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
+                "hoofdwapening_dwars_diameter": 12.0,
+                "hoofdwapening_dwars_hart_op_hart": 150.0,
+                "heeft_bijlegwapening": False,
+            },
+            {
+                "zone_number": "2-1",
+                "hoofdwapening_langs_boven_diameter": 12.0,
+                "hoofdwapening_langs_boven_hart_op_hart": 150.0,
+                "hoofdwapening_langs_onder_diameter": 12.0,
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
+                "hoofdwapening_dwars_diameter": 12.0,
+                "hoofdwapening_dwars_hart_op_hart": 150.0,
+                "heeft_bijlegwapening": False,
+            },
+            {
+                "zone_number": "3-1",
+                "hoofdwapening_langs_boven_diameter": 12.0,
+                "hoofdwapening_langs_boven_hart_op_hart": 150.0,
+                "hoofdwapening_langs_onder_diameter": 12.0,
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
+                "hoofdwapening_dwars_diameter": 12.0,
+                "hoofdwapening_dwars_hart_op_hart": 150.0,
+                "heeft_bijlegwapening": False,
+            },
+        ],
+    )
+
+    # Zone number display
+    input.geometrie_wapening.zones.zone_number = OptionField(
+        "Zone nummer", options=define_options_numbering, description="Dit is het zone nummer dat correspondeert met de zone in de brug."
+    )
+
+    input.geometrie_wapening.zones.lb1 = LineBreak()
+
+    # Main reinforcement - Longitudinal top
+    input.geometrie_wapening.zones.hoofdwapening_langs_boven_diameter = NumberField(
+        "Diameter hoofdwapening langsrichting boven", default=12.0, suffix="mm"
+    )
+    input.geometrie_wapening.zones.hoofdwapening_langs_boven_hart_op_hart = NumberField(
+        "Hart-op-hart afstand hoofdwapening langsrichting boven", default=150.0, suffix="mm"
+    )
+    input.geometrie_wapening.zones.lb2 = LineBreak()
+
+    # Main reinforcement - Longitudinal bottom
+    input.geometrie_wapening.zones.hoofdwapening_langs_onder_diameter = NumberField(
+        "Diameter hoofdwapening langsrichting onder", default=12.0, suffix="mm"
+    )
+    input.geometrie_wapening.zones.hoofdwapening_langs_onder_hart_op_hart = NumberField(
+        "Hart-op-hart afstand hoofdwapening langsrichting onder", default=150.0, suffix="mm"
+    )
+    input.geometrie_wapening.zones.lb3 = LineBreak()
+
+    # Main reinforcement - Transverse
+    input.geometrie_wapening.zones.hoofdwapening_dwars_diameter = NumberField("Diameter hoofdwapening dwarsrichting", default=12.0, suffix="mm")
+    input.geometrie_wapening.zones.hoofdwapening_dwars_hart_op_hart = NumberField(
+        "Hart-op-hart afstand hoofdwapening dwarsrichting", default=150.0, suffix="mm"
+    )
+
+    # Visual separator for bijlegwapening
+    input.geometrie_wapening.zones.separator1 = LineBreak()
+
+    # Additional reinforcement toggle
+    input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)
+
+    # Additional reinforcement fields - only visible when heeft_bijlegwapening is True
+    _bijleg_visibility = DynamicArrayConstraint(
+        dynamic_array_name="reinforcement_zones_array",
+        operand=Lookup("$row.heeft_bijlegwapening"),
+    )
+
+    input.geometrie_wapening.zones.lb4 = LineBreak()
+
+    input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(
+        "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = NumberField(
+        "Hart-op-hart afstand bijlegwapening langsrichting boven", default=150.0, suffix="mm", visible=_bijleg_visibility
+    )
+
+    input.geometrie_wapening.zones.lb5 = LineBreak()
+
+    # Additional reinforcement - Longitudinal bottom
+    input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
+        "Diameter bijlegwapening langsrichting onder", default=12.0, suffix="mm", visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = NumberField(
+        "Hart-op-hart afstand bijlegwapening langsrichting onder", default=150.0, suffix="mm", visible=_bijleg_visibility
+    )
+
+    input.geometrie_wapening.zones.lb6 = LineBreak()
+
+    # Additional reinforcement - Transverse
+    input.geometrie_wapening.zones.bijlegwapening_dwars_diameter = NumberField(
+        "Diameter bijlegwapening dwarsrichting", default=12.0, suffix="mm", visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.bijlegwapening_dwars_hart_op_hart = NumberField(
+        "Hart-op-hart afstand bijlegwapening dwarsrichting", default=150.0, suffix="mm", visible=_bijleg_visibility
+    )
 
     # --- Load Zones (in belastingzones tab) ---
     input.belastingzones.info_text = Text(
