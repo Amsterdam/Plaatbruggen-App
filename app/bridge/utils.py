@@ -93,7 +93,7 @@ def validate_load_zone_widths(params: ParamsForLoadZones, geometry_data: LoadZon
         if calculated_total_consumed_width_at_d > current_bridge_total_width_available + 1e-3:
             overrun = calculated_total_consumed_width_at_d - current_bridge_total_width_available
             error_msg = (
-                f"Bij {current_d_point_name}: Totale zonebreedte "
+                f"{current_d_point_name} - Totale zonebreedte "
                 f"({calculated_total_consumed_width_at_d:.2f}m) overschrijdt brugbreedte "
                 f"({current_bridge_total_width_available:.2f}m) met {overrun:.2f}m."
             )

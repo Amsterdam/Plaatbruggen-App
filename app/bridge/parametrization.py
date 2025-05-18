@@ -20,7 +20,7 @@ from viktor.parametrization import (
 
 # --- Constants for Parametrization ---
 MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
-LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto"]
+LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto", "Berm"]
 
 
 # --- Helper functions for DynamicArray Default Rows ---
@@ -214,6 +214,7 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         default=[
             _create_default_load_zone_row(LOAD_ZONE_TYPES[0], 1.5),  # Voetgangers
             _create_default_load_zone_row(LOAD_ZONE_TYPES[1], 3.0),  # Fietsers
+            _create_default_load_zone_row(LOAD_ZONE_TYPES[3], 0.5),  # Berm (new)
             _create_default_load_zone_row(LOAD_ZONE_TYPES[2], 10.5),  # Auto (Rijbaan)
         ],
     )
