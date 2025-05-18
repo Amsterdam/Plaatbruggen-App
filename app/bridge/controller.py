@@ -1,11 +1,14 @@
 """Module for the Bridge entity controller."""
 
-import traceback  # Import traceback for logging exceptions
+from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
 
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
+
+# ParamsForLoadZones protocol and validate_load_zone_widths are in app.bridge.utils
+from app.bridge.utils import validate_load_zone_widths
 from app.common.map_utils import (
     load_and_filter_bridge_shapefile,  # Import the new function
     process_bridge_geometries,
@@ -14,8 +17,20 @@ from app.common.map_utils import (
 from app.constants import (  # Replace relative imports with absolute imports
     OUTPUT_REPORT_PATH,
 )
+from src.common.plot_utils import (
+    create_bridge_outline_traces,
+)
 from src.geometry.cross_section import create_cross_section_view
 from src.geometry.horizontal_section import create_horizontal_section_view
+from src.geometry.load_zone_geometry import LoadZoneDataRow
+from src.geometry.load_zone_plot import (
+    DEFAULT_PLOTLY_COLORS,  # Import for styling defaults
+    DEFAULT_ZONE_APPEARANCE_MAP,  # Import for styling defaults
+    BridgeBaseGeometry,  # TypedDict for bridge_geom argument
+    PlotPresentationDetails,  # TypedDict for presentation details
+    ZoneStylingDefaults,  # TypedDict for styling_defaults argument
+    build_load_zones_figure,
+)
 from src.geometry.longitudinal_section import create_longitudinal_section
 from src.geometry.model_creator import (
     BridgeSegmentDimensions,  # Import the dataclass
@@ -24,6 +39,7 @@ from src.geometry.model_creator import (
     create_3d_model,
     prepare_load_zone_geometry_data,
 )
+from src.geometry.top_view_plot import build_top_view_figure
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
 from viktor.utils import convert_word_to_pdf
@@ -41,12 +57,23 @@ from viktor.views import (
 
 # Import parametrization from the separate file
 from .parametrization import (
+    MAX_LOAD_ZONE_SEGMENT_FIELDS,  # Import the constant
     BridgeParametrization,
 )
-from .utils import (
-    add_load_zone_visuals,
-    create_text_annotations_from_data,
-)  # Added imports
+
+
+# Define TypedDict for a row from params.bridge_segments_array
+class BridgeSegmentParamRow(TypedDict):
+    """
+    Represents the structure of a single row item from params.bridge_segments_array.
+    This TypedDict is used to provide type hinting for these row objects.
+    """
+
+    bz1: float
+    bz2: float
+    bz3: float
+    l: float  # noqa: E741 # 'l' matches the field name in BridgeParametrization (input.dimensions.array.l)
+    # Add other fields like dz, dz_2, col_6, is_first_segment if accessed, with appropriate types
 
 
 class BridgeController(ViktorController):
@@ -54,6 +81,40 @@ class BridgeController(ViktorController):
 
     label = "Brug"
     parametrization = BridgeParametrization  # type: ignore[assignment]
+
+    def _create_bridge_segment_dimensions_from_params(self, segment_param_row: BridgeSegmentParamRow) -> BridgeSegmentDimensions:
+        """Validates a segment param row and returns BridgeSegmentDimensions or raises UserError."""
+        # The attribute check `hasattr` is still useful as a runtime check before typed access,
+        # though MyPy will now also check based on BridgeSegmentParamRow.
+        required_attrs = ["bz1", "bz2", "bz3", "l"]
+        # For TypedDict, we'd ideally check presence of keys.
+        # However, VIKTOR param objects are often Munch-like, so hasattr can work at runtime.
+        # For Mypy, the key is using dictionary access below.
+        if not all(key in segment_param_row for key in required_attrs):
+            raise UserError("Een of meer brugsegmenten missen benodigde data (bz1, bz2, bz3, l) in Dimensies.")
+        return BridgeSegmentDimensions(
+            bz1=segment_param_row["bz1"], bz2=segment_param_row["bz2"], bz3=segment_param_row["bz3"], segment_length=segment_param_row["l"]
+        )
+
+    def _prepare_bridge_geometry_for_plotting(self, bridge_segments_params: list) -> LoadZoneGeometryData | None:
+        """Helper to prepare BridgeSegmentDimensions and LoadZoneGeometryData from params."""
+        if not bridge_segments_params:
+            return None
+        try:
+            typed_bridge_dimensions = []
+            for segment_param_row in bridge_segments_params:
+                # Call the new helper method
+                segment_data = self._create_bridge_segment_dimensions_from_params(segment_param_row)
+                typed_bridge_dimensions.append(segment_data)
+
+            if not typed_bridge_dimensions:
+                return None
+            return prepare_load_zone_geometry_data(typed_bridge_dimensions)
+        except UserError:
+            raise
+        except Exception as e:
+            print(f"Error preparing bridge geometry for load zones view: {e}")  # noqa: T201
+            raise UserError("Fout bij voorbereiden bruggeometrie. Controleer de Dimensies tab.") from e
 
     def _get_bridge_entity_data(self, entity_id: int) -> tuple[str | None, str | None, MapResult | None]:
         """Fetches bridge entity data (OBJECTNUMM and name) using the VIKTOR API."""
@@ -127,177 +188,53 @@ class BridgeController(ViktorController):
         return GeometryResult(geometry, geometry_type="gltf")
 
     @PlotlyView("Bovenaanzicht", duration_guess=1)
-    def get_top_view(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002, C901, PLR0912
+    def get_top_view(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
         """
-        Generates a 2D top view of the bridge deck with dimensions.
-
-        Args:
-            params (BridgeParametrization): Input parameters for the bridge dimensions.
-            **kwargs: Additional arguments.
-
-        Returns:
-            PlotlyResult: A 2D representation of the top view.
-
+        Generates a 2D top view of the bridge deck with dimensions by calling the src layer.
+        Also performs validation of load zone widths against bridge dimensions.
         """
+        # 1. Prepare bridge geometry data (needed for validation)
+        bridge_segments_params = params.bridge_segments_array
+        bridge_geom_data: LoadZoneGeometryData | None = None  # Ensure type hint for clarity
+
+        if bridge_segments_params:
+            try:
+                typed_bridge_dimensions = []
+                for segment_param_row in bridge_segments_params:
+                    if not all(hasattr(segment_param_row, attr) for attr in ["bz1", "bz2", "bz3", "l"]):
+                        # Silently skip or log if a segment is malformed to avoid blocking top view
+                        # Or raise UserError("Een of meer brugsegmenten missen data (bz1, bz2, bz3, l).")
+                        print(f"Warning: Malformed bridge segment data in get_top_view: {segment_param_row}")  # noqa: T201
+                        continue  # Skip this segment if it's missing critical attributes
+                    typed_bridge_dimensions.append(
+                        BridgeSegmentDimensions(
+                            bz1=segment_param_row.bz1, bz2=segment_param_row.bz2, bz3=segment_param_row.bz3, segment_length=segment_param_row.l
+                        )
+                    )
+                if typed_bridge_dimensions:  # Only proceed if we have valid dimensions to process
+                    bridge_geom_data = prepare_load_zone_geometry_data(typed_bridge_dimensions)
+            except Exception as e:
+                print(f"Error preparing bridge geometry for validation in get_top_view: {e}")  # noqa: T201
+                # bridge_geom_data remains None
+
+        # 2. Perform validation if possible
+        validation_messages: list[str] = []
+        if bridge_geom_data and hasattr(params, "load_zones_data_array") and params.load_zones_data_array:
+            validation_messages = validate_load_zone_widths(
+                params=params,  # Pass the whole params object
+                geometry_data=bridge_geom_data,
+            )
+        elif not bridge_segments_params or not bridge_geom_data:  # Covers cases where bridge_geom_data is None due to error or no segments
+            validation_messages = ["Brugsegmenten data ontbreekt of is ongeldig, validatie van belastingzones niet volledig uitgevoerd."]
+        # If load_zones_data_array is empty/None, validation_messages remains empty (no zones to validate)
+
+        # 3. Generate top view plot data
         top_view_data = create_2d_top_view(params)
 
-        bridge_lines = top_view_data.get("bridge_lines", [])
-        zone_annotations_data = top_view_data.get("zone_annotations", [])
-        dimension_lines_data = top_view_data.get("dimension_lines", [])
-        dimension_texts_data = top_view_data.get("dimension_texts", [])
-        cross_section_labels_data = top_view_data.get("cross_section_labels", [])
-        zone_polygons_data = top_view_data.get("zone_polygons", [])
+        # 4. Build the figure
+        fig = build_top_view_figure(top_view_geometric_data=top_view_data, validation_messages=validation_messages)
 
-        fig = go.Figure()
-
-        # Add zone background fills
-        for poly in zone_polygons_data:
-            vertices = poly.get("vertices", [])
-            if vertices:
-                x_coords = [v[0] for v in vertices] + [vertices[0][0]]
-                y_coords = [v[1] for v in vertices] + [vertices[0][1]]
-                fig.add_trace(
-                    go.Scatter(
-                        x=x_coords,
-                        y=y_coords,
-                        mode="lines",
-                        fill="toself",
-                        fillcolor=poly.get("color", "rgba(128,128,128,0.1)"),
-                        line={"width": 0},  # Use literal dict
-                        hoverinfo="skip",
-                        showlegend=False,
-                    )
-                )
-
-        # Add bridge outline lines
-        for line_segment in bridge_lines:
-            fig.add_trace(
-                go.Scatter(
-                    x=[line_segment["start"][0], line_segment["end"][0]],
-                    y=[line_segment["start"][1], line_segment["end"][1]],
-                    mode="lines",
-                    line={"color": "blue", "width": 2},  # Use literal dict
-                    hoverinfo="none",
-                )
-            )
-
-        # Add dimension lines (this loop does nothing as dimension_lines_data is empty)
-        for dim_line in dimension_lines_data:
-            line_props = {"color": "red", "width": 1}  # Use literal dict
-            if dim_line.get("type") == "tick":
-                line_props["width"] = 1
-            fig.add_trace(
-                go.Scatter(
-                    x=[dim_line["start"][0], dim_line["end"][0]],
-                    y=[dim_line["start"][1], dim_line["end"][1]],
-                    mode="lines",
-                    line=line_props,
-                    hoverinfo="none",
-                )
-            )
-
-        # --- Prepare all annotations using list comprehensions ---
-        all_annotations = []
-
-        # Zone labels comprehension
-        zone_annotations_plotly = [
-            go.layout.Annotation(
-                x=ann["x"],
-                y=ann["y"],
-                text=f"<b>{ann['text']}</b>",
-                showarrow=False,
-                font={"size": 14, "color": "DarkSlateGray"},
-                ax=0,
-                ay=0,
-            )
-            for ann in zone_annotations_data
-        ]
-        all_annotations.extend(zone_annotations_plotly)
-
-        # Dimension value labels comprehension
-        dimension_annotations = []
-        for dim_text in dimension_texts_data:
-            text_align = "center"
-            xanchor = "center"
-            yanchor = "middle"
-            current_textangle = dim_text.get("textangle", 0)
-
-            if current_textangle == 180:
-                xanchor = "right"
-                yanchor = "middle"
-                text_align = "right"
-            elif current_textangle in (90, -90):  # Use 'in'
-                xanchor = "center"
-                yanchor = "middle"
-                text_align = "center"
-            elif dim_text.get("type") == "length":
-                text_align = "center"
-                xanchor = "center"
-                yanchor = "bottom"
-            else:
-                text_align = "left"
-                xanchor = "left"
-                yanchor = "middle"
-
-            dimension_annotations.append(
-                go.layout.Annotation(
-                    x=dim_text["x"],
-                    y=dim_text["y"],
-                    text=f"<b>{dim_text['text']}</b>",
-                    showarrow=False,
-                    font={"size": 12, "color": "red"},  # Use literal dict
-                    align=text_align,
-                    xanchor=xanchor,
-                    yanchor=yanchor,
-                    textangle=current_textangle,
-                    ax=0,
-                    ay=0,
-                )
-            )
-        all_annotations.extend(dimension_annotations)
-
-        # Cross-section labels (D-points) using the new utility
-        if cross_section_labels_data:  # Ensure data exists
-            cs_label_annotations = create_text_annotations_from_data(
-                label_data=cross_section_labels_data,
-                font_size=15,  # Specific font size for top view D-labels
-                font_color="black",
-                align="center",  # align is not a direct go.layout.Annotation prop, will be caught by kwargs
-                xanchor="center",
-                yanchor="bottom",
-            )
-            all_annotations.extend(cs_label_annotations)
-        # --- End Annotation Preparation ---
-
-        fig.update_layout(
-            title="Bovenaanzicht (Top View)",
-            xaxis_title="Length (m)",
-            yaxis_title="Width (m)",
-            showlegend=False,
-            autosize=True,
-            hovermode="closest",
-            yaxis={  # Use literal dict
-                "scaleanchor": "x",
-                "scaleratio": 1,
-            },
-            annotations=all_annotations,
-            margin={"l": 50, "r": 50, "t": 50, "b": 50},  # Use literal dict
-            plot_bgcolor="white",
-        )
-
-        try:
-            figure_json = fig.to_json()
-            if not figure_json or figure_json == "null":
-                error_fig = go.Figure()
-                error_fig.update_layout(title="Error generating Top View", xaxis={"visible": False}, yaxis={"visible": False})
-                error_fig.add_annotation(text="Could not generate plot. Check logs.", showarrow=False)
-                return PlotlyResult(error_fig.to_json())
-            return PlotlyResult(figure_json)
-        except Exception as e:
-            error_fig = go.Figure()
-            error_fig.update_layout(title="Error generating Top View", xaxis={"visible": False}, yaxis={"visible": False})
-            error_fig.add_annotation(text=f"Error: {e}. Check application logs.", showarrow=False)
-            return PlotlyResult(error_fig.to_json())
+        return PlotlyResult(fig.to_json())
 
     @PlotlyView("Horizontale doorsnede", duration_guess=1)
     def get_2d_horizontal_section(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
@@ -360,152 +297,85 @@ class BridgeController(ViktorController):
         return PlotlyResult(fig.to_json())
 
     @PlotlyView("Belastingzones", duration_guess=1)
-    def get_load_zones_view(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002, C901
+    def get_load_zones_view(self, params: BridgeParametrization, **kwargs) -> PlotlyResult:  # noqa: ARG002
         """
-        Generates a 2D top view for defining load zones.
-
-        Args:
-            params (BridgeParametrization): Input parameters for the bridge dimensions.
-            **kwargs: Additional arguments.
-
-        Returns:
-            PlotlyResult: A 2D representation for load zones.
-
+        Generates a 2D view of the load zones on the bridge deck.
+        Uses the new build_load_zones_figure from the src layer.
         """
-        top_view_data = create_2d_top_view(params)
+        # 1. Prepare LoadZoneDataRow list from params
+        load_zones_data_params: list[LoadZoneDataRow] = []
+        if params.load_zones_data_array:
+            for row_param in params.load_zones_data_array:
+                # Construct a dictionary that matches LoadZoneDataRow fields
+                temp_row_data: dict[str, Any] = {"zone_type": row_param.zone_type}
+                for i in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1):
+                    field_name = f"d{i}_width"
+                    value = getattr(row_param, field_name, None)
+                    # LoadZoneDataRow has dX_width as float | None, so store None if getattr returns None
+                    temp_row_data[field_name] = value
 
-        bridge_lines = top_view_data.get("bridge_lines", [])
-        zone_polygons_data = top_view_data.get("zone_polygons", [])
+                row_data = cast(LoadZoneDataRow, temp_row_data)
+                load_zones_data_params.append(row_data)
 
-        fig = go.Figure()
-        all_annotations = []
+        if not load_zones_data_params:  # No load zones defined
+            fig = go.Figure()
+            fig.update_layout(title_text="Belastingzones - Geen zones gedefinieerd", xaxis_visible=False, yaxis_visible=False)
+            return PlotlyResult(fig.to_json())
 
-        # Add structural zone background fills
-        for poly in zone_polygons_data:
-            vertices = poly.get("vertices", [])
-            if vertices:
-                x_coords_poly = [v[0] for v in vertices] + [vertices[0][0]]
-                y_coords_poly = [v[1] for v in vertices] + [vertices[0][1]]
-                fig.add_trace(
-                    go.Scatter(
-                        x=x_coords_poly,
-                        y=y_coords_poly,
-                        mode="lines",
-                        fill="toself",
-                        fillcolor="rgba(220,220,220,0.4)",
-                        line={"width": 0},
-                        hoverinfo="skip",
-                        showlegend=False,
-                    )
-                )
+        # 2. Prepare bridge geometric data
+        bridge_geom_data = self._prepare_bridge_geometry_for_plotting(params.bridge_segments_array)
+        if not bridge_geom_data:  # If preparation failed or returned None (e.g. no segments)
+            fig = go.Figure()
+            fig.update_layout(title_text="Belastingzones - Brugsegmenten ongeldig", xaxis_visible=False, yaxis_visible=False)
+            return PlotlyResult(fig.to_json())
 
-        # Add bridge outline lines
-        for line_segment in bridge_lines:
-            fig.add_trace(
-                go.Scatter(
-                    x=[line_segment["start"][0], line_segment["end"][0]],
-                    y=[line_segment["start"][1], line_segment["end"][1]],
-                    mode="lines",
-                    line={"color": "grey", "width": 1},
-                    hoverinfo="none",
-                    showlegend=False,
-                )
+        # 3. Get validation messages
+        validation_messages: list[str] = []
+        if hasattr(params, "load_zones_data_array") and params.load_zones_data_array:
+            validation_messages = validate_load_zone_widths(
+                params=params,  # Pass the whole params object
+                geometry_data=bridge_geom_data,
             )
+        # If load_zones_data_array is empty, validation_messages remains empty.
 
-        load_zones_data = None
-        if (
-            hasattr(params, "input")
-            and params.input
-            and hasattr(params.input, "belastingzones")
-            and params.input.belastingzones
-            and hasattr(params.input.belastingzones, "load_zones_array")
-        ):
-            load_zones_data = params.input.belastingzones.load_zones_array
+        # 4. Prepare base_traces for the bridge background
+        # Get structural polygons and bridge lines from create_2d_top_view data
+        # (This is the same data used for the "Bovenaanzicht" base plot)
+        top_view_render_data = create_2d_top_view(params)
 
-        bridge_dimensions_array = None
-        if hasattr(params, "bridge_segments_array"):
-            bridge_dimensions_array = params.bridge_segments_array
+        base_traces = []
+        # No longer adding structural polygons to this view's base traces
 
-        if bridge_dimensions_array:  # Ensure bridge_dimensions_array is not None or empty
-            try:
-                # Convert raw segment data to BridgeSegmentDimensions instances
-                typed_bridge_dimensions = [
-                    BridgeSegmentDimensions(bz1=segment.bz1, bz2=segment.bz2, bz3=segment.bz3, segment_length=segment.l)
-                    for segment in bridge_dimensions_array
-                ]
+        bridge_outline_data = top_view_render_data.get("bridge_lines", [])  # Bridge outline from top view
+        if bridge_outline_data:
+            base_traces.extend(create_bridge_outline_traces(bridge_outline_data))
 
-                load_zone_geom_data: LoadZoneGeometryData = prepare_load_zone_geometry_data(typed_bridge_dimensions)
+        # 5. Call build_load_zones_figure
+        bridge_geom_arg: BridgeBaseGeometry = {
+            "x_coords_d_points": bridge_geom_data.x_coords_d_points,
+            "y_coords_bridge_top_edge": bridge_geom_data.y_top_structural_edge_at_d_points,
+            "y_coords_bridge_bottom_edge": bridge_geom_data.y_bridge_bottom_at_d_points,
+            "num_defined_d_points": bridge_geom_data.num_defined_d_points,
+        }
+        styling_defaults_arg: ZoneStylingDefaults = {
+            "zone_appearance_map": DEFAULT_ZONE_APPEARANCE_MAP,
+            "default_plotly_colors": DEFAULT_PLOTLY_COLORS,
+        }
 
-                # Access data from the dataclass instance
-                x_coords_d_points = load_zone_geom_data.x_coords_d_points
-                y_top_structural_edge_at_d_points = load_zone_geom_data.y_top_structural_edge_at_d_points
-                # total_widths_at_d_points is available if needed: load_zone_geom_data.total_widths_at_d_points
-                y_bridge_bottom_at_d_points = load_zone_geom_data.y_bridge_bottom_at_d_points
-                num_defined_d_points = load_zone_geom_data.num_defined_d_points
-                d_point_label_data = load_zone_geom_data.d_point_label_data
+        presentation_details_arg: PlotPresentationDetails = {
+            "base_traces": base_traces,
+            "validation_messages": validation_messages,
+            "figure_title": "Belastingzones",
+        }
 
-                if num_defined_d_points > 0:
-                    if d_point_label_data:
-                        # Convert DPointLabel objects to dicts for create_text_annotations_from_data
-                        d_point_label_dicts = [{"text": lbl.text, "x": lbl.x, "y": lbl.y} for lbl in d_point_label_data]
-                        d_point_annotations = create_text_annotations_from_data(
-                            label_data=d_point_label_dicts,  # Pass the list of dicts
-                            font_size=12,
-                        )
-                        all_annotations.extend(d_point_annotations)
-
-                    if load_zones_data:
-                        geometry_data_for_helper = {
-                            "x_coords": x_coords_d_points,
-                            "y_top_edge": y_top_structural_edge_at_d_points,
-                            "y_bottom_edge": y_bridge_bottom_at_d_points,
-                            "num_points": num_defined_d_points,
-                        }
-                        load_zone_type_annotations = add_load_zone_visuals(
-                            fig,
-                            load_zones_data,
-                            geometry_data_for_helper,
-                        )
-                        all_annotations.extend(load_zone_type_annotations)
-            except ValueError as ve:
-                # Handle validation errors from prepare_load_zone_geometry_data
-                fig = go.Figure()
-                fig.update_layout(title="Fout in brugsegmentdata", xaxis={"visible": False}, yaxis={"visible": False})
-                fig.add_annotation(text=str(ve), showarrow=False)
-                print(f"ValueError in get_load_zones_view: {ve}\n{traceback.format_exc()}")  # noqa: T201
-                return PlotlyResult(fig.to_json())
-
-        fig.update_layout(
-            title="Belastingzones Definitie",
-            xaxis_title="Length (m)",
-            yaxis_title="Width (m)",
-            showlegend=False,  # Hide legend completely
-            autosize=True,
-            yaxis={
-                "scaleanchor": "x",
-                "scaleratio": 1,
-            },
-            margin={"l": 50, "r": 50, "t": 50, "b": 50},
-            plot_bgcolor="white",
-            annotations=all_annotations,  # Add all collected annotations
+        fig = build_load_zones_figure(
+            load_zones_data_params=load_zones_data_params,
+            bridge_geom=bridge_geom_arg,
+            styling_defaults=styling_defaults_arg,
+            presentation_details=presentation_details_arg,
         )
 
-        try:
-            figure_json = fig.to_json()
-            if not figure_json or figure_json == "null":
-                error_fig = go.Figure()
-                error_fig.update_layout(title="Error: Belastingzones Aanzicht", xaxis={"visible": False}, yaxis={"visible": False})
-                error_fig.add_annotation(text="Kan plot niet genereren. Controleer logs.", showarrow=False)
-                # The 'e' variable is not in scope here, this print is for a specific failure case.
-                print(f"Error in get_load_zones_view: Failed to serialize figure to JSON.\n{traceback.format_exc()}")  # noqa: T201
-                return PlotlyResult(error_fig.to_json())
-            return PlotlyResult(figure_json)
-        except Exception as e:
-            error_fig = go.Figure()
-            error_fig.update_layout(title="Error: Belastingzones Aanzicht", xaxis={"visible": False}, yaxis={"visible": False})
-            error_fig.add_annotation(text=f"Error: {e}. Controleer logs.", showarrow=False)
-            print(f"Error in get_load_zones_view: {e}\n{traceback.format_exc()}")  # Log exception # noqa: T201
-            return PlotlyResult(error_fig.to_json())
+        return PlotlyResult(fig.to_json())
 
     # ============================================================================================================
     # output - Rapport
