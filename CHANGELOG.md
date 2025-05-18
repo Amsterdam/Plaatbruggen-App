@@ -20,6 +20,13 @@ Semantic versioning is used to denote different versions of this project.
     - The final load zone extends to the bottom of the bridge's structural area.
     - Annotates each zone with its type at the right end of the plot.
     - Adds "D1", "D2", etc., labels at the top, aligned with bridge cross-sections.
+- Enhanced "Belastingzones" (Load Zones) functionality:
+    - Introduced a new "Berm" load zone type with a distinct visual style (yellow, cross-hatch).
+    - Updated the default load zone configuration to include a "Berm" zone.
+    - Implemented validation for load zone widths:
+        - Ensures total zone width does not exceed available bridge width at each D-point.
+        - Displays clear warning annotations on "Bovenaanzicht" and "Belastingzones" views if discrepancies are found.
+        - Highlights individual load zones in red on the "Belastingzones" view if they geometrically exceed bridge boundaries.
 
 ### Changed
 - Reorganized resources directory structure for better organization:
@@ -40,6 +47,9 @@ Semantic versioning is used to denote different versions of this project.
 - Simplified shapefile path retrieval in `BridgeController` by inlining the `_get_shapefile_path` helper method into `get_bridge_map_view`.
 - Centralized individual bridge shapefile loading and filtering by moving logic from `BridgeController`._load_and_filter_geodataframe` to a new `load_and_filter_bridge_shapefile` function in `app/common/map_utils.py`.
 - Refactored `get_load_zones_view` method in `BridgeController` into helper functions (`_prepare_load_zone_geometry_data`, `_create_d_point_annotations`, `_add_load_zone_visuals`) for improved readability and reduced complexity.
+- Improved "Belastingzones" visualization and architecture:
+    - Refactored load zone plotting logic from the `app` layer (controller/utils) to dedicated modules within the `src/geometry/` layer for better separation of concerns and testability.
+    - Enhanced the appearance and positioning of validation warning annotations in "Bovenaanzicht" and "Belastingzones" views for improved clarity and user experience.
 
 ### Fixed
 - Resolved issues where `OBJECTNUMM` was not found in `Bridge` entity parameters by:
