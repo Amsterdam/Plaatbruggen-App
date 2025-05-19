@@ -124,44 +124,40 @@ DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for 
 
 
 # --- Functions for dynamic reinforcement zones ---
-def calculate_max_array(params: Mapping, **kwargs) -> int:  # noqa: ARG001
+def calculate_max_array(params: Mapping) -> int:
     """
     Calculate the maximum number of reinforcement zones based on bridge segments.
-    
+
     Args:
         params: Parameters object containing bridge_segments_array
-        **kwargs: Additional keyword arguments required by VIKTOR
-        
     Returns:
         The maximum number of reinforcement zones (3 per segment)
+
     """
     sections = len(params.bridge_segments_array)
-    max_zones = 3 * (sections - 1)
-
-    return max_zones
+    return 3 * (sections - 1)
 
 
-def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
+def define_options_numbering(params: Mapping) -> list:
     """
     Define options for zone numbering based on the number of segments.
-    
+
     Args:
         params: Parameters containing bridge_segments_array
-        **kwargs: Additional keyword arguments required by VIKTOR
-        
     Returns:
         list: List of zone numbers in format "location-segment" (e.g., ["1-1", "2-1", "3-1", "1-2", "2-2", "3-2"])
+
     """
     option_list = []
     num_segments = len(params.bridge_segments_array) - 1
-    
+
     # For each segment
     for segment in range(num_segments):
         # For each zone (left, middle, right)
         for zone in range(3):
             zone_number = f"{zone + 1}-{segment + 1}"
             option_list.append(zone_number)
-            
+
     return option_list
 
 
@@ -252,7 +248,7 @@ Eerst wordt er gevraagd naar de eigenschappen van de hoofdwapening in langs- en 
 Vervolgens kan er per veld aangeklikt worden, of er extra bijlegwapening aanwezig is in de zone.
 Wanneer dit wordt aangevinkt, verschijnen dezelfde invoervelden nogmaals, om deze bijlegwapening te definiëren.
 In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwapeningsnet gelegd."""
-    )    # General reinforcement parameters
+    )  # General reinforcement parameters
     input.geometrie_wapening.staalsoort = OptionField(
         "Staalsoort",
         options=get_steel_qualities(),
@@ -269,7 +265,9 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.langswapening_buiten = BooleanField(
         "Langswapening aan buitenzijde?",
         default=True,
-        description="Indien aangevinkt ligt de langswapening aan de buitenzijde van het beton. Indien uitgevinkt ligt de dwarswapening aan de buitenzijde.",
+        description=(
+            "Indien aangevinkt ligt de langswapening aan de buitenzijde van het beton. Indien uitgevinkt ligt de dwarswapening aan de buitenzijde."
+        ),
     )
 
     input.geometrie_wapening.zones = DynamicArray(
