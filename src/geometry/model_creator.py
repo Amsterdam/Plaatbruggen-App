@@ -69,6 +69,10 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     reinforcement_zones_array = params.reinforcement_zones_array
     length_rebar_longitudinal = params.bridge_segments_array[1].l
 
+    # Get reinforcement configuration
+    langswapening_buiten = params.input.geometrie_wapening.langswapening_buiten
+    dekking = params.input.geometrie_wapening.dekking / 1000  # Convert to meters
+
     # Define rebar parameters for all zones
     # Zone 1 parameters (index 0)
     bz1 = bridge_segments_array[0].bz1
@@ -76,6 +80,8 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     hoh_bottom_z1 = reinforcement_zones_array[0].hoofdwapening_langs_onder_hart_op_hart / 1000
     diameter_rebar_top_z1 = reinforcement_zones_array[0].hoofdwapening_langs_boven_diameter / 1000
     hoh_top_z1 = reinforcement_zones_array[0].hoofdwapening_langs_boven_hart_op_hart / 1000
+    diameter_rebar_shear_z1 = reinforcement_zones_array[0].hoofdwapening_dwars_diameter / 1000
+    hoh_shear_z1 = reinforcement_zones_array[0].hoofdwapening_dwars_hart_op_hart / 1000
 
     # Zone 2 parameters (index 1)
     bz2 = bridge_segments_array[0].bz2
@@ -83,6 +89,8 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     hoh_bottom_z2 = reinforcement_zones_array[1].hoofdwapening_langs_onder_hart_op_hart / 1000
     diameter_rebar_top_z2 = reinforcement_zones_array[1].hoofdwapening_langs_boven_diameter / 1000
     hoh_top_z2 = reinforcement_zones_array[1].hoofdwapening_langs_boven_hart_op_hart / 1000
+    diameter_rebar_shear_z2 = reinforcement_zones_array[1].hoofdwapening_dwars_diameter / 1000
+    hoh_shear_z2 = reinforcement_zones_array[1].hoofdwapening_dwars_hart_op_hart / 1000
 
     # Zone 3 parameters (index 2)
     bz3 = bridge_segments_array[0].bz3
@@ -90,31 +98,70 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     hoh_bottom_z3 = reinforcement_zones_array[2].hoofdwapening_langs_onder_hart_op_hart / 1000
     diameter_rebar_top_z3 = reinforcement_zones_array[2].hoofdwapening_langs_boven_diameter / 1000
     hoh_top_z3 = reinforcement_zones_array[2].hoofdwapening_langs_boven_hart_op_hart / 1000
+    diameter_rebar_shear_z3 = reinforcement_zones_array[2].hoofdwapening_dwars_diameter / 1000
+    hoh_shear_z3 = reinforcement_zones_array[2].hoofdwapening_dwars_hart_op_hart / 1000
 
-    # Calculate the effective width for each zone over which to divide the lontgitudinal reinforcement.
+    # Calculate the effective width for each zone
     # Zone 1
-    bz1_eff_bottom = float(bz1) - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_bottom_z1
-    bz1_eff_top = float(bz1) - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_top_z1
+    bz1_eff_bottom = float(bz1) - 2 * dekking - diameter_rebar_bottom_z1
+    bz1_eff_top = float(bz1) - 2 * dekking - diameter_rebar_top_z1
+    width_rebar_shear_eff_z1 = length_rebar_longitudinal - 2 * dekking - diameter_rebar_shear_z1
     
     # Zone 2
-    bz2_eff_bottom = float(bz2) - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_bottom_z2
-    bz2_eff_top = float(bz2) - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_top_z2
+    bz2_eff_bottom = float(bz2) - 2 * dekking - diameter_rebar_bottom_z2
+    bz2_eff_top = float(bz2) - 2 * dekking - diameter_rebar_top_z2
+    width_rebar_shear_eff_z2 = length_rebar_longitudinal - 2 * dekking - diameter_rebar_shear_z2
     
     # Zone 3
-    bz3_eff_bottom = float(bz3) - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_bottom_z3
-    bz3_eff_top = float(bz3) - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_top_z3
+    bz3_eff_bottom = float(bz3) - 2 * dekking - diameter_rebar_bottom_z3
+    bz3_eff_top = float(bz3) - 2 * dekking - diameter_rebar_top_z3
+    width_rebar_shear_eff_z3 = length_rebar_longitudinal - 2 * dekking - diameter_rebar_shear_z3
     
-    #Calculate the z positions of the rebars in the bottom and top.
+    # Calculate z positions based on reinforcement configuration
     z_position_bottom = 0 - params.bridge_segments_array[0].dz
-    rebar_z_position_bottom = z_position_bottom + (params.input.geometrie_wapening.dekking / 1000) + 0.5 * diameter_rebar_bottom_z2  # Using z2 as reference
-    
-    # Calculate z positions for top rebars - different for each zone
-    # Zone 1 and 3 - at top of regular height
-    rebar_z_position_top_zone1 = - (params.input.geometrie_wapening.dekking / 1000) - 0.5 * diameter_rebar_top_z1
-    rebar_z_position_top_zone3 = - (params.input.geometrie_wapening.dekking / 1000) - 0.5 * diameter_rebar_top_z3
-    # Zone 2 - at increased height
     z_position_top = params.bridge_segments_array[0].dz_2 - params.bridge_segments_array[0].dz
-    rebar_z_position_top_zone2 = z_position_top - (params.input.geometrie_wapening.dekking / 1000) - 0.5 * diameter_rebar_top_z2
+    
+    if langswapening_buiten:
+        # Bottom configuration - longitudinal outside, shear inside
+        # First the longitudinal bars
+        rebar_z_position_bottom = z_position_bottom + dekking + 0.5 * diameter_rebar_bottom_z2
+        # Then the shear bars above them
+        z_pos_shear_bottom_z1 = rebar_z_position_bottom + 0.5 * (diameter_rebar_bottom_z1 + diameter_rebar_shear_z1)
+        z_pos_shear_bottom_z2 = rebar_z_position_bottom + 0.5 * (diameter_rebar_bottom_z2 + diameter_rebar_shear_z2)
+        z_pos_shear_bottom_z3 = rebar_z_position_bottom + 0.5 * (diameter_rebar_bottom_z3 + diameter_rebar_shear_z3)
+
+        # Top configuration - longitudinal outside, shear inside
+        # First the longitudinal bars
+        rebar_z_position_top_zone1 = -(dekking + 0.5 * diameter_rebar_top_z1)
+        rebar_z_position_top_zone3 = -(dekking + 0.5 * diameter_rebar_top_z3)
+        rebar_z_position_top_zone2 = z_position_top - (dekking + 0.5 * diameter_rebar_top_z2)
+        # Then the shear bars below them
+        z_pos_shear_top_z1 = rebar_z_position_top_zone1 + (diameter_rebar_top_z1 + 0.5 * diameter_rebar_shear_z1)
+        z_pos_shear_top_z2 = rebar_z_position_top_zone2 + (diameter_rebar_top_z2 + 0.5 * diameter_rebar_shear_z2)
+        z_pos_shear_top_z3 = rebar_z_position_top_zone3 + (diameter_rebar_top_z3 + 0.5 * diameter_rebar_shear_z3)
+    else:
+        # Bottom configuration - shear outside, longitudinal inside
+        # First the shear bars
+        z_pos_shear_bottom = z_position_bottom + dekking 
+        z_pos_shear_bottom_z1 = z_pos_shear_bottom + 0.5 * diameter_rebar_shear_z1
+        z_pos_shear_bottom_z2 = z_pos_shear_bottom + 0.5 * diameter_rebar_shear_z2
+        z_pos_shear_bottom_z3 = z_pos_shear_bottom + 0.5 * diameter_rebar_shear_z3
+        # Then the longitudinal bars above them
+        rebar_z_position_bottom = z_pos_shear_bottom + max(
+            diameter_rebar_shear_z1 + 0.5 * diameter_rebar_bottom_z1,
+            diameter_rebar_shear_z2 + 0.5 * diameter_rebar_bottom_z2,
+            diameter_rebar_shear_z3 + 0.5 * diameter_rebar_bottom_z3
+        )
+
+        # Top configuration - shear outside, longitudinal inside
+        # First the shear bars
+        z_pos_shear_top_z1 = -(dekking + 0.5 * diameter_rebar_shear_z1)
+        z_pos_shear_top_z3 = -(dekking + 0.5 * diameter_rebar_shear_z3)
+        z_pos_shear_top_z2 = z_position_top - (dekking + 0.5 * diameter_rebar_shear_z2)
+        # Then the longitudinal bars below them
+        rebar_z_position_top_zone1 = z_pos_shear_top_z1 - (diameter_rebar_shear_z1 + 0.5 * diameter_rebar_top_z1)
+        rebar_z_position_top_zone3 = z_pos_shear_top_z3 - (diameter_rebar_shear_z3 + 0.5 * diameter_rebar_top_z3)
+        rebar_z_position_top_zone2 = z_pos_shear_top_z2 - (diameter_rebar_shear_z2 + 0.5 * diameter_rebar_top_z2)
 
     # Create a scene for all rebars
     rebar_scene = trimesh.Scene()
@@ -168,44 +215,6 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             rebar_copy.visual.face_colors = color
             rebar_scene.add_geometry(rebar_copy)
 
-    # Calculate y-offsets for each zone
-    y_offset_z1 = bz2/2 + bz1/2  # Positive offset for zone 1
-    y_offset_z3 = -(bz2/2 + bz3/2)  # Negative offset for zone 3
-    
-    # Create rebars for Zone 1
-    bottom_positions_z1 = calculate_rebar_positions(bz1_eff_bottom, hoh_bottom_z1, y_offset_z1)
-    create_rebar_meshes(bottom_positions_z1, rebar_z_position_bottom, diameter_rebar_bottom_z1)
-    top_positions_z1 = calculate_rebar_positions(bz1_eff_top, hoh_top_z1, y_offset_z1)
-    create_rebar_meshes(top_positions_z1, rebar_z_position_top_zone1, diameter_rebar_top_z1)
-
-    # Create rebars for Zone 2 (center zone)
-    bottom_positions_z2 = calculate_rebar_positions(bz2_eff_bottom, hoh_bottom_z2)
-    create_rebar_meshes(bottom_positions_z2, rebar_z_position_bottom, diameter_rebar_bottom_z2)
-    top_positions_z2 = calculate_rebar_positions(bz2_eff_top, hoh_top_z2)
-    create_rebar_meshes(top_positions_z2, rebar_z_position_top_zone2, diameter_rebar_top_z2)
-
-    # Create rebars for Zone 3
-    bottom_positions_z3 = calculate_rebar_positions(bz3_eff_bottom, hoh_bottom_z3, y_offset_z3)
-    create_rebar_meshes(bottom_positions_z3, rebar_z_position_bottom, diameter_rebar_bottom_z3)
-    top_positions_z3 = calculate_rebar_positions(bz3_eff_top, hoh_top_z3, y_offset_z3)
-    create_rebar_meshes(top_positions_z3, rebar_z_position_top_zone3, diameter_rebar_top_z3)
-
-    # Create shear reinforcement for each zone
-    # Zone 1 parameters
-    diameter_rebar_shear_z1 = reinforcement_zones_array[0].hoofdwapening_dwars_diameter / 1000
-    hoh_shear_z1 = reinforcement_zones_array[0].hoofdwapening_dwars_hart_op_hart / 1000
-    width_rebar_shear_eff_z1 = length_rebar_longitudinal - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_shear_z1
-    
-    # Zone 2 parameters
-    diameter_rebar_shear_z2 = reinforcement_zones_array[1].hoofdwapening_dwars_diameter / 1000
-    hoh_shear_z2 = reinforcement_zones_array[1].hoofdwapening_dwars_hart_op_hart / 1000
-    width_rebar_shear_eff_z2 = length_rebar_longitudinal - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_shear_z2
-    
-    # Zone 3 parameters
-    diameter_rebar_shear_z3 = reinforcement_zones_array[2].hoofdwapening_dwars_diameter / 1000
-    hoh_shear_z3 = reinforcement_zones_array[2].hoofdwapening_dwars_hart_op_hart / 1000
-    width_rebar_shear_eff_z3 = length_rebar_longitudinal - 2 * (params.input.geometrie_wapening.dekking / 1000) - diameter_rebar_shear_z3
-    
     # Helper function for shear rebar positions
     def get_shear_positions(width_eff: float, hoh: float, diameter: float) -> list[float]:
         """Calculate x positions for shear reinforcement.
@@ -250,57 +259,63 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         
         return bottom_shear, top_shear
 
-    # Calculate z positions for shear reinforcement based on longitudinal rebar positions
-    z_pos_shear_bottom_z1 = rebar_z_position_bottom + 0.5 * (diameter_rebar_bottom_z1 + diameter_rebar_shear_z1)
-    z_pos_shear_bottom_z2 = rebar_z_position_bottom + 0.5 * (diameter_rebar_bottom_z2 + diameter_rebar_shear_z2)
-    z_pos_shear_bottom_z3 = rebar_z_position_bottom + 0.5 * (diameter_rebar_bottom_z3 + diameter_rebar_shear_z3)
+    # Calculate y-offsets for each zone
+    y_offset_z1 = bz2/2 + bz1/2  # Positive offset for zone 1
+    y_offset_z3 = -(bz2/2 + bz3/2)  # Negative offset for zone 3
+    
+    # Create longitudinal rebars
+    # Zone 1
+    bottom_positions_z1 = calculate_rebar_positions(bz1_eff_bottom, hoh_bottom_z1, y_offset_z1)
+    create_rebar_meshes(bottom_positions_z1, rebar_z_position_bottom, diameter_rebar_bottom_z1)
+    top_positions_z1 = calculate_rebar_positions(bz1_eff_top, hoh_top_z1, y_offset_z1)
+    create_rebar_meshes(top_positions_z1, rebar_z_position_top_zone1, diameter_rebar_top_z1)
 
-    z_pos_shear_top_z1 = rebar_z_position_top_zone1 - 0.5 * (diameter_rebar_top_z1 + diameter_rebar_shear_z1)
-    z_pos_shear_top_z2 = rebar_z_position_top_zone2 - 0.5 * (diameter_rebar_top_z2 + diameter_rebar_shear_z2)
-    z_pos_shear_top_z3 = rebar_z_position_top_zone3 - 0.5 * (diameter_rebar_top_z3 + diameter_rebar_shear_z3)
+    # Zone 2
+    bottom_positions_z2 = calculate_rebar_positions(bz2_eff_bottom, hoh_bottom_z2)
+    create_rebar_meshes(bottom_positions_z2, rebar_z_position_bottom, diameter_rebar_bottom_z2)
+    top_positions_z2 = calculate_rebar_positions(bz2_eff_top, hoh_top_z2)
+    create_rebar_meshes(top_positions_z2, rebar_z_position_top_zone2, diameter_rebar_top_z2)
 
-    # Calculate x positions for shear rebars in each zone
+    # Zone 3
+    bottom_positions_z3 = calculate_rebar_positions(bz3_eff_bottom, hoh_bottom_z3, y_offset_z3)
+    create_rebar_meshes(bottom_positions_z3, rebar_z_position_bottom, diameter_rebar_bottom_z3)
+    top_positions_z3 = calculate_rebar_positions(bz3_eff_top, hoh_top_z3, y_offset_z3)
+    create_rebar_meshes(top_positions_z3, rebar_z_position_top_zone3, diameter_rebar_top_z3)
+
+    # Create shear rebars
+    # Calculate x positions for shear rebars
     shear_x_positions_z1 = get_shear_positions(width_rebar_shear_eff_z1, hoh_shear_z1, diameter_rebar_shear_z1)
     shear_x_positions_z2 = get_shear_positions(width_rebar_shear_eff_z2, hoh_shear_z2, diameter_rebar_shear_z2)
     shear_x_positions_z3 = get_shear_positions(width_rebar_shear_eff_z3, hoh_shear_z3, diameter_rebar_shear_z3)
 
-    # Create and position shear rebars for each zone
-    # Zone 1 (bz2/2 y-offset)
+    # Create and position shear rebars
+    # Zone 1
     for x_pos in shear_x_positions_z1:
         bottom_shear, top_shear = create_shear_rebar_pair(diameter_rebar_shear_z1, bz1)
-        
         bottom_shear.apply_translation([x_pos, bz1/2 + bz2/2, z_pos_shear_bottom_z1])
         top_shear.apply_translation([x_pos, bz1/2 + bz2/2, z_pos_shear_top_z1])
-        
         bottom_shear.visual.face_colors = color
         top_shear.visual.face_colors = color
-        
         rebar_scene.add_geometry(bottom_shear)
         rebar_scene.add_geometry(top_shear)
 
-    # Zone 2 (no y-offset)
+    # Zone 2
     for x_pos in shear_x_positions_z2:
         bottom_shear, top_shear = create_shear_rebar_pair(diameter_rebar_shear_z2, bz2)
-        
         bottom_shear.apply_translation([x_pos, 0, z_pos_shear_bottom_z2])
         top_shear.apply_translation([x_pos, 0, z_pos_shear_top_z2])
-        
         bottom_shear.visual.face_colors = color
         top_shear.visual.face_colors = color
-        
         rebar_scene.add_geometry(bottom_shear)
         rebar_scene.add_geometry(top_shear)
 
-    # Zone 3 (-(bz2/2 + bz3) y-offset)
+    # Zone 3
     for x_pos in shear_x_positions_z3:
         bottom_shear, top_shear = create_shear_rebar_pair(diameter_rebar_shear_z3, bz3)
-        
         bottom_shear.apply_translation([x_pos, -(bz2/2 + bz3/2), z_pos_shear_bottom_z3])
         top_shear.apply_translation([x_pos, -(bz2/2 + bz3/2), z_pos_shear_top_z3])
-        
         bottom_shear.visual.face_colors = color
         top_shear.visual.face_colors = color
-        
         rebar_scene.add_geometry(bottom_shear)
         rebar_scene.add_geometry(top_shear)
 
@@ -315,6 +330,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         return sum(spacings) / len(spacings) if spacings else None
 
     print("\nShear Reinforcement Details:")
+    print(f"Configuration: {'Longitudinal outside, shear inside' if langswapening_buiten else 'Shear outside, longitudinal inside'}")
     print("Zone 1:")
     print(f"  - Number of bars: {len(shear_x_positions_z1)}")
     print(f"  - Theoretical h.o.h: {hoh_shear_z1:.3f}m")
