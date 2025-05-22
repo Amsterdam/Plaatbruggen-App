@@ -11,6 +11,7 @@ from viktor.parametrization import (
     Parametrization,
     Tab,
     Text,
+    MultiSelectField,
 )
 
 
@@ -27,6 +28,10 @@ class BridgeParametrization(Parametrization):
     input.geometrie_wapening = Tab("Wapening")
     input.belastingzones = Tab("Belastingzones")
     input.belastingcombinaties = Tab("Belastingcombinaties")
+
+    # --- Load Combinations (in belastingcombinaties tab) ---
+    input.belastingcombinaties.cc_class = MultiSelectField("Gevolgklasse", options=['CC1a/b', 'CC2', 'CC3'])
+    input.belastingcombinaties.uls_comb_factor = MultiSelectField("Belastingscombinaties", options=['ULS', 'SLS', 'FAT'])
 
     # --- Bridge Geometry (moved to geometrie_brug tab) ---
     input.dimensions.top_view_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
@@ -99,10 +104,6 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     # --- Load Zones (in belastingzones tab) ---
     input.belastingzones.zone_breedte = NumberField("Zone Breedte", default=1.0, suffix="m")
     input.belastingzones.load_intensity = NumberField("Belasting Intensiteit", default=5.0, suffix="kN/m²")
-
-    # --- Load Combinations (in belastingcombinaties tab) ---
-    input.belastingcombinaties.permanent_factor = NumberField("Factor Permanente Belasting", default=1.35)
-    input.belastingcombinaties.variable_factor = NumberField("Factor Variabele Belasting", default=1.50)
 
     # --- Added Pages ---
     scia = Page("SCIA")
