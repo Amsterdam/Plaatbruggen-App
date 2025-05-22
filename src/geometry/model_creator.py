@@ -65,6 +65,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
 
     Returns:
         trimesh.Trimesh: A trimesh object representing the rebars.
+
     """
     def get_cumulative_distance(segment_idx: int) -> float:
         """Calculate the cumulative distance to the start of a segment."""
@@ -77,18 +78,18 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     def get_zone_parameters(zone_entry: Munch) -> dict:
         """Get all parameters for a specific zone."""
         return {
-            'zone_number': zone_entry.zone_number,
-            'diam_long_bottom': zone_entry.hoofdwapening_langs_onder_diameter / 1000,
-            'hoh_long_bottom': zone_entry.hoofdwapening_langs_onder_hart_op_hart / 1000,
-            'diam_long_top': zone_entry.hoofdwapening_langs_boven_diameter / 1000,
-            'hoh_long_top': zone_entry.hoofdwapening_langs_boven_hart_op_hart / 1000,
-            'diam_shear': zone_entry.hoofdwapening_dwars_diameter / 1000,
-            'hoh_shear': zone_entry.hoofdwapening_dwars_hart_op_hart / 1000
+            "zone_number": zone_entry.zone_number,
+            "diam_long_bottom": zone_entry.hoofdwapening_langs_onder_diameter / 1000,
+            "hoh_long_bottom": zone_entry.hoofdwapening_langs_onder_hart_op_hart / 1000,
+            "diam_long_top": zone_entry.hoofdwapening_langs_boven_diameter / 1000,
+            "hoh_long_top": zone_entry.hoofdwapening_langs_boven_hart_op_hart / 1000,
+            "diam_shear": zone_entry.hoofdwapening_dwars_diameter / 1000,
+            "hoh_shear": zone_entry.hoofdwapening_dwars_hart_op_hart / 1000
         }
 
     def parse_zone_number(zone_number: str) -> tuple[int, int]:
         """Parse zone number 'X-Y' into position (1,2,3) and segment index (1,2,...)."""
-        position, segment = map(int, zone_number.split('-'))
+        position, segment = map(int, zone_number.split("-"))
         return position, segment - 1  # Convert to 0-based segment index
 
     def get_zone_dimensions(position: int, segment_idx: int) -> dict:
@@ -97,9 +98,9 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         next_segment_data = bridge_segments_array[segment_idx + 1]
 
         # Get the zone widths at the start and end of the segment
-        bz = getattr(segment_data, f'bz{position}')
-        bz_next = getattr(next_segment_data, f'bz{position}')
-        
+        bz = getattr(segment_data, f"bz{position}")
+        bz_next = getattr(next_segment_data, f"bz{position}")
+
         # For position 2 (middle zone), use bz2 for both height and width
         if position == 2:
             height_start = segment_data.bz2
@@ -109,19 +110,19 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             height_end = bz_next
 
         return {
-            'bz': bz,
-            'bz_next': bz_next,
-            'height_start': height_start,
-            'height_end': height_end,
-            'length': next_segment_data.l
+            "bz": bz,
+            "bz_next": bz_next,
+            "height_start": height_start,
+            "height_end": height_end,
+            "length": next_segment_data.l
         }
 
     def calculate_effective_widths(zone_params: dict, zone_dims: dict) -> dict:
         """Calculate effective widths for rebar placement."""
         return {
-            'long_bottom': float(zone_dims['bz']) - 2 * dekking - zone_params['diam_long_bottom'],
-            'long_top': float(zone_dims['bz']) - 2 * dekking - zone_params['diam_long_top'],
-            'shear': zone_dims['length'] - 2 * dekking - zone_params['diam_shear']
+            "long_bottom": float(zone_dims["bz"]) - 2 * dekking - zone_params["diam_long_bottom"],
+            "long_top": float(zone_dims["bz"]) - 2 * dekking - zone_params["diam_long_top"],
+            "shear": zone_dims["length"] - 2 * dekking - zone_params["diam_shear"]
         }
 
     def calculate_z_positions(is_middle_zone: bool, zone_params: dict) -> dict:
@@ -129,37 +130,37 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         pos = {}
         if langswapening_buiten:
             # Bottom configuration - longitudinal outside, shear inside
-            pos['long_bottom'] = z_position_bottom + dekking + 0.5 * zone_params['diam_long_bottom']
-            pos['shear_bottom'] = pos['long_bottom'] + 0.5 * (zone_params['diam_long_bottom'] + zone_params['diam_shear'])
-            
+            pos["long_bottom"] = z_position_bottom + dekking + 0.5 * zone_params["diam_long_bottom"]
+            pos["shear_bottom"] = pos["long_bottom"] + 0.5 * (zone_params["diam_long_bottom"] + zone_params["diam_shear"])
+
             # Top configuration - longitudinal outside, shear inside
             if is_middle_zone:
-                pos['long_top'] = z_position_top - (dekking + 0.5 * zone_params['diam_long_top'])
+                pos["long_top"] = z_position_top - (dekking + 0.5 * zone_params["diam_long_top"])
             else:
-                pos['long_top'] = -(dekking + 0.5 * zone_params['diam_long_top'])
-            pos['shear_top'] = pos['long_top'] + (zone_params['diam_long_top'] + 0.5 * zone_params['diam_shear'])
+                pos["long_top"] = -(dekking + 0.5 * zone_params["diam_long_top"])
+            pos["shear_top"] = pos["long_top"] + (zone_params["diam_long_top"] + 0.5 * zone_params["diam_shear"])
         else:
             # Bottom configuration - shear outside, longitudinal inside
-            pos['shear_bottom'] = z_position_bottom + dekking + 0.5 * zone_params['diam_shear']
-            pos['long_bottom'] = pos['shear_bottom'] + zone_params['diam_shear'] + 0.5 * zone_params['diam_long_bottom']
-            
+            pos["shear_bottom"] = z_position_bottom + dekking + 0.5 * zone_params["diam_shear"]
+            pos["long_bottom"] = pos["shear_bottom"] + zone_params["diam_shear"] + 0.5 * zone_params["diam_long_bottom"]
+
             # Top configuration - shear outside, longitudinal inside
             if is_middle_zone:
-                pos['shear_top'] = z_position_top - (dekking + 0.5 * zone_params['diam_shear'])
+                pos["shear_top"] = z_position_top - (dekking + 0.5 * zone_params["diam_shear"])
             else:
-                pos['shear_top'] = -(dekking + 0.5 * zone_params['diam_shear'])
-            pos['long_top'] = pos['shear_top'] - (zone_params['diam_shear'] + 0.5 * zone_params['diam_long_top'])
+                pos["shear_top"] = -(dekking + 0.5 * zone_params["diam_shear"])
+            pos["long_top"] = pos["shear_top"] - (zone_params["diam_shear"] + 0.5 * zone_params["diam_long_top"])
         return pos
 
     def calculate_y_offset(position: int, segment_idx: int) -> float:
         """Calculate y offset for a zone."""
         bz2 = bridge_segments_array[segment_idx].bz2
         zone_dim = get_zone_dimensions(position, segment_idx)
-        
+
         if position == 1:  # Left zone
-            return bz2/2 + zone_dim['bz']/2
-        elif position == 3:  # Right zone
-            return -(bz2/2 + zone_dim['bz']/2)
+            return bz2/2 + zone_dim["bz"]/2
+        if position == 3:  # Right zone
+            return -(bz2/2 + zone_dim["bz"]/2)
         return 0  # Middle zone
 
     def calculate_rebar_positions(width: float, hoh: float, y_offset: float = 0) -> list[float]:
@@ -180,7 +181,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             for i in range(1, (n_rebars + 1) // 2):
                 offset = i * actual_hoh
                 positions.extend([-offset, offset])
-        
+
         positions.sort()
         return [pos + y_offset for pos in positions]
 
@@ -191,7 +192,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             return []
 
         actual_hoh = width_eff / n_rebars
-        start_offset = dekking + 0.5 * zone_params['diam_shear']
+        start_offset = dekking + 0.5 * zone_params["diam_shear"]
         mid_x = width_eff / 2 + start_offset
         positions = []
 
@@ -204,11 +205,19 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             for i in range(1, (n_rebars + 1) // 2):
                 x_offset = i * actual_hoh
                 positions.extend([mid_x - x_offset, mid_x + x_offset])
-        
+
         positions.sort()
         return positions
 
-    def create_rebar_meshes(positions: list[float], z_position: float, diameter: float, segment_length: float, x_offset: float, height_start: float = None, height_end: float = None) -> None:
+    def create_rebar_meshes(  # noqa: PLR0913
+        positions: list[float],
+        z_position: float,
+        diameter: float,
+        segment_length: float,
+        x_offset: float,
+        height_start: float = None,
+        height_end: float = None
+    ) -> None:
         """Create and position longitudinal rebar meshes."""
         if height_start is None:
             height_start = diameter
@@ -222,7 +231,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
                 height=segment_length,
                 sections=16
             )
-            
+
             # Rotate to align with X axis
             rebar.apply_transform(
                 trimesh.transformations.rotation_matrix(
@@ -230,14 +239,23 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
                     direction=[0, 1, 0]
                 )
             )
-            
+
             # Position the rebar with the cumulative x_offset
             rebar_copy = rebar.copy()
             rebar_copy.apply_translation([x_offset + segment_length/2, y_pos, z_position])
             rebar_copy.visual.face_colors = color
             rebar_scene.add_geometry(rebar_copy)
 
-    def create_shear_rebars(x_positions: list[float], y_offset: float, height: float, zone_params: dict, z_positions: dict, x_offset: float, height_start: float = None, height_end: float = None) -> None:
+    def create_shear_rebars(  # noqa: PLR0913
+        x_positions: list[float],
+        y_offset: float,
+        height: float,
+        zone_params: dict,
+        z_positions: dict,
+        x_offset: float,
+        height_start: float | None = None,
+        height_end: float | None = None
+    ) -> None:
         """Create and position shear rebars for a zone."""
         if height_start is None:
             height_start = height
@@ -247,23 +265,23 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         for i, relative_x_pos in enumerate(x_positions):
             # Add the cumulative x_offset to position the rebar in the correct segment
             x_pos = x_offset + relative_x_pos
-            
+
             # Calculate height at this x position
             interpolation_factor = i / (len(x_positions) - 1) if len(x_positions) > 1 else 0.5
             height_at_x = height_start + (height_end - height_start) * interpolation_factor
-            
+
             # Create bottom and top shear rebars
-            bottom_shear = trimesh.creation.cylinder(radius=zone_params['diam_shear']/2, height=height_at_x, sections=16)
-            top_shear = trimesh.creation.cylinder(radius=zone_params['diam_shear']/2, height=height_at_x, sections=16)
-            
+            bottom_shear = trimesh.creation.cylinder(radius=zone_params["diam_shear"]/2, height=height_at_x, sections=16)
+            top_shear = trimesh.creation.cylinder(radius=zone_params["diam_shear"]/2, height=height_at_x, sections=16)
+
             rotation_matrix = trimesh.transformations.rotation_matrix(angle=np.pi/2, direction=[1, 0, 0])
             bottom_shear.apply_transform(rotation_matrix)
             top_shear.apply_transform(rotation_matrix)
-            
+
             # Position the rebars with the cumulative x_offset
-            bottom_shear.apply_translation([x_pos, y_offset, z_positions['shear_bottom']])
-            top_shear.apply_translation([x_pos, y_offset, z_positions['shear_top']])
-            
+            bottom_shear.apply_translation([x_pos, y_offset, z_positions["shear_bottom"]])
+            top_shear.apply_translation([x_pos, y_offset, z_positions["shear_top"]])
+
             # Set colors and add to scene
             bottom_shear.visual.face_colors = color
             top_shear.visual.face_colors = color
@@ -283,53 +301,53 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     for zone_entry in reinforcement_zones_array:
         # Parse zone number to get position and segment
         position, segment_idx = parse_zone_number(zone_entry.zone_number)
-        
+
         # Get parameters and dimensions for this zone
         zone_params = get_zone_parameters(zone_entry)
         zone_dims = get_zone_dimensions(position, segment_idx)
-        
+
         # Calculate the cumulative distance to this segment
         x_offset = get_cumulative_distance(segment_idx)
-        
+
         # Calculate widths, positions and offsets
         effective_widths = calculate_effective_widths(zone_params, zone_dims)
         z_positions = calculate_z_positions(position == 2, zone_params)
         y_offset = calculate_y_offset(position, segment_idx)
 
         # Create longitudinal reinforcement
-        bottom_positions = calculate_rebar_positions(effective_widths['long_bottom'], zone_params['hoh_long_bottom'], y_offset)
+        bottom_positions = calculate_rebar_positions(effective_widths["long_bottom"], zone_params["hoh_long_bottom"], y_offset)
         create_rebar_meshes(
             bottom_positions,
-            z_positions['long_bottom'],
-            zone_params['diam_long_bottom'],
-            zone_dims['length'],
+            z_positions["long_bottom"],
+            zone_params["diam_long_bottom"],
+            zone_dims["length"],
             x_offset,
-            zone_dims['height_start'],
-            zone_dims['height_end']
+            zone_dims["height_start"],
+            zone_dims["height_end"]
         )
-        
-        top_positions = calculate_rebar_positions(effective_widths['long_top'], zone_params['hoh_long_top'], y_offset)
+
+        top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
         create_rebar_meshes(
             top_positions,
-            z_positions['long_top'],
-            zone_params['diam_long_top'],
-            zone_dims['length'],
+            z_positions["long_top"],
+            zone_params["diam_long_top"],
+            zone_dims["length"],
             x_offset,
-            zone_dims['height_start'],
-            zone_dims['height_end']
+            zone_dims["height_start"],
+            zone_dims["height_end"]
         )
 
         # Create shear reinforcement
-        shear_positions = get_shear_positions(effective_widths['shear'], zone_params['hoh_shear'], zone_params)
+        shear_positions = get_shear_positions(effective_widths["shear"], zone_params["hoh_shear"], zone_params)
         create_shear_rebars(
             shear_positions,
             y_offset,
-            zone_dims['bz'],
+            zone_dims["bz"],
             zone_params,
             z_positions,
             x_offset,
-            zone_dims['height_start'],
-            zone_dims['height_end']
+            zone_dims["height_start"],
+            zone_dims["height_end"]
         )
 
     return rebar_scene
