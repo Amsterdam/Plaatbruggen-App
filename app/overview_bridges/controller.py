@@ -11,7 +11,7 @@ from io import StringIO
 
 # Add GeoPandas import (ensure it's installed in your venv)
 import geopandas as gpd
-import markdown
+import markdown # type: ignore[import-untyped]
 import viktor.api_v1 as api  # Import VIKTOR API
 from viktor.core import ViktorController  # Import Color, ViktorController
 from viktor.errors import UserError  # Import UserError
