@@ -2,8 +2,22 @@
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
-
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
+from viktor.core import File, ViktorController
+from viktor.errors import UserError  # Add UserError
+from viktor.utils import convert_word_to_pdf
+from viktor.views import (
+    GeometryResult,
+    GeometryView,
+    MapPoint,  # Add MapPoint
+    MapResult,  # Add MapResult
+    MapView,  # Add MapView
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
+)
+
 from app.common.map_utils import (
     load_and_filter_bridge_shapefile,  # Import the new function
     process_bridge_geometries,
@@ -18,20 +32,6 @@ from src.geometry.longitudinal_section import create_longitudinal_section
 from src.geometry.model_creator import (
     create_2d_top_view,
     create_3d_model,
-)
-from viktor.core import File, ViktorController
-from viktor.errors import UserError  # Add UserError
-from viktor.utils import convert_word_to_pdf
-from viktor.views import (
-    GeometryResult,
-    GeometryView,
-    MapPoint,  # Add MapPoint
-    MapResult,  # Add MapResult
-    MapView,  # Add MapView
-    PDFResult,
-    PDFView,
-    PlotlyResult,  # Import PlotlyResult
-    PlotlyView,  # Import PlotlyView
 )
 
 # Import parametrization from the separate file
