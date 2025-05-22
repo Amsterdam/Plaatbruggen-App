@@ -11,9 +11,8 @@ from src.geometry.model_creator import create_3d_model, create_cross_section
 if TYPE_CHECKING:
     pass
 
-def create_horizontal_section_annotations(
-    params: dict | Munch, all_y: list[float]
-) -> list[go.layout.Annotation]:
+
+def create_horizontal_section_annotations(params: dict | Munch, all_y: list[float]) -> list[go.layout.Annotation]:
     """
     Create Plotly annotation objects for the horizontal section view.
 
@@ -24,6 +23,8 @@ def create_horizontal_section_annotations(
     :returns: List of Plotly annotation objects for the horizontal section.
     :rtype: list[go.layout.Annotation]
     """
+    if not isinstance(params, Munch):
+        params = Munch.fromDict(params)
     all_annotations = []
     only_zone2 = False
     if params.input.dimensions.horizontal_section_loc >= 0:
@@ -47,17 +48,17 @@ def create_horizontal_section_annotations(
         b_values_1.append(segment.bz1)
         b_values_2.append(segment.bz2)
         b_values_3.append(segment.bz3)
-        zone1_center_y.append(segment.bz2/2 + segment.bz1/2)
+        zone1_center_y.append(segment.bz2 / 2 + segment.bz1 / 2)
         zone2_center_y.append(0)
-        zone3_center_y.append(-segment.bz2/2 - segment.bz3/2)
+        zone3_center_y.append(-segment.bz2 / 2 - segment.bz3 / 2)
 
-    zone_center_x = [cum + val/2 for cum, val in zip(l_values_cumulative, l_values[1:])]
+    zone_center_x = [cum + val / 2 for cum, val in zip(l_values_cumulative, l_values[1:])]
 
     cross_section_labels = [
         go.layout.Annotation(
             x=cs_x,
             y=max(all_y) + 0.5,
-            text=f"<b>D-{i+1}</b>",
+            text=f"<b>D-{i + 1}</b>",
             showarrow=False,
             font={"size": 15, "color": "black"},
             align="center",
@@ -77,7 +78,7 @@ def create_horizontal_section_annotations(
             go.layout.Annotation(
                 x=zcx,
                 y=cz1,
-                text=f"<b>Z1-{i+1}</b>",
+                text=f"<b>Z1-{i + 1}</b>",
                 showarrow=False,
                 font={"size": 12, "color": "black"},
                 align="center",
@@ -94,7 +95,7 @@ def create_horizontal_section_annotations(
         go.layout.Annotation(
             x=zcx,
             y=cz2,
-            text=f"<b>Z2-{i+1}</b>",
+            text=f"<b>Z2-{i + 1}</b>",
             showarrow=False,
             font={"size": 12, "color": "black"},
             align="center",
@@ -112,7 +113,7 @@ def create_horizontal_section_annotations(
             go.layout.Annotation(
                 x=zcx,
                 y=cz3,
-                text=f"<b>Z3-{i+1}</b>",
+                text=f"<b>Z3-{i + 1}</b>",
                 showarrow=False,
                 font={"size": 12, "color": "black"},
                 align="center",

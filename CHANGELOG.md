@@ -9,15 +9,33 @@ Semantic versioning is used to denote different versions of this project.
 ### Added
 - Added `wapening_buigstraal.csv` containing minimum bending radii specifications for different reinforcement bar diameters (6mm to 40mm) according to Eurocode 2.
 - Added "Info" page to the `Bridge` entity, displaying a map view of the specific bridge.
+- Implemented parametrization for "Belastingzones" (Load Zones) within the `Bridge` entity:
+    - Added a "Belastingzones" tab to the "Invoer" page.
+    - Introduced a `DynamicArray` (`load_zones_array`) for defining multiple load zones, each with a selectable `zone_type` (e.g., "Voetgangers", "Fietsers", "Auto").
+    - Added `NumberField`s (`d1_width` to `d15_width`) for specifying zone widths at each bridge cross-section (D-point), with dynamic visibility for D3-D15 based on defined bridge segments.
+    - Configured a default of two load zones upon entity creation.
+- Developed a new "Belastingzones" `PlotlyView` in `BridgeController` to visualize load zones:
+    - Displays a 2D top-down view of the bridge outline.
+    - Draws lines representing the boundaries of each load zone, stacked downwards.
+    - The final load zone extends to the bottom of the bridge's structural area.
+    - Annotates each zone with its type at the right end of the plot.
+    - Adds "D1", "D2", etc., labels at the top, aligned with bridge cross-sections.
+- Enhanced "Belastingzones" (Load Zones) functionality:
+    - Introduced a new "Berm" load zone type with a distinct visual style (yellow, cross-hatch).
+    - Updated the default load zone configuration to include a "Berm" zone.
+    - Implemented validation for load zone widths:
+        - Ensures total zone width does not exceed available bridge width at each D-point.
+        - Displays clear warning annotations on "Bovenaanzicht" and "Belastingzones" views if discrepancies are found.
+        - Highlights individual load zones in red on the "Belastingzones" view if they geometrically exceed bridge boundaries.
 - Dynamic zone numbering system in reinforcement tab:
-  - Automatic zone number generation based on bridge segments
-  - Format "location-segment" (e.g., "1-1", "2-1", "3-1", "1-2", etc.)
-  - First number indicates location (1=left, 2=middle, 3=right)
-  - Second number indicates segment number
+    - Automatic zone number generation based on bridge segments
+    - Format "location-segment" (e.g., "1-1", "2-1", "3-1", "1-2", etc.)
+    - First number indicates location (1=left, 2=middle, 3=right)
+    - Second number indicates segment number
 - New OptionField for zone selection in reinforcement input:
-  - Options dynamically generated based on number of bridge segments
-  - Options list updates automatically when segments are added/removed
-  - Proper zone labeling helps users identify reinforcement locations
+    - Options dynamically generated based on number of bridge segments
+    - Options list updates automatically when segments are added/removed
+    - Proper zone labeling helps users identify reinforcement locations
 
 ### Changed
 - Reorganized resources directory structure for better organization:
@@ -37,6 +55,10 @@ Semantic versioning is used to denote different versions of this project.
 - Performed internal refactoring of `BridgeController`'s `get_bridge_map_view` and related helper methods to enhance structure and address linter warnings.
 - Simplified shapefile path retrieval in `BridgeController` by inlining the `_get_shapefile_path` helper method into `get_bridge_map_view`.
 - Centralized individual bridge shapefile loading and filtering by moving logic from `BridgeController`._load_and_filter_geodataframe` to a new `load_and_filter_bridge_shapefile` function in `app/common/map_utils.py`.
+- Refactored `get_load_zones_view` method in `BridgeController` into helper functions (`_prepare_load_zone_geometry_data`, `_create_d_point_annotations`, `_add_load_zone_visuals`) for improved readability and reduced complexity.
+- Improved "Belastingzones" visualization and architecture:
+    - Refactored load zone plotting logic from the `app` layer (controller/utils) to dedicated modules within the `src/geometry/` layer for better separation of concerns and testability.
+    - Enhanced the appearance and positioning of validation warning annotations in "Bovenaanzicht" and "Belastingzones" views for improved clarity and user experience.
 
 ### Fixed
 - Resolved issues where `OBJECTNUMM` was not found in `Bridge` entity parameters by:
@@ -45,7 +67,6 @@ Semantic versioning is used to denote different versions of this project.
 - Addressed `AttributeError: info` for older `Bridge` entities by:
     - Making parameter access in `BridgeController` more robust using `params.get("info")`.
     - Updating `OverviewBridgesController` (`_create_missing_children` method) to correctly structure parameters under an "info" key when creating new bridge entities.
-- Corrected various Ruff linter errors in `BridgeController` and `app/common/map_utils.py`, including `ERA001` (commented-out code), `TRY301` (abstract `raise`), `C901`/`PLR0911`/`PLR0912` (complexity/branches/returns), `TRY300` (consider `else`), `W293` (whitespace), `RUF013` (implicit `Optional`), `ANN202` (missing return type), and `RET505` (unnecessary `else`).
 
 ## [`v0.0.4`] - 2025-05-08
 
@@ -114,4 +135,3 @@ Semantic versioning is used to denote different versions of this project.
 - Initial project structure
 
 ## [`v0.0.1`] - 2025-05-01
-

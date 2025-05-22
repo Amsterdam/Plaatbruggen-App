@@ -1,14 +1,17 @@
 """Functions for geometry calculations in the Bridge application."""
+
 import csv
-import os
 from pathlib import Path
 from app.constants import REINFORCEMENT_PATH
 
-def get_steel_qualities():
-    """Get list of available steel qualities from the CSV file.
-    
+
+def get_steel_qualities() -> list[str]:
+    """
+    Get list of available steel qualities from the CSV file.
+
     Returns:
         list: List of steel quality names
+
     """
     csv_path = REINFORCEMENT_PATH
     steel_qualities = []
@@ -20,4 +23,3 @@ def get_steel_qualities():
             steel_qualities.append(row["Betonstaalkwaliteit"].strip('"'))
     
     return steel_qualities
-

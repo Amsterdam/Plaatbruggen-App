@@ -71,6 +71,7 @@ instance/
 # Cursor stuff
 .cursor/
 
+
 # Sphinx documentation
 docs/_build/
 docs/source/gen/*
