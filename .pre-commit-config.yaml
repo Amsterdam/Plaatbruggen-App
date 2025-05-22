@@ -13,23 +13,25 @@
 # 4. If a hook fails and you see errors, fix them and try to commit again.
 #    The hooks will run again and the commit will only be made if they all pass.
 # 5. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
-# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
+# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.3
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.7
-    hooks:
-      # Run the linter.
+    hooks:      # Run the linter.
       - id: ruff
         args: [ --fix ]
+        stages: [pre-push]
       # Run the formatter.
       - id: ruff-format
+        stages: [pre-push]
 
   -   repo: https://github.com/pre-commit/mirrors-mypy
       rev: v1.15.0
       hooks:
       - id: mypy
         language_version: python3.12
+        stages: [pre-push]
         # Add dependencies needed by mypy that are not mypy itself
         additional_dependencies: [
             "types-Markdown",
