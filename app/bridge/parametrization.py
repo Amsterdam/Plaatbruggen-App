@@ -124,12 +124,14 @@ DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for 
 
 
 # --- Functions for dynamic reinforcement zones ---
-def calculate_max_array(params: Mapping) -> int:
+def calculate_max_array(params: Mapping, **kwargs) -> int:  # noqa: ARG001
     """
     Calculate the maximum number of reinforcement zones based on bridge segments.
 
     Args:
         params: Parameters object containing bridge_segments_array
+        **kwargs: Additional keyword arguments (unused).
+
     Returns:
         The maximum number of reinforcement zones (3 per segment)
 
@@ -138,12 +140,14 @@ def calculate_max_array(params: Mapping) -> int:
     return 3 * (sections - 1)
 
 
-def define_options_numbering(params: Mapping) -> list:
+def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     """
     Define options for zone numbering based on the number of segments.
 
     Args:
         params: Parameters containing bridge_segments_array
+        **kwargs: Additional keyword arguments (unused).
+
     Returns:
         list: List of zone numbers in format "location-segment" (e.g., ["1-1", "2-1", "3-1", "1-2", "2-2", "3-2"])
 
