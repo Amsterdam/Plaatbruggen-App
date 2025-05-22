@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
+## [`v0.0.6`] - 2025-05-22
+
+### Added
+- Enhanced reinforcement visualization in all three bridge zones:
+  - Added support for shear reinforcement bars in all zones
+  - Proper handling of both reinforcement configurations (longitudinal/shear inside/outside)
+  - Extension of reinforcement system to dynamically added zones
+  - Correct positioning of reinforcement in additional segments based on cumulative distances
+  - Accurate height calculations for shear reinforcement in the middle zone (bz2)
+
+### Changed
+- Refactored reinforcement creation code in `model_creator.py`:
+  - Split into modular, single-responsibility functions
+  - Added helper functions for zone parameter extraction
+  - Added zone dimension calculation functions
+  - Improved reinforcement positioning calculations
+  - Enhanced readability and maintainability of the code
+- Added support for the `langswapening_buiten` radio button:
+  - Dynamic switching between reinforcement configurations
+  - Proper spacing calculations between rebar layers
+  - Correct positioning of longitudinal and shear reinforcement based on configuration
+
 ## [`v0.0.5`] - 2025-05-15
 
 ### Added
