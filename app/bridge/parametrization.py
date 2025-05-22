@@ -241,11 +241,6 @@ Use the tabs below to view geometric properties, load configurations, and analys
     input.belastingcombinaties.cc_class = MultiSelectField("Gevolgklasse", options=['CC1a/b', 'CC2', 'CC3'])
     input.belastingcombinaties.uls_comb_factor = MultiSelectField("Belastingscombinaties", options=['ULS', 'SLS', 'FAT'])
 
-    # --- Bridge Geometry (moved to geometrie_brug tab) ---
-    input.dimensions.horizontal_section_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
-    input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
-    input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
-
     # ----------------------------------------
     ## Dimensions tab
     # ----------------------------------------
