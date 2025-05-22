@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import plotly.graph_objects as go
 import trimesh
-from munch import Munch
+from munch import Munch  # type: ignore[import-untyped]
 
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
@@ -218,6 +218,8 @@ def create_horizontal_section_view(params: dict | Munch, section_loc: float) -> 
         go.Figure: A 2D representation of the horizontal section.
 
     """
+    if isinstance(params, dict) and not isinstance(params, Munch):
+        params = Munch.fromDict(params)
     # Generate the 3D model without coordinate axes
     scene = create_3d_model(params, axes=False)
     combined_mesh = trimesh.util.concatenate(scene.geometry.values())

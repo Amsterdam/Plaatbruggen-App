@@ -35,6 +35,9 @@ def create_cross_section_annotations(params: dict | Munch, all_z: list[float]) -
     zone1_h_center_y = []
     zone2_h_center_y = []
     zone3_h_center_y = []
+    zone1_h_location = []
+    zone2_h_location = []
+    zone3_h_location = []
 
     for segment in params.bridge_segments_array:
         l_values.append(segment.l)
@@ -55,6 +58,10 @@ def create_cross_section_annotations(params: dict | Munch, all_z: list[float]) -
         zone1_h_center_y.append(-segment.dz / 2)
         zone2_h_center_y.append(-segment.dz + segment.dz_2 / 2)
         zone3_h_center_y.append(-segment.dz / 2)
+
+        zone1_h_location.append(segment.bz2 / 2)
+        zone2_h_location.append(-segment.bz2 / 2)
+        zone3_h_location.append(-segment.bz2 / 2 - segment.bz3)
 
     # Find which segment the cross section is located in
     section_loc_param = params.input.dimensions.cross_section_loc
@@ -155,6 +162,50 @@ def create_cross_section_annotations(params: dict | Munch, all_z: list[float]) -
     ]
     all_annotations.extend(zone_width_annotations)
 
+    # Height dimension annotations for each zone
+    zone_height_annotations = [
+        go.layout.Annotation(
+            x=zone1_h_location[segment_index],
+            y=zone1_h_center_y[segment_index],
+            text=f"<b>h = {zone1_h[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "blue"},
+            align="center",
+            xanchor="right",
+            yanchor="middle",
+            textangle=-90,
+            ax=0,
+            ay=0,
+        ),
+        go.layout.Annotation(
+            x=zone2_h_location[segment_index],
+            y=zone2_h_center_y[segment_index],
+            text=f"<b>h = {zone2_h[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "blue"},
+            align="center",
+            xanchor="right",
+            yanchor="middle",
+            textangle=-90,
+            ax=0,
+            ay=0,
+        ),
+        go.layout.Annotation(
+            x=zone3_h_location[segment_index],
+            y=zone3_h_center_y[segment_index],
+            text=f"<b>h = {zone3_h[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "blue"},
+            align="center",
+            xanchor="right",
+            yanchor="middle",
+            textangle=-90,
+            ax=0,
+            ay=0,
+        ),
+    ]
+    all_annotations.extend(zone_height_annotations)
+
     return all_annotations
 
 
@@ -174,6 +225,8 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
         go.Figure: A 2D representation of the cross-section.
 
     """
+    if isinstance(params, dict) and not isinstance(params, Munch):
+        params = Munch.fromDict(params)
     # Generate the 3D model without coordinate axes
     scene = create_3d_model(params, axes=False)
     combined_mesh = trimesh.util.concatenate(scene.geometry.values())
@@ -237,9 +290,15 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
         yaxis={
             "range": z_range,
             "scaleanchor": "x",
-            "scaleratio": 2,  # Maintain aspect ratio for proper visualization
+            "scaleratio": 1,  # Maintain aspect ratio for proper visualization
             "title": "Z-as - Hoogte [m]",  # Z-as is the vertical axis shown as Y-axis in the plot
         },
+        showlegend=False,
     )
 
     return fig
+
+def calculate_max_array(params: object, **kwargs) -> int:  # noqa: ARG001
+    """Calculate the maximum number of reinforcement zones based on the number of bridge segments."""
+    sections = len(params.bridge_segments_array)    # type: ignore[attr-defined]
+    return 3 * (sections - 1)
