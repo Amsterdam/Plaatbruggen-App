@@ -55,7 +55,8 @@ def create_box(vertices: np.ndarray, color: list) -> trimesh.Trimesh:
     box_mesh.visual.face_colors = np.array([color] * len(box_mesh.faces))
     return box_mesh
 
-def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
+
+def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901, PLR0915
     """
     Create a mesh representing rebars based on specified parameters.
 
@@ -67,6 +68,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         trimesh.Trimesh: A trimesh object representing the rebars.
 
     """
+
     def get_cumulative_distance(segment_idx: int) -> float:
         """Calculate the cumulative distance to the start of a segment."""
         total_distance = 0.0
@@ -84,7 +86,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             "diam_long_top": zone_entry.hoofdwapening_langs_boven_diameter / 1000,
             "hoh_long_top": zone_entry.hoofdwapening_langs_boven_hart_op_hart / 1000,
             "diam_shear": zone_entry.hoofdwapening_dwars_diameter / 1000,
-            "hoh_shear": zone_entry.hoofdwapening_dwars_hart_op_hart / 1000
+            "hoh_shear": zone_entry.hoofdwapening_dwars_hart_op_hart / 1000,
         }
 
     def parse_zone_number(zone_number: str) -> tuple[int, int]:
@@ -109,20 +111,14 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             height_start = bz
             height_end = bz_next
 
-        return {
-            "bz": bz,
-            "bz_next": bz_next,
-            "height_start": height_start,
-            "height_end": height_end,
-            "length": next_segment_data.l
-        }
+        return {"bz": bz, "bz_next": bz_next, "height_start": height_start, "height_end": height_end, "length": next_segment_data.l}
 
     def calculate_effective_widths(zone_params: dict, zone_dims: dict) -> dict:
         """Calculate effective widths for rebar placement."""
         return {
             "long_bottom": float(zone_dims["bz"]) - 2 * dekking - zone_params["diam_long_bottom"],
             "long_top": float(zone_dims["bz"]) - 2 * dekking - zone_params["diam_long_top"],
-            "shear": zone_dims["length"] - 2 * dekking - zone_params["diam_shear"]
+            "shear": zone_dims["length"] - 2 * dekking - zone_params["diam_shear"],
         }
 
     def calculate_z_positions(is_middle_zone: bool, zone_params: dict) -> dict:
@@ -158,9 +154,9 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         zone_dim = get_zone_dimensions(position, segment_idx)
 
         if position == 1:  # Left zone
-            return bz2/2 + zone_dim["bz"]/2
+            return bz2 / 2 + zone_dim["bz"] / 2
         if position == 3:  # Right zone
-            return -(bz2/2 + zone_dim["bz"]/2)
+            return -(bz2 / 2 + zone_dim["bz"] / 2)
         return 0  # Middle zone
 
     def calculate_rebar_positions(width: float, hoh: float, y_offset: float = 0) -> list[float]:
@@ -215,8 +211,8 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         diameter: float,
         segment_length: float,
         x_offset: float,
-        height_start: float = None,
-        height_end: float = None
+        height_start: float | None = None,
+        height_end: float | None = None,
     ) -> None:
         """Create and position longitudinal rebar meshes."""
         if height_start is None:
@@ -226,23 +222,14 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
 
         for y_pos in positions:
             # Create a cylinder that spans the segment length
-            rebar = trimesh.creation.cylinder(
-                radius=diameter/2,
-                height=segment_length,
-                sections=16
-            )
+            rebar = trimesh.creation.cylinder(radius=diameter / 2, height=segment_length, sections=16)
 
             # Rotate to align with X axis
-            rebar.apply_transform(
-                trimesh.transformations.rotation_matrix(
-                    angle=np.pi/2,
-                    direction=[0, 1, 0]
-                )
-            )
+            rebar.apply_transform(trimesh.transformations.rotation_matrix(angle=np.pi / 2, direction=[0, 1, 0]))
 
             # Position the rebar with the cumulative x_offset
             rebar_copy = rebar.copy()
-            rebar_copy.apply_translation([x_offset + segment_length/2, y_pos, z_position])
+            rebar_copy.apply_translation([x_offset + segment_length / 2, y_pos, z_position])
             rebar_copy.visual.face_colors = color
             rebar_scene.add_geometry(rebar_copy)
 
@@ -254,7 +241,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         z_positions: dict,
         x_offset: float,
         height_start: float | None = None,
-        height_end: float | None = None
+        height_end: float | None = None,
     ) -> None:
         """Create and position shear rebars for a zone."""
         if height_start is None:
@@ -271,10 +258,10 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             height_at_x = height_start + (height_end - height_start) * interpolation_factor
 
             # Create bottom and top shear rebars
-            bottom_shear = trimesh.creation.cylinder(radius=zone_params["diam_shear"]/2, height=height_at_x, sections=16)
-            top_shear = trimesh.creation.cylinder(radius=zone_params["diam_shear"]/2, height=height_at_x, sections=16)
+            bottom_shear = trimesh.creation.cylinder(radius=zone_params["diam_shear"] / 2, height=height_at_x, sections=16)
+            top_shear = trimesh.creation.cylinder(radius=zone_params["diam_shear"] / 2, height=height_at_x, sections=16)
 
-            rotation_matrix = trimesh.transformations.rotation_matrix(angle=np.pi/2, direction=[1, 0, 0])
+            rotation_matrix = trimesh.transformations.rotation_matrix(angle=np.pi / 2, direction=[1, 0, 0])
             bottom_shear.apply_transform(rotation_matrix)
             top_shear.apply_transform(rotation_matrix)
 
@@ -323,7 +310,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             zone_dims["length"],
             x_offset,
             zone_dims["height_start"],
-            zone_dims["height_end"]
+            zone_dims["height_end"],
         )
 
         top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
@@ -334,23 +321,17 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             zone_dims["length"],
             x_offset,
             zone_dims["height_start"],
-            zone_dims["height_end"]
+            zone_dims["height_end"],
         )
 
         # Create shear reinforcement
         shear_positions = get_shear_positions(effective_widths["shear"], zone_params["hoh_shear"], zone_params)
         create_shear_rebars(
-            shear_positions,
-            y_offset,
-            zone_dims["bz"],
-            zone_params,
-            z_positions,
-            x_offset,
-            zone_dims["height_start"],
-            zone_dims["height_end"]
+            shear_positions, y_offset, zone_dims["bz"], zone_params, z_positions, x_offset, zone_dims["height_start"], zone_dims["height_end"]
         )
 
     return rebar_scene
+
 
 # Function to create the X, Y, and Z axes
 def create_axes(length: float = 5.0, radius: float = 0.05) -> trimesh.Scene:
