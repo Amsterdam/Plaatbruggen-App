@@ -109,21 +109,21 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     bz1_eff_bottom = float(bz1) - 2 * dekking - diameter_rebar_bottom_z1
     bz1_eff_top = float(bz1) - 2 * dekking - diameter_rebar_top_z1
     width_rebar_shear_eff_z1 = length_rebar_longitudinal - 2 * dekking - diameter_rebar_shear_z1
-    
+
     # Zone 2
     bz2_eff_bottom = float(bz2) - 2 * dekking - diameter_rebar_bottom_z2
     bz2_eff_top = float(bz2) - 2 * dekking - diameter_rebar_top_z2
     width_rebar_shear_eff_z2 = length_rebar_longitudinal - 2 * dekking - diameter_rebar_shear_z2
-    
+
     # Zone 3
     bz3_eff_bottom = float(bz3) - 2 * dekking - diameter_rebar_bottom_z3
     bz3_eff_top = float(bz3) - 2 * dekking - diameter_rebar_top_z3
     width_rebar_shear_eff_z3 = length_rebar_longitudinal - 2 * dekking - diameter_rebar_shear_z3
-    
+
     # Calculate z positions based on reinforcement configuration
     z_position_bottom = 0 - params.bridge_segments_array[0].dz
     z_position_top = params.bridge_segments_array[0].dz_2 - params.bridge_segments_array[0].dz
-    
+
     if langswapening_buiten:
         # Bottom configuration - longitudinal outside, shear inside
         # First the longitudinal bars
@@ -145,7 +145,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     else:
         # Bottom configuration - shear outside, longitudinal inside
         # First the shear bars
-        z_pos_shear_bottom = z_position_bottom + dekking 
+        z_pos_shear_bottom = z_position_bottom + dekking
         z_pos_shear_bottom_z1 = z_pos_shear_bottom + 0.5 * diameter_rebar_shear_z1
         z_pos_shear_bottom_z2 = z_pos_shear_bottom + 0.5 * diameter_rebar_shear_z2
         z_pos_shear_bottom_z3 = z_pos_shear_bottom + 0.5 * diameter_rebar_shear_z3
@@ -174,9 +174,9 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         n_rebars = int(width / hoh)  # Round down to ensure minimum hoh is maintained
         if n_rebars < 1:
             return []
-        
+
         actual_hoh = width / n_rebars
-        
+
         if n_rebars % 2 == 0:  # Even number of rebars
             positions = []
             for i in range(n_rebars // 2):
@@ -189,7 +189,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
                 offset = i * actual_hoh
                 positions.extend([-offset, offset])
             positions.sort()
-        
+
         # Apply y_offset to all positions
         return [pos + y_offset for pos in positions]
 
@@ -201,7 +201,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             height=length_rebar_longitudinal,
             sections=16
         )
-        
+
         # Rotate the cylinder to align with X axis
         rebar.apply_transform(
             trimesh.transformations.rotation_matrix(
@@ -209,7 +209,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
                 direction=[0, 1, 0]
             )
         )
-        
+
         # Create and position copies for each y position
         for y_pos in positions:
             rebar_copy = rebar.copy()
@@ -220,7 +220,8 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
 
     # Helper function for shear rebar positions
     def get_shear_positions(width_eff: float, hoh: float, diameter: float) -> list[float]:
-        """Calculate x positions for shear reinforcement.
+        """
+        Calculate x positions for shear reinforcement.
         
         Similar to calculate_rebar_positions, this ensures rebars are placed symmetrically
         around the midspan, with a central bar for odd numbers and equal spacing from edges
@@ -229,11 +230,11 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         n_rebars = int(width_eff / hoh)  # Round down to ensure minimum hoh is maintained
         if n_rebars < 1:
             return []
-        
+
         actual_hoh = width_eff / n_rebars
         start_offset = (params.input.geometrie_wapening.dekking / 1000) + 0.5 * diameter
         mid_x = width_eff / 2 + start_offset
-        
+
         if n_rebars % 2 == 0:  # Even number of rebars
             positions = []
             for i in range(n_rebars // 2):
@@ -246,26 +247,26 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
                 x_offset = i * actual_hoh
                 positions.extend([mid_x - x_offset, mid_x + x_offset])
             positions.sort()
-        
+
         return positions
-    
+
 
     # Helper function to create shear rebars for a zone
     def create_shear_rebar_pair(diameter: float, height: float) -> tuple[trimesh.Trimesh, trimesh.Trimesh]:
         """Create top and bottom shear rebars."""
         bottom_shear = trimesh.creation.cylinder(radius=diameter/2, height=height, sections=16)
         top_shear = trimesh.creation.cylinder(radius=diameter/2, height=height, sections=16)
-        
+
         rotation_matrix = trimesh.transformations.rotation_matrix(angle=np.pi/2, direction=[1, 0, 0])
         bottom_shear.apply_transform(rotation_matrix)
         top_shear.apply_transform(rotation_matrix)
-        
+
         return bottom_shear, top_shear
 
     # Calculate y-offsets for each zone
     y_offset_z1 = bz2/2 + bz1/2  # Positive offset for zone 1
     y_offset_z3 = -(bz2/2 + bz3/2)  # Negative offset for zone 3
-    
+
     # Create longitudinal rebars
     # Zone 1
     bottom_positions_z1 = calculate_rebar_positions(bz1_eff_bottom, hoh_bottom_z1, y_offset_z1)
@@ -339,13 +340,13 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     # print(f"  - Theoretical h.o.h: {hoh_shear_z1:.3f}m")
     # actual_hoh_z1 = calculate_actual_hoh(shear_x_positions_z1)
     # print(f"  - Actual h.o.h: {actual_hoh_z1:.3f}m" if actual_hoh_z1 else "  - Actual h.o.h: N/A (less than 2 bars)")
-    
+
     # print("\nZone 2:")
     # print(f"  - Number of bars: {len(shear_x_positions_z2)}")
     # print(f"  - Theoretical h.o.h: {hoh_shear_z2:.3f}m")
     # actual_hoh_z2 = calculate_actual_hoh(shear_x_positions_z2)
     # print(f"  - Actual h.o.h: {actual_hoh_z2:.3f}m" if actual_hoh_z2 else "  - Actual h.o.h: N/A (less than 2 bars)")
-    
+
     # print("\nZone 3:")
     # print(f"  - Number of bars: {len(shear_x_positions_z3)}")
     # print(f"  - Theoretical h.o.h: {hoh_shear_z3:.3f}m")
@@ -690,7 +691,7 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
         # Add the black dot at the origin to the scene
         black_dot = create_black_dot(radius=0.1)
         combined_scene.add_geometry(black_dot)
-    
+
     rebars_scene = create_rebars(params, color=[0, 0, 0, 255])  # Call the function to create rebars
 
     combined_scene.add_geometry(rebars_scene)  # Add the rebars to the scene
