@@ -146,13 +146,15 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.dimensions.toggle_sections = BooleanField("Toon locaties van de doorsneden in het 3D model", default=False, flex=100)
     input.dimensions.lb2 = LineBreak()
     input.dimensions.horizontal_section_loc = NumberField(
-        "Doorsnede bovenaanzicht z =", default=-1.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Horizontale doorsnede z =", default=-1.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
     )
+    input.dimensions.lb3 = LineBreak()
     input.dimensions.longitudinal_section_loc = NumberField(
-        "Doorsnede langsdoorsnede y =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Langsdoorsnede y =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
     )
+    input.dimensions.lb4 = LineBreak()
     input.dimensions.cross_section_loc = NumberField(
-        "Doorsnede dwarsdoorsnede x =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Dwarsdoorsnede x =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
     )
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
