@@ -13,7 +13,7 @@
 # 4. If a hook fails and you see errors, fix them and try to commit again.
 #    The hooks will run again and the commit will only be made if they all pass.
 # 5. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
-# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
+# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.3
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
