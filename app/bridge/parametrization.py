@@ -1,5 +1,9 @@
 """Module for the Bridge entity parametrization."""
 
+from collections.abc import Callable, Mapping
+from typing import Any
+
+from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -18,19 +22,127 @@ from viktor.parametrization import (
 
 from .geometry_functions import get_steel_qualities
 
+# --- Helper functions for DynamicArray Default Rows ---
 
-def calculate_max_array(params: object, **kwargs) -> int:  # noqa: ARG001
-    """Calculate the maximum number of reinforcement zones based on the number of bridge segments."""
+
+def _create_default_dimension_segment_row(l_value: int, is_first: bool) -> dict[str, Any]:
+    """Creates a dictionary for a default bridge dimension segment row."""
+    return {
+        "bz1": 10.0,
+        "bz2": 5.0,
+        "bz3": 15.0,
+        "dz": 2.0,
+        "dz_2": 3.0,
+        "col_6": 0.0,
+        "l": l_value,
+        "is_first_segment": is_first,
+    }
+
+
+def _create_default_load_zone_row(zone_type: str, default_width: float) -> dict[str, Any]:
+    """Creates a dictionary for a default load zone row."""
+    row: dict[str, Any] = {"zone_type": zone_type}
+    for i in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1):
+        row[f"d{i}_width"] = default_width
+    return row
+
+
+# --- Helper functions for Parametrization Logic (e.g., visibility callbacks) ---
+def _get_current_num_load_zones(params_obj: "BridgeParametrization") -> int:
+    """Helper to get the current number of load zones from params.load_zones_data_array."""
+    try:
+        if params_obj is None or not hasattr(params_obj, "load_zones_data_array"):
+            return 0
+        load_zones_array = params_obj.load_zones_data_array
+        if load_zones_array is None or not isinstance(load_zones_array, list | tuple):
+            return 0
+        return len(load_zones_array)
+    except (AttributeError, TypeError):
+        # Parameters not yet fully defined during app initialization or update – treat as "0" zones
+        return 0
+
+
+def _get_current_num_segments(params_obj: "BridgeParametrization") -> int:
+    """Helper to get the current number of segments from params.bridge_segments_array."""
+    try:
+        if params_obj is None or not hasattr(params_obj, "bridge_segments_array"):
+            return 0
+        dimension_array = params_obj.bridge_segments_array
+        if dimension_array is None or not isinstance(dimension_array, list | tuple):
+            return 0
+        return len(dimension_array)
+    except (AttributeError, TypeError):
+        # Parameters not yet fully defined during app initialization or update – treat as "0" segments
+        return 0
+
+
+# Factory function to create visibility callbacks for dX_width fields
+def _create_dx_width_visibility_callback(required_segment_count: int) -> Callable[..., list[bool]]:
+    """
+    Factory function to create visibility callback functions for dX_width fields.
+
+    Args:
+        required_segment_count: The minimum number of bridge segments (D-sections)
+                                that must exist for the dX_width field to be
+                                potentially visible (before considering the last row rule).
+
+    Returns:
+        A callback function suitable for the 'visible' attribute of a NumberField.
+
+    """
+
+    def dx_width_visibility_function(params, **kwargs) -> list[bool]:  # noqa: ANN001, ARG001
+        """
+        Determines visibility for a dX_width field in the load_zones_array.
+
+        A row's field is visible if:
+        1. The number of defined bridge segments is >= required_segment_count.
+        2. The row is not the last row in the load_zones_array.
+        """
+        num_segments = _get_current_num_segments(params)
+        num_load_zones = _get_current_num_load_zones(params)
+
+        if num_load_zones <= 0:
+            return []
+
+        visibility_list = []
+        for i in range(num_load_zones):
+            is_visible = (num_segments >= required_segment_count) and (i < num_load_zones - 1)
+            visibility_list.append(is_visible)
+
+        return visibility_list
+
+    return dx_width_visibility_function
+
+
+# Generate the visibility callbacks using a dictionary comprehension
+DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for i in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1)}
+
+
+# --- Functions for dynamic reinforcement zones ---
+def calculate_max_array(params: Mapping, **kwargs) -> int:  # noqa: ARG001
+    """
+    Calculate the maximum number of reinforcement zones based on bridge segments.
+
+    Args:
+        params: Parameters object containing bridge_segments_array
+        **kwargs: Additional keyword arguments (unused).
+
+    Returns:
+        The maximum number of reinforcement zones (3 per segment)
+
+    """
     sections = len(params.bridge_segments_array)
     return 3 * (sections - 1)
 
-def define_options_numbering(params: object, **kwargs) -> list:  # noqa: ARG001
+
+def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     """
     Define options for zone numbering based on the number of segments.
 
     Args:
         params: Parameters containing bridge_segments_array
-        **kwargs: Unused, required for VIKTOR compatibility.  # noqa: ARG001
+        **kwargs: Additional keyword arguments (unused).
 
     Returns:
         list: List of zone numbers in format "location-segment" (e.g., ["1-1", "2-1", "3-1", "1-2", "2-2", "3-2"])
@@ -62,7 +174,14 @@ class BridgeParametrization(Parametrization):
 
     input = Page(
         "Invoer",
-        views=["get_top_view", "get_3d_view", "get_2d_horizontal_section", "get_2d_longitudinal_section", "get_2d_cross_section"],
+        views=[
+            "get_top_view",
+            "get_3d_view",
+            "get_2d_horizontal_section",
+            "get_2d_longitudinal_section",
+            "get_2d_cross_section",
+            "get_load_zones_view",
+        ],
     )
 
     ###############################################
@@ -98,26 +217,8 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         min=2,
         name="bridge_segments_array",
         default=[
-            {
-                "bz1": 10.0,
-                "bz2": 5.0,
-                "bz3": 15.0,
-                "dz": 2.0,
-                "dz_2": 3.0,
-                "col_6": 0.0,
-                "l": 0,
-                "is_first_segment": True,
-            },
-            {
-                "bz1": 10.0,
-                "bz2": 5.0,
-                "bz3": 15.0,
-                "dz": 2.0,
-                "dz_2": 3.0,
-                "col_6": 0.0,
-                "l": 10,
-                "is_first_segment": False,
-            },
+            _create_default_dimension_segment_row(l_value=0, is_first=True),
+            _create_default_dimension_segment_row(l_value=10, is_first=False),
         ],
     )
     input.dimensions.array.is_first_segment = BooleanField("Is First Segment Marker", default=False, visible=False)
@@ -257,9 +358,11 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.zones.lb3 = LineBreak()
 
     # Main reinforcement - Transverse
+
     input.geometrie_wapening.zones.hoofdwapening_dwars_diameter = NumberField(
         "Diameter hoofdwapening dwarsrichting", default=12.0, suffix="mm", flex=47
     )
+
     input.geometrie_wapening.zones.hoofdwapening_dwars_hart_op_hart = NumberField(
         "H.o.h. afstand hoofdwapening dwarsrichting", default=150.0, suffix="mm", flex=53
     )
@@ -306,8 +409,37 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     )
 
     # --- Load Zones (in belastingzones tab) ---
-    input.belastingzones.zone_breedte = NumberField("Zone Breedte", default=1.0, suffix="m")
-    input.belastingzones.load_intensity = NumberField("Belasting Intensiteit", default=5.0, suffix="kN/m²")
+    input.belastingzones.info_text = Text(
+        "Definieer hier de belastingzones. Elke zone wordt gestapeld vanaf één zijde van de brug. "
+        "Vul alleen breedtes in voor de daadwerkelijk gedefinieerde brugsegmenten (D-nummers) "
+        "onder de tab 'Dimensies'. De laatste belastingzone loopt automatisch door tot het einde van de brug; "
+        "hiervoor hoeven dus geen segmentbreedtes (D-waardes) ingevuld te worden."
+    )
+
+    input.belastingzones.load_zones_array = DynamicArray(
+        "Belastingzones",
+        row_label="Belasting Zone",
+        name="load_zones_data_array",
+        default=[
+            _create_default_load_zone_row(LOAD_ZONE_TYPES[0], 1.5),  # Voetgangers
+            _create_default_load_zone_row(LOAD_ZONE_TYPES[1], 3.0),  # Fietsers
+            _create_default_load_zone_row(LOAD_ZONE_TYPES[3], 0.5),  # Berm (new)
+            _create_default_load_zone_row(LOAD_ZONE_TYPES[2], 10.5),  # Auto (Rijbaan)
+        ],
+    )
+    input.belastingzones.load_zones_array.zone_type = OptionField("Type belastingzone", options=LOAD_ZONE_TYPES, default=LOAD_ZONE_TYPES[0])
+
+    # Dynamically create dX_width fields for the load_zones_array
+    for _idx_field in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1):
+        _field = NumberField(
+            f"Breedte zone bij D{_idx_field}",
+            default=2.0,  # Default set to 2.0m for all fields
+            min=0.01,  # Minimum value set to 0.01m (1cm)
+            suffix="m",
+            description=f"Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D{_idx_field}.",
+            visible=DX_WIDTH_VISIBILITY_CALLBACKS[_idx_field],
+        )
+        setattr(input.belastingzones.load_zones_array, f"d{_idx_field}_width", _field)
 
     # --- Load Combinations (in belastingcombinaties tab) ---
     input.belastingcombinaties.permanent_factor = NumberField("Factor Permanente Belasting", default=1.35)
@@ -316,4 +448,4 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     # --- Added Pages ---
     scia = Page("SCIA")
     berekening = Page("Berekening")
-    rapport = Page("Rapport", views="get_output_report")
+    rapport = Page("Rapport", views=["get_output_report"])

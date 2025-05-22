@@ -18,7 +18,7 @@ def create_cross_section_annotations(params: dict | Munch, all_z: list[float]) -
     :returns: List of Plotly annotation objects for the cross-section.
     :rtype: list[go.layout.Annotation]
     """
-    if isinstance(params, dict) and not isinstance(params, Munch):
+    if not isinstance(params, Munch):
         params = Munch.fromDict(params)
     l_values = []
     l_values_cumulative = []

@@ -4,6 +4,9 @@ and cross-sections, using the `trimesh` library. It also includes functionality 
 generating a 3D representation of a bridge deck based on input parameters.
 """
 
+from collections.abc import Sequence
+from dataclasses import dataclass
+
 import numpy as np
 import trimesh
 from munch import Munch  # type: ignore[import-untyped]
@@ -928,3 +931,112 @@ def create_2d_top_view(viktor_params: Munch) -> dict:  # noqa: C901, PLR0912, PL
         "cross_section_labels": cross_section_labels_data,
         "zone_polygons": zone_polygons_data,
     }
+
+
+# Define dataclasses for structured data
+@dataclass
+class BridgeSegmentDimensions:
+    """Represents the dimensions of a single bridge segment cross-section."""
+
+    bz1: float
+    bz2: float
+    bz3: float
+    segment_length: float  # Length to previous segment (0 for the first segment)
+    # Add is_first_segment if it becomes necessary for validation logic here
+
+
+@dataclass
+class DPointLabel:
+    """Represents the data for a D-point label."""
+
+    text: str
+    x: float
+    y: float
+
+
+@dataclass
+class LoadZoneGeometryData:
+    """Holds calculated geometric data for load zone visualization."""
+
+    x_coords_d_points: list[float]
+    y_top_structural_edge_at_d_points: list[float]
+    total_widths_at_d_points: list[float]
+    y_bridge_bottom_at_d_points: list[float]
+    num_defined_d_points: int
+    d_point_label_data: list[DPointLabel]
+
+
+def prepare_load_zone_geometry_data(
+    bridge_dimensions_array: Sequence[BridgeSegmentDimensions],
+    label_y_offset: float = 1.5,  # Exposed parameter with default
+) -> LoadZoneGeometryData:
+    """
+    Calculates geometric data needed for load zone visualization based on bridge segments.
+
+    Args:
+        bridge_dimensions_array: A sequence of BridgeSegmentDimensions objects.
+        label_y_offset: Vertical offset for D-point labels from the top structural edge.
+
+    Returns:
+        A LoadZoneGeometryData object containing calculated lists and counts.
+
+    Raises:
+        ValueError: If segment dimensions (bz1, bz2, bz3, l) are invalid.
+
+    """
+    num_defined_d_points = len(bridge_dimensions_array)
+
+    if num_defined_d_points == 0:
+        return LoadZoneGeometryData([], [], [], [], 0, [])
+
+    # Input Validation
+    for i, segment_data in enumerate(bridge_dimensions_array):
+        if not (segment_data.bz1 >= 0 and segment_data.bz2 >= 0 and segment_data.bz3 >= 0):
+            raise ValueError(
+                f"Bridge segment {i + 1} (D{i + 1}) dimensions (bz1, bz2, bz3) must be non-negative. "
+                f"Got bz1={segment_data.bz1}, bz2={segment_data.bz2}, bz3={segment_data.bz3}"
+            )
+        # Length 'l' must be positive for segments after the first one.
+        # For the first segment (i=0), 'l' is often 0 or not used for positioning based on previous.
+        if i > 0 and not (segment_data.segment_length > 0):
+            raise ValueError(f"Length 'l' for bridge segment {i + 1} (D{i + 1}) must be positive. Got l={segment_data.segment_length}")
+
+    x_coords_d_points = []
+    y_top_structural_edge_at_d_points = []
+    total_widths_at_d_points = []
+    d_point_label_data: list[DPointLabel] = []  # Explicitly typed list
+    current_x = 0.0
+    # label_y_offset is now a parameter
+
+    for i in range(num_defined_d_points):
+        segment_params = bridge_dimensions_array[i]
+        if i == 0:
+            x_coords_d_points.append(current_x)  # D1 is at x = 0
+        else:
+            # Subsequent D-points are positioned by adding the length 'l' of the *current* segment,
+            # which represents the length *from the previous* D-point to this one.
+            current_x += segment_params.segment_length
+            x_coords_d_points.append(current_x)
+
+        # Guarding for bz2 < 0 is implicitly handled by the validation above (bz2 >= 0).
+        # If bz2 is 0, y_top calculation is still valid.
+        y_top = segment_params.bz1 + (segment_params.bz2 / 2.0)
+        y_top_structural_edge_at_d_points.append(y_top)
+
+        current_total_width_at_di = segment_params.bz1 + segment_params.bz2 + segment_params.bz3
+        total_widths_at_d_points.append(current_total_width_at_di)
+
+        d_point_label_data.append(DPointLabel(text=f"D{i + 1}", x=x_coords_d_points[i], y=y_top + label_y_offset))
+
+    y_bridge_bottom_at_d_points = [
+        y_top_structural_edge_at_d_points[d_idx] - total_widths_at_d_points[d_idx] for d_idx in range(num_defined_d_points)
+    ]
+
+    return LoadZoneGeometryData(
+        x_coords_d_points=x_coords_d_points,
+        y_top_structural_edge_at_d_points=y_top_structural_edge_at_d_points,
+        total_widths_at_d_points=total_widths_at_d_points,
+        y_bridge_bottom_at_d_points=y_bridge_bottom_at_d_points,
+        num_defined_d_points=num_defined_d_points,
+        d_point_label_data=d_point_label_data,
+    )
