@@ -2,6 +2,7 @@
 import csv
 import os
 from pathlib import Path
+from app.constants import REINFORCEMENT_PATH
 
 def get_steel_qualities():
     """Get list of available steel qualities from the CSV file.
@@ -9,7 +10,7 @@ def get_steel_qualities():
     Returns:
         list: List of steel quality names
     """
-    csv_path = Path(__file__).parent.parent.parent / "resources" / "betonstaalkwaliteit.csv"
+    csv_path = REINFORCEMENT_PATH
     steel_qualities = []
     
     with open(csv_path, 'r') as f:
