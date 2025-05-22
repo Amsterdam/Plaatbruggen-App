@@ -151,14 +151,12 @@ def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     """
     option_list = []
     num_segments = len(params.bridge_segments_array) - 1
-
     # For each segment
     for segment in range(num_segments):
         # For each zone (left, middle, right)
         for zone in range(3):
             zone_number = f"{zone + 1}-{segment + 1}"
             option_list.append(zone_number)
-
     return option_list
 
 
@@ -228,16 +226,19 @@ Use the tabs below to view geometric properties, load configurations, and analys
         ],
     )
 
+    ###############################################
+    ## Invoer Page
+    ##############################################
+
     # --- Tabs within Invoer Page ---
     input.dimensions = Tab("Dimensies")
     input.geometrie_wapening = Tab("Wapening")
     input.belastingzones = Tab("Belastingzones")
     input.belastingcombinaties = Tab("Belastingcombinaties")
 
-    # --- Bridge Geometry (moved to geometrie_brug tab) ---
-    input.dimensions.horizontal_section_loc = NumberField("Locatie bovenaanzicht", default=0.0, suffix="m")
-    input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
-    input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
+    # ----------------------------------------
+    ## Dimensions tab
+    # ----------------------------------------
 
     input.dimensions.segment_explanation = Text(
         """Definieer hier de dwarsdoorsneden (snedes) van de brug.
@@ -251,6 +252,7 @@ Elk item in de lijst hieronder representeert een dwarsdoorsnede.
 Standaard zijn twee dwarsdoorsneden (D1 en D2) voorgedefinieerd, wat resulteert in één brugsegment.
 Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en '-' knoppen."""
     )
+
     input.dimensions.array = DynamicArray(
         "Brug dimensies",
         row_label="D-",
@@ -268,7 +270,7 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.dimensions.array.bz3 = NumberField("Breedte zone 3", default=15.0, suffix="m")
     input.dimensions.array.dz = NumberField("Dikte zone 1 en 3", default=2.0, suffix="m")
     input.dimensions.array.dz_2 = NumberField("Dikte zone 2", default=3.0, suffix="m")
-    input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden")
+    input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden", visible=False)
 
     _l_field_visibility_constraint = DynamicArrayConstraint(
         dynamic_array_name="bridge_segments_array",
@@ -279,6 +281,23 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         default=10,
         suffix="m",
         visible=_l_field_visibility_constraint,
+    )
+
+    # --- Bridge Geometry (moved to geometrie_brug tab) ---
+    input.dimensions.lb1 = LineBreak()
+    input.dimensions.text_sections = Text("Met onderstaande instellingen kan de locatie van de doorsneden worden ingesteld.")
+    input.dimensions.toggle_sections = BooleanField("Toon locaties van de doorsneden in het 3D model", default=False, flex=100)
+    input.dimensions.lb2 = LineBreak()
+    input.dimensions.horizontal_section_loc = NumberField(
+        "Horizontale doorsnede z =", default=-1.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+    )
+    input.dimensions.lb3 = LineBreak()
+    input.dimensions.longitudinal_section_loc = NumberField(
+        "Langsdoorsnede y =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+    )
+    input.dimensions.lb4 = LineBreak()
+    input.dimensions.cross_section_loc = NumberField(
+        "Dwarsdoorsnede x =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
     )
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---

@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 Semantic versioning is used to denote different versions of this project.
 
+## [`v0.0.6`] - 2025-05-22
+
+### Added
+- Enhanced reinforcement visualization in all three bridge zones:
+  - Added support for shear reinforcement bars in all zones
+  - Proper handling of both reinforcement configurations (longitudinal/shear inside/outside)
+  - Extension of reinforcement system to dynamically added zones
+  - Correct positioning of reinforcement in additional segments based on cumulative distances
+  - Accurate height calculations for shear reinforcement in the middle zone (bz2)
+
+### Changed
+- Refactored reinforcement creation code in `model_creator.py`:
+  - Split into modular, single-responsibility functions
+  - Added helper functions for zone parameter extraction
+  - Added zone dimension calculation functions
+  - Improved reinforcement positioning calculations
+  - Enhanced readability and maintainability of the code
+- Added support for the `langswapening_buiten` radio button:
+  - Dynamic switching between reinforcement configurations
+  - Proper spacing calculations between rebar layers
+  - Correct positioning of longitudinal and shear reinforcement based on configuration
+
 ## [`v0.0.5`] - 2025-05-15
 
 ### Added
@@ -33,9 +55,9 @@ Semantic versioning is used to denote different versions of this project.
     - First number indicates location (1=left, 2=middle, 3=right)
     - Second number indicates segment number
 - New OptionField for zone selection in reinforcement input:
-    - Options dynamically generated based on number of bridge segments
-    - Options list updates automatically when segments are added/removed
-    - Proper zone labeling helps users identify reinforcement locations
+  - Options dynamically generated based on number of bridge segments
+  - Options list updates automatically when segments are added/removed
+  - Proper zone labeling helps users identify reinforcement locations
 
 ### Changed
 - Reorganized resources directory structure for better organization:
@@ -55,10 +77,6 @@ Semantic versioning is used to denote different versions of this project.
 - Performed internal refactoring of `BridgeController`'s `get_bridge_map_view` and related helper methods to enhance structure and address linter warnings.
 - Simplified shapefile path retrieval in `BridgeController` by inlining the `_get_shapefile_path` helper method into `get_bridge_map_view`.
 - Centralized individual bridge shapefile loading and filtering by moving logic from `BridgeController`._load_and_filter_geodataframe` to a new `load_and_filter_bridge_shapefile` function in `app/common/map_utils.py`.
-- Refactored `get_load_zones_view` method in `BridgeController` into helper functions (`_prepare_load_zone_geometry_data`, `_create_d_point_annotations`, `_add_load_zone_visuals`) for improved readability and reduced complexity.
-- Improved "Belastingzones" visualization and architecture:
-    - Refactored load zone plotting logic from the `app` layer (controller/utils) to dedicated modules within the `src/geometry/` layer for better separation of concerns and testability.
-    - Enhanced the appearance and positioning of validation warning annotations in "Bovenaanzicht" and "Belastingzones" views for improved clarity and user experience.
 
 ### Fixed
 - Resolved issues where `OBJECTNUMM` was not found in `Bridge` entity parameters by:
