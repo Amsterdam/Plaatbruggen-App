@@ -50,7 +50,6 @@ Semantic versioning is used to denote different versions of this project.
     - Updating `OverviewBridgesController` (`_create_missing_children` method) to correctly structure parameters under an "info" key when creating new bridge entities.
 - Corrected various Ruff linter errors in `BridgeController` and `app/common/map_utils.py`, including `ERA001` (commented-out code), `TRY301` (abstract `raise`), `C901`/`PLR0911`/`PLR0912` (complexity/branches/returns), `TRY300` (consider `else`), `W293` (whitespace), `RUF013` (implicit `Optional`), `ANN202` (missing return type), and `RET505` (unnecessary `else`).
 
-
 ## [`v0.0.4`] - 2025-05-08
 
 ### Added
