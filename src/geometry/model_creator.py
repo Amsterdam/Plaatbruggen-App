@@ -319,39 +319,39 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         rebar_scene.add_geometry(bottom_shear)
         rebar_scene.add_geometry(top_shear)
 
-    # Print debug information for shear reinforcement
-    def calculate_actual_hoh(positions: list[float]) -> float | None:
-        """Calculate actual heart-to-heart distance from positions."""
-        if len(positions) < 2:
-            return None
-        # Sort positions and calculate average spacing between consecutive bars
-        sorted_pos = sorted(positions)
-        spacings = [sorted_pos[i+1] - sorted_pos[i] for i in range(len(sorted_pos)-1)]
-        return sum(spacings) / len(spacings) if spacings else None
+    # # Print debug information for shear reinforcement
+    # def calculate_actual_hoh(positions: list[float]) -> float | None:
+    #     """Calculate actual heart-to-heart distance from positions."""
+    #     if len(positions) < 2:
+    #         return None
+    #     # Sort positions and calculate average spacing between consecutive bars
+    #     sorted_pos = sorted(positions)
+    #     spacings = [sorted_pos[i+1] - sorted_pos[i] for i in range(len(sorted_pos)-1)]
+    #     return sum(spacings) / len(spacings) if spacings else None
 
-    print("\nShear Reinforcement Details:")
-    print(f"Configuration: {'Longitudinal outside, shear inside' if langswapening_buiten else 'Shear outside, longitudinal inside'}")
-    print("Zone 1:")
-    print(f"  - Number of bars: {len(shear_x_positions_z1)}")
-    print(f"  - Theoretical h.o.h: {hoh_shear_z1:.3f}m")
-    actual_hoh_z1 = calculate_actual_hoh(shear_x_positions_z1)
-    print(f"  - Actual h.o.h: {actual_hoh_z1:.3f}m" if actual_hoh_z1 else "  - Actual h.o.h: N/A (less than 2 bars)")
+    # print("\nShear Reinforcement Details:")
+    # print(f"Configuration: {'Longitudinal outside, shear inside' if langswapening_buiten else 'Shear outside, longitudinal inside'}")
+    # print("Zone 1:")
+    # print(f"  - Number of bars: {len(shear_x_positions_z1)}")
+    # print(f"  - Theoretical h.o.h: {hoh_shear_z1:.3f}m")
+    # actual_hoh_z1 = calculate_actual_hoh(shear_x_positions_z1)
+    # print(f"  - Actual h.o.h: {actual_hoh_z1:.3f}m" if actual_hoh_z1 else "  - Actual h.o.h: N/A (less than 2 bars)")
     
-    print("\nZone 2:")
-    print(f"  - Number of bars: {len(shear_x_positions_z2)}")
-    print(f"  - Theoretical h.o.h: {hoh_shear_z2:.3f}m")
-    actual_hoh_z2 = calculate_actual_hoh(shear_x_positions_z2)
-    print(f"  - Actual h.o.h: {actual_hoh_z2:.3f}m" if actual_hoh_z2 else "  - Actual h.o.h: N/A (less than 2 bars)")
+    # print("\nZone 2:")
+    # print(f"  - Number of bars: {len(shear_x_positions_z2)}")
+    # print(f"  - Theoretical h.o.h: {hoh_shear_z2:.3f}m")
+    # actual_hoh_z2 = calculate_actual_hoh(shear_x_positions_z2)
+    # print(f"  - Actual h.o.h: {actual_hoh_z2:.3f}m" if actual_hoh_z2 else "  - Actual h.o.h: N/A (less than 2 bars)")
     
-    print("\nZone 3:")
-    print(f"  - Number of bars: {len(shear_x_positions_z3)}")
-    print(f"  - Theoretical h.o.h: {hoh_shear_z3:.3f}m")
-    actual_hoh_z3 = calculate_actual_hoh(shear_x_positions_z3)
-    print(f"  - Actual h.o.h: {actual_hoh_z3:.3f}m" if actual_hoh_z3 else "  - Actual h.o.h: N/A (less than 2 bars)")
-    print("\nX-positions per zone:")
-    print(f"Zone 1: {[f'{x:.3f}' for x in shear_x_positions_z1]}")
-    print(f"Zone 2: {[f'{x:.3f}' for x in shear_x_positions_z2]}")
-    print(f"Zone 3: {[f'{x:.3f}' for x in shear_x_positions_z3]}")
+    # print("\nZone 3:")
+    # print(f"  - Number of bars: {len(shear_x_positions_z3)}")
+    # print(f"  - Theoretical h.o.h: {hoh_shear_z3:.3f}m")
+    # actual_hoh_z3 = calculate_actual_hoh(shear_x_positions_z3)
+    # print(f"  - Actual h.o.h: {actual_hoh_z3:.3f}m" if actual_hoh_z3 else "  - Actual h.o.h: N/A (less than 2 bars)")
+    # print("\nX-positions per zone:")
+    # print(f"Zone 1: {[f'{x:.3f}' for x in shear_x_positions_z1]}")
+    # print(f"Zone 2: {[f'{x:.3f}' for x in shear_x_positions_z2]}")
+    # print(f"Zone 3: {[f'{x:.3f}' for x in shear_x_positions_z3]}")
 
     return rebar_scene
 
