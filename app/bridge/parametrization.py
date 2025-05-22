@@ -17,6 +17,7 @@ from viktor.parametrization import (
     Parametrization,
     Tab,
     Text,
+    TextAreaField,
     TextField,
 )
 
@@ -164,11 +165,56 @@ def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
 
-    info = Page("Info", views=["get_bridge_map_view"])
+    info = Page("Info", views=["get_bridge_map_view", "get_bridge_summary_view"])
 
-    # Hidden fields to store bridge identifiers, moved under the 'info' page
-    info.bridge_objectnumm = TextField("Bridge OBJECTNUMM", visible=False)
-    info.bridge_name = TextField("Bridge Name", visible=False)
+    # Bridge identification section
+    info.bridge_info_section = Text(
+        """# Bridge Details
+Below you'll find key information about this bridge structure."""
+    )
+
+    # Saved bridge identifiers (now visible and with better labels)
+    info.bridge_objectnumm = TextField("Bridge ID (OBJECTNUMM)", default="", description="Unique identifier for this bridge in the system")
+    info.bridge_name = TextField("Bridge Name", default="", description="Official name of this bridge structure")
+
+    # Additional bridge information fields
+    info.bridge_description = Text(
+        """## Bridge Overview
+This bridge model represents a plate bridge structure as part of the automatic assessment model for plate bridges.
+Use the tabs below to view geometric properties, load configurations, and analysis results.
+        """
+    )
+
+    info.lb1 = LineBreak()
+
+    info.bridge_location_header = Text("## Location Information")
+    info.location_description = TextField(
+        "Location Description", default="", description="Descriptive location of the bridge (e.g., 'Crossing River A at Highway B')"
+    )
+    info.city = TextField("City/Municipality", default="", description="Municipality where the bridge is located")
+
+    info.lb2 = LineBreak()
+
+    info.bridge_properties_header = Text("## Bridge Properties")
+    info.construction_year = NumberField("Construction Year", default=2000, min=1900, max=2100, description="Year when the bridge was constructed")
+    info.total_length = NumberField(
+        "Total Length", default=0.0, suffix="m", description="Total length of the bridge structure (calculated from segments)"
+    )
+    info.total_width = NumberField(
+        "Total Width", default=0.0, suffix="m", description="Maximum width of the bridge structure (calculated from segments)"
+    )
+
+    info.lb3 = LineBreak()
+
+    info.bridge_status_header = Text("## Assessment Status")
+    info.assessment_date = TextField("Last Assessment", default="", description="Date of the last assessment")
+    info.assessment_status = OptionField(
+        "Assessment Status",
+        default="Not started",
+        options=["Not started", "In progress", "Completed", "Requires attention"],
+        description="Current status of the bridge assessment",
+    )
+    info.assessment_notes = TextAreaField("Assessment Notes", default="", description="Notes about the assessment process or findings")
 
     input = Page(
         "Invoer",
