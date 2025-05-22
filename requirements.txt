@@ -7,3 +7,4 @@ geopandas
 plotly
 shapely
 trimesh
+networkx
