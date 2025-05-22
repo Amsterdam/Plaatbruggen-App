@@ -20,11 +20,13 @@ repos:
     rev: v0.11.7
     hooks:      # Run the linter.
       - id: ruff
-        args: [ --fix ]
+        args: [ --fix, --config=.ruff.toml ]
         stages: [pre-push]
       # Run the formatter.
       - id: ruff-format
+        args: [ --config=.ruff.toml ]
         stages: [pre-push]
+
 
   -   repo: https://github.com/pre-commit/mirrors-mypy
       rev: v1.15.0
