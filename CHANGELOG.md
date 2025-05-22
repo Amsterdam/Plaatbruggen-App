@@ -67,9 +67,6 @@ Semantic versioning is used to denote different versions of this project.
 - Addressed `AttributeError: info` for older `Bridge` entities by:
     - Making parameter access in `BridgeController` more robust using `params.get("info")`.
     - Updating `OverviewBridgesController` (`_create_missing_children` method) to correctly structure parameters under an "info" key when creating new bridge entities.
-- Corrected various Ruff linter errors in `BridgeController` and `app/common/map_utils.py`, including `ERA001` (commented-out code), `TRY301` (abstract `raise`), `C901`/`PLR0911`/`PLR0912`/`PLR0913` (complexity/branches/returns/arguments), `TRY300` (consider `else`), `W293` (whitespace), `RUF013` (implicit `Optional`), `ANN202` (missing return type), `RET505` (unnecessary `else`), `N806` (variable naming), and `PERF401` (list append in loop).
-- Addressed Ruff and MyPy linting errors in `app/bridge/parametrization.py` related to `PLR0911` (too many returns), `ANN001`/`ANN401` (missing/disallowed type hints for `Any`), `ARG001` (unused argument), `T201` (print statements), `UP038` (isinstance with tuple), `TRY300` (consider else), `RET504` (unnecessary assignment), `N802`/`N803` (function/argument naming).
-- Resolved MyPy `var-annotated` error in `app/bridge/controller.py` by adding a type hint to `zone_annotations` in `_add_load_zone_visuals`.
 
 ## [`v0.0.4`] - 2025-05-08
 

@@ -2,6 +2,7 @@
 
 import csv
 from pathlib import Path
+from app.constants import REINFORCEMENT_PATH
 
 
 def get_steel_qualities() -> list[str]:
@@ -12,7 +13,13 @@ def get_steel_qualities() -> list[str]:
         list: List of steel quality names
 
     """
-    csv_path = Path(__file__).parent.parent.parent / "resources" / "data" / "materials" / "betonstaalkwaliteit.csv"
-    with open(csv_path) as f:
-        csv_reader = csv.DictReader(f, delimiter=";")
-        return [row["Betonstaalkwaliteit"].strip('"') for row in csv_reader]
+    csv_path = REINFORCEMENT_PATH
+    steel_qualities = []
+    
+    with open(csv_path, 'r') as f:
+        csv_reader = csv.DictReader(f, delimiter=';')
+        for row in csv_reader:
+            # The first column header is "Betonstaalkwaliteit"
+            steel_qualities.append(row["Betonstaalkwaliteit"].strip('"'))
+    
+    return steel_qualities
