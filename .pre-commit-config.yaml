@@ -21,17 +21,17 @@ repos:
     hooks:      # Run the linter.
       - id: ruff
         args: [ --fix ]
-        stages: [push]
+        stages: [pre-push]
       # Run the formatter.
       - id: ruff-format
-        stages: [push]
+        stages: [pre-push]
 
   -   repo: https://github.com/pre-commit/mirrors-mypy
       rev: v1.15.0
       hooks:
       - id: mypy
         language_version: python3.12
-        stages: [push]
+        stages: [pre-push]
         # Add dependencies needed by mypy that are not mypy itself
         additional_dependencies: [
             "types-Markdown",
