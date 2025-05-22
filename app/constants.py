@@ -50,3 +50,10 @@ README_CONTENT = """
         <div class="container">
         <div class="iframe-wrapper">
 """
+
+# ===================================================================================================================
+# Parametrization Constants
+# ===================================================================================================================
+
+MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
+LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto", "Berm"]

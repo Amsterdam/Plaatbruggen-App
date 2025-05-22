@@ -3,6 +3,7 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -20,11 +21,6 @@ from viktor.parametrization import (
 )
 
 from .geometry_functions import get_steel_qualities
-
-# --- Constants for Parametrization ---
-MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
-LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto", "Berm"]
-
 
 # --- Helper functions for DynamicArray Default Rows ---
 
