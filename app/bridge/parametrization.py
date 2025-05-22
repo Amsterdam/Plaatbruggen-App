@@ -11,13 +11,13 @@ from viktor.parametrization import (
     IsFalse,
     LineBreak,
     Lookup,
+    MultiSelectField,
     NumberField,
     OptionField,
     Page,
     Parametrization,
     Tab,
     Text,
-    MultiSelectField,
     TextAreaField,
     TextField,
 )
@@ -238,8 +238,8 @@ Use the tabs below to view geometric properties, load configurations, and analys
     input.belastingcombinaties = Tab("Belastingcombinaties")
 
     # --- Load Combinations (in belastingcombinaties tab) ---
-    input.belastingcombinaties.cc_class = MultiSelectField("Gevolgklasse", options=['CC1a/b', 'CC2', 'CC3'])
-    input.belastingcombinaties.uls_comb_factor = MultiSelectField("Belastingscombinaties", options=['ULS', 'SLS', 'FAT'])
+    input.belastingcombinaties.cc_class = MultiSelectField("Gevolgklasse", options=["CC1a/b", "CC2", "CC3"])
+    input.belastingcombinaties.uls_comb_factor = MultiSelectField("Belastingscombinaties", options=["ULS", "SLS", "FAT"])
 
     # ----------------------------------------
     ## Dimensions tab
