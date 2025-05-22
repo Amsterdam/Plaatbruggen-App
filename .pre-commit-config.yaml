@@ -20,16 +20,18 @@ repos:
     rev: v0.11.7
     hooks:      # Run the linter.
       - id: ruff
-        args: [ --fix, --config=.ruff.toml ]
+        args: [ --fix ]
+        stages: [push]
       # Run the formatter.
       - id: ruff-format
-        args: [ --config=.ruff.toml ]
+        stages: [push]
 
   -   repo: https://github.com/pre-commit/mirrors-mypy
       rev: v1.15.0
       hooks:
       - id: mypy
         language_version: python3.12
+        stages: [push]
         # Add dependencies needed by mypy that are not mypy itself
         additional_dependencies: [
             "types-Markdown",
