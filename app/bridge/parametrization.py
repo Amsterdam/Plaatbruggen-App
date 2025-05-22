@@ -18,6 +18,7 @@ from viktor.parametrization import (
     Tab,
     Text,
     MultiSelectField,
+    TextAreaField,
     TextField,
 )
 
@@ -151,25 +152,68 @@ def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     """
     option_list = []
     num_segments = len(params.bridge_segments_array) - 1
-
     # For each segment
     for segment in range(num_segments):
         # For each zone (left, middle, right)
         for zone in range(3):
             zone_number = f"{zone + 1}-{segment + 1}"
             option_list.append(zone_number)
-
     return option_list
 
 
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
 
-    info = Page("Info", views=["get_bridge_map_view"])
+    info = Page("Info", views=["get_bridge_map_view", "get_bridge_summary_view"])
 
-    # Hidden fields to store bridge identifiers, moved under the 'info' page
-    info.bridge_objectnumm = TextField("Bridge OBJECTNUMM", visible=False)
-    info.bridge_name = TextField("Bridge Name", visible=False)
+    # Bridge identification section
+    info.bridge_info_section = Text(
+        """# Bridge Details
+Below you'll find key information about this bridge structure."""
+    )
+
+    # Saved bridge identifiers (now visible and with better labels)
+    info.bridge_objectnumm = TextField("Bridge ID (OBJECTNUMM)", default="", description="Unique identifier for this bridge in the system")
+    info.bridge_name = TextField("Bridge Name", default="", description="Official name of this bridge structure")
+
+    # Additional bridge information fields
+    info.bridge_description = Text(
+        """## Bridge Overview
+This bridge model represents a plate bridge structure as part of the automatic assessment model for plate bridges.
+Use the tabs below to view geometric properties, load configurations, and analysis results.
+        """
+    )
+
+    info.lb1 = LineBreak()
+
+    info.bridge_location_header = Text("## Location Information")
+    info.location_description = TextField(
+        "Location Description", default="", description="Descriptive location of the bridge (e.g., 'Crossing River A at Highway B')"
+    )
+    info.city = TextField("City/Municipality", default="", description="Municipality where the bridge is located")
+
+    info.lb2 = LineBreak()
+
+    info.bridge_properties_header = Text("## Bridge Properties")
+    info.construction_year = NumberField("Construction Year", default=2000, min=1900, max=2100, description="Year when the bridge was constructed")
+    info.total_length = NumberField(
+        "Total Length", default=0.0, suffix="m", description="Total length of the bridge structure (calculated from segments)"
+    )
+    info.total_width = NumberField(
+        "Total Width", default=0.0, suffix="m", description="Maximum width of the bridge structure (calculated from segments)"
+    )
+
+    info.lb3 = LineBreak()
+
+    info.bridge_status_header = Text("## Assessment Status")
+    info.assessment_date = TextField("Last Assessment", default="", description="Date of the last assessment")
+    info.assessment_status = OptionField(
+        "Assessment Status",
+        default="Not started",
+        options=["Not started", "In progress", "Completed", "Requires attention"],
+        description="Current status of the bridge assessment",
+    )
+    info.assessment_notes = TextAreaField("Assessment Notes", default="", description="Notes about the assessment process or findings")
 
     input = Page(
         "Invoer",
@@ -182,6 +226,10 @@ class BridgeParametrization(Parametrization):
             "get_load_zones_view",
         ],
     )
+
+    ###############################################
+    ## Invoer Page
+    ##############################################
 
     # --- Tabs within Invoer Page ---
     input.dimensions = Tab("Dimensies")
@@ -198,6 +246,10 @@ class BridgeParametrization(Parametrization):
     input.dimensions.longitudinal_section_loc = NumberField("Locatie langsdoorsnede", default=1.0, suffix="m")
     input.dimensions.cross_section_loc = NumberField("Locatie dwarsdoorsnede", default=1.0, suffix="m")
 
+    # ----------------------------------------
+    ## Dimensions tab
+    # ----------------------------------------
+
     input.dimensions.segment_explanation = Text(
         """Definieer hier de dwarsdoorsneden (snedes) van de brug.
 Elk item in de lijst hieronder representeert een dwarsdoorsnede.
@@ -210,6 +262,7 @@ Elk item in de lijst hieronder representeert een dwarsdoorsnede.
 Standaard zijn twee dwarsdoorsneden (D1 en D2) voorgedefinieerd, wat resulteert in één brugsegment.
 Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en '-' knoppen."""
     )
+
     input.dimensions.array = DynamicArray(
         "Brug dimensies",
         row_label="D-",
@@ -227,7 +280,7 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.dimensions.array.bz3 = NumberField("Breedte zone 3", default=15.0, suffix="m")
     input.dimensions.array.dz = NumberField("Dikte zone 1 en 3", default=2.0, suffix="m")
     input.dimensions.array.dz_2 = NumberField("Dikte zone 2", default=3.0, suffix="m")
-    input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden")
+    input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden", visible=False)
 
     _l_field_visibility_constraint = DynamicArrayConstraint(
         dynamic_array_name="bridge_segments_array",
@@ -238,6 +291,23 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         default=10,
         suffix="m",
         visible=_l_field_visibility_constraint,
+    )
+
+    # --- Bridge Geometry (moved to geometrie_brug tab) ---
+    input.dimensions.lb1 = LineBreak()
+    input.dimensions.text_sections = Text("Met onderstaande instellingen kan de locatie van de doorsneden worden ingesteld.")
+    input.dimensions.toggle_sections = BooleanField("Toon locaties van de doorsneden in het 3D model", default=False, flex=100)
+    input.dimensions.lb2 = LineBreak()
+    input.dimensions.horizontal_section_loc = NumberField(
+        "Horizontale doorsnede z =", default=-1.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+    )
+    input.dimensions.lb3 = LineBreak()
+    input.dimensions.longitudinal_section_loc = NumberField(
+        "Langsdoorsnede y =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+    )
+    input.dimensions.lb4 = LineBreak()
+    input.dimensions.cross_section_loc = NumberField(
+        "Dwarsdoorsnede x =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
     )
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---

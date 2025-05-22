@@ -91,6 +91,7 @@ def create_longitudinal_section(params: "BridgeParametrization", section_loc: fl
     h_values_extra_hight = []
     h_values_output = []
     h_center_y = []
+
     for segment in params.bridge_segments_array:
         l_values.append(segment.l)
         l_cumulative += segment.l
@@ -205,7 +206,7 @@ def create_longitudinal_section(params: "BridgeParametrization", section_loc: fl
         yaxis={
             "range": z_range,
             "scaleanchor": "x",
-            "scaleratio": 2,  # Maintain aspect ratio for proper visualization
+            "scaleratio": 1,  # Maintain aspect ratio for proper visualization
             "title": "Z-as - Hoogte [m]",  # Z-as is the vertical axis shown as Y-axis in the plot
         },
         annotations=all_annotations,
