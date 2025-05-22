@@ -7,6 +7,157 @@ from munch import Munch  # type: ignore[import-untyped]
 from src.geometry.model_creator import create_3d_model, create_cross_section
 
 
+def create_cross_section_annotations(
+    params: dict | Munch, all_z: list[float]
+) -> list[go.layout.Annotation]:
+    """
+    Create Plotly annotation objects for the cross-section view.
+
+    :param params: Input parameters for the bridge dimensions.
+    :type params: dict | Munch
+    :param all_z: List of all z-coordinates in the cross-section.
+    :type all_z: list[float]
+    :returns: List of Plotly annotation objects for the cross-section.
+    :rtype: list[go.layout.Annotation]
+    """
+    l_values = []
+    l_values_cumulative = []
+    l_cumulative = 0
+    b_values_1 = []
+    b_values_2 = []
+    b_values_3 = []
+    zone1_center_y = []
+    zone2_center_y = []
+    zone3_center_y = []
+    zone1_h = []
+    zone2_h = []
+    zone3_h = []
+    zone1_h_center_y = []
+    zone2_h_center_y = []
+    zone3_h_center_y = []
+
+    for segment in params.bridge_segments_array:
+        l_values.append(segment.l)
+        l_cumulative += segment.l
+        l_values_cumulative.append(l_cumulative)
+
+        b_values_1.append(segment.bz1)
+        b_values_2.append(segment.bz2)
+        b_values_3.append(segment.bz3)
+        zone1_center_y.append(segment.bz2 / 2 + segment.bz1 / 2)
+        zone2_center_y.append(0)
+        zone3_center_y.append(-segment.bz2 / 2 - segment.bz3 / 2)
+
+        zone1_h.append(segment.dz)
+        zone2_h.append(segment.dz_2)
+        zone3_h.append(segment.dz)
+
+        zone1_h_center_y.append(-segment.dz / 2)
+        zone2_h_center_y.append(-segment.dz + segment.dz_2 / 2)
+        zone3_h_center_y.append(-segment.dz / 2)
+
+    # Find which segment the cross section is located in
+    section_loc_param = params.input.dimensions.cross_section_loc
+    segment_index = 0
+    for i, cumulative_length in enumerate(l_values_cumulative):
+        if section_loc_param <= cumulative_length:
+            segment_index = i
+            break
+
+    all_annotations: list[go.layout.Annotation] = []
+
+    # Zone labels
+    zone_labels = [
+        go.layout.Annotation(
+            x=zone1_center_y[segment_index],
+            y=zone1_h_center_y[segment_index],
+            text=f"<b>Z1-{segment_index}</b>",
+            showarrow=False,
+            font={"size": 12, "color": "black"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        ),
+        go.layout.Annotation(
+            x=zone2_center_y[segment_index],
+            y=zone2_h_center_y[segment_index],
+            text=f"<b>Z2-{segment_index}</b>",
+            showarrow=False,
+            font={"size": 12, "color": "black"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        ),
+        go.layout.Annotation(
+            x=zone3_center_y[segment_index],
+            y=zone3_h_center_y[segment_index],
+            text=f"<b>Z3-{segment_index}</b>",
+            showarrow=False,
+            font={"size": 12, "color": "black"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        ),
+    ]
+    all_annotations.extend(zone_labels)
+
+    # Width dimension annotations for each zone
+    min_z = min(all_z)
+    zone_width_annotations = [
+        go.layout.Annotation(
+            x=zone1_center_y[segment_index],
+            y=min_z - 1.0,
+            text=f"<b>b = {b_values_1[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "green"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        ),
+        go.layout.Annotation(
+            x=zone2_center_y[segment_index],
+            y=min_z - 1.0,
+            text=f"<b>b = {b_values_2[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "green"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        ),
+        go.layout.Annotation(
+            x=zone3_center_y[segment_index],
+            y=min_z - 1.0,
+            text=f"<b>b = {b_values_3[segment_index]}m</b>",
+            showarrow=False,
+            font={"size": 12, "color": "green"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+            textangle=0,
+            ax=0,
+            ay=0,
+        ),
+    ]
+    all_annotations.extend(zone_width_annotations)
+
+    return all_annotations
+
+
 def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Figure:
     """
     Creates a 2D cross-section view of the bridge using Plotly.
@@ -72,6 +223,10 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
             mode="lines",
             line={"color": "black"}  # Consistent black color for all lines
         ))
+
+    # Add annotations to layout using the new function
+    all_annotations = create_cross_section_annotations(params, all_z)
+    fig.update_layout(annotations=all_annotations)
 
     # Configure the plot layout with appropriate ranges and labels
     fig.update_layout(
