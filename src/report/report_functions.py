@@ -1,16 +1,18 @@
 """Functions for generating reports."""
 
 from datetime import datetime
-from docxtpl import DocxTemplate
 from io import BytesIO
-from pathlib import Path
-from typing import Dict, Union, Any
+from zoneinfo import ZoneInfo
 
+from docxtpl import DocxTemplate  # type: ignore[import]
+from munch import Munch  # type: ignore[import-untyped]
 from viktor.core import File
 from viktor.utils import convert_word_to_pdf
+
 from app.constants import OUTPUT_REPORT_PATH
 
-def create_export_report(params: Dict[str, Any]) -> File:
+
+def create_export_report(params: Munch) -> File:
     """
     Create a report for the export process using a Word template.
 
@@ -30,28 +32,23 @@ def create_export_report(params: Dict[str, Any]) -> File:
     Raises:
         KeyError: If any required parameters are missing from the params dict.
         OSError: If there are issues accessing the template or saving temporary files.
+
     """
     # Load the template
-    doc = DocxTemplate(OUTPUT_REPORT_PATH)
-    
-    # Create the context dict for the template
+    doc = DocxTemplate(OUTPUT_REPORT_PATH)  # Create the context dict for the template
     context = {
         "BRIDGE_ID": params.info.bridge_objectnumm,
-        "DATE": datetime.now().strftime("%d-%m-%Y"),
+        "DATE": datetime.now(tz=ZoneInfo("Europe/Amsterdam")).strftime("%d-%m-%Y"),
         # Add more template variables as needed
     }
-    
+
     # Render the template
     doc.render(context)
-    
+
     # Save the rendered document to a BytesIO object
     doc_binary = BytesIO()
     doc.save(doc_binary)
-    doc_binary.seek(0)  # Reset pointer to start of buffer
-
-    # Convert to PDF
+    doc_binary.seek(0)  # Reset pointer to start of buffer    # Convert to PDF
     file = File.from_data(doc_binary.read())
     with file.open_binary() as f:
-        pdf = convert_word_to_pdf(f)
-        
-    return pdf
+        return convert_word_to_pdf(f)
