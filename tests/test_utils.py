@@ -19,8 +19,13 @@ def is_git_hook_environment() -> bool:
     if any(os.environ.get(indicator) for indicator in git_hook_indicators):
         return True
     
-    # Check if running under pre-commit
-    if "PRE_COMMIT" in os.environ or "PRE_COMMIT_HOME" in os.environ:
+    # Check if running under pre-commit (multiple possible indicators)
+    pre_commit_indicators = ["PRE_COMMIT", "PRE_COMMIT_HOME", "_PRE_COMMIT_HOOK_ID", "PRE_COMMIT_COLOR"]
+    if any(os.environ.get(indicator) for indicator in pre_commit_indicators):
+        return True
+    
+    # Check if we're being called from a hook script (common pattern)
+    if any("hook" in str(arg).lower() for arg in sys.argv):
         return True
         
     # Check for Windows (often has encoding issues with emojis)

@@ -3,6 +3,7 @@
 Enhanced test runner with colorful output and detailed failure reporting.
 """
 
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -71,7 +72,10 @@ def print_detailed_summary(result):
 
 def main():
     """Run all tests with enhanced reporting."""
-    concise_mode = should_use_concise_mode()
+    # Force concise mode for pre-commit by detecting if we're running in a subprocess
+    # This is a fallback in case our environment detection doesn't work
+    is_subprocess = os.environ.get('_') != sys.executable
+    concise_mode = is_subprocess or should_use_concise_mode()
 
     # In concise mode, don't show startup message
     if not concise_mode:

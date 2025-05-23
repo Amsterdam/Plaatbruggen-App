@@ -5,6 +5,7 @@ MyPy wrapper with concise summary for git hooks.
 
 import subprocess
 import sys
+import os
 from pathlib import Path
 
 # Add the project root to Python path to access test utils
@@ -16,6 +17,11 @@ from tests.test_utils import Colors, colored_text, safe_emoji_text, should_use_c
 
 def run_mypy():
     """Run mypy and provide concise summary."""
+    # Force concise mode for pre-commit by detecting if we're running in a subprocess
+    # This is a fallback in case our environment detection doesn't work
+    is_subprocess = os.environ.get('_') != sys.executable
+    force_concise = is_subprocess or should_use_concise_mode()
+    
     try:
         result = subprocess.run(
             [sys.executable, "-m", "mypy", "."], 
@@ -27,7 +33,7 @@ def run_mypy():
             check=False
         )
         
-        if should_use_concise_mode():
+        if force_concise:
             # Combine stdout and stderr for analysis
             output = (result.stdout or "") + (result.stderr or "")
             lines = output.strip().split("\n") if output else []
