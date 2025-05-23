@@ -198,6 +198,7 @@ class EnhancedTestResult(unittest.TestResult):
 
     def addSuccess(self, test):
         super().addSuccess(test)
+        # In concise mode (git hooks), don't print individual test results
         if not should_use_concise_mode():
             print(colored_text(safe_emoji_text(f"✅ {test._testMethodName}", f"OK {test._testMethodName}"), Colors.GREEN))
 

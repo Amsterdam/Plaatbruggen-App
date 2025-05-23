@@ -20,7 +20,7 @@ def print_concise_summary(result):
     failures = len(result.failures)
     errors = len(result.errors)
     successes = total_tests - failures - errors
-    
+
     # Always show a summary line for git hooks
     if failures == 0 and errors == 0:
         print(colored_text(safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!"), Colors.GREEN, bold=True))
@@ -28,7 +28,7 @@ def print_concise_summary(result):
     else:
         print(colored_text(safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED"), Colors.RED, bold=True))
         print(colored_text(f"Tests: {failures} failed, {errors} errors, {successes} passed, {total_tests} total", Colors.WHITE))
-        
+
         # Show failed test details concisely
         if hasattr(result, "_concise_failures") and result._concise_failures:
             print(colored_text("\nFailed tests:", Colors.YELLOW, bold=True))
@@ -36,7 +36,7 @@ def print_concise_summary(result):
                 status = "ERROR" if failure["is_error"] else "FAIL"
                 print(colored_text(f"  {status}: {failure['test_class']}.{failure['test_name']}", Colors.RED))
                 print(colored_text(f"    {failure['error_msg']}", Colors.WHITE))
-        
+
         print(colored_text("\nFor detailed output, run:", Colors.CYAN))
         print(colored_text("  python run_enhanced_tests.py", Colors.WHITE))
 
@@ -64,6 +64,7 @@ def main():
     """Run all tests with enhanced reporting."""
     concise_mode = should_use_concise_mode()
 
+    # In concise mode, don't show startup message
     if not concise_mode:
         print(colored_text(safe_emoji_text("🚀 STARTING ENHANCED TEST SUITE! 🚀", "STARTING ENHANCED TEST SUITE!"), Colors.BLUE, bold=True))
         print(colored_text("=" * 60, Colors.BLUE))
@@ -72,8 +73,9 @@ def main():
     loader = unittest.TestLoader()
     test_suite = loader.discover("tests", pattern="test_*.py")
 
-    # Create enhanced test runner
-    runner = unittest.TextTestRunner(resultclass=EnhancedTestResult, verbosity=0, stream=sys.stdout)
+    # Create enhanced test runner with minimal output in concise mode
+    verbosity = 0 if concise_mode else 0
+    runner = unittest.TextTestRunner(resultclass=EnhancedTestResult, verbosity=verbosity, stream=sys.stdout)
 
     # Run tests
     result = runner.run(test_suite)

@@ -16,35 +16,33 @@
 # 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.3
 
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.7
-    hooks:      # Run the linter.
-      - id: ruff
-        args: [ --fix, --config=.ruff.toml ]
-        stages: [pre-push]
-      # Run the formatter.
-      - id: ruff-format
-        args: [ --config=.ruff.toml ]
-        stages: [pre-push]
-
-
-  -   repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.15.0
-      hooks:
-      - id: mypy
-        language_version: python3.12
-        stages: [pre-push]
-        # Add dependencies needed by mypy that are not mypy itself
-        additional_dependencies: [
-            "types-Markdown",
-            "types-shapely",
-            # Add other types-* packages from requirements_dev.txt if needed
-        ]
-
   - repo: local
     hooks:
+      - id: ruff-check
+        name: Ruff code style check
+        entry: python scripts/run_ruff_check.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true
+
+      - id: ruff-format
+        name: Ruff code formatter
+        entry: python -m ruff format --config=.ruff.toml
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+
+      - id: mypy
+        name: MyPy type checking
+        entry: python scripts/run_mypy.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true
+
       - id: run-unit-tests
-        name: Run enhanced unit tests
+        name: Enhanced unit tests
         entry: python run_enhanced_tests.py
         language: system
         stages: [pre-push]
