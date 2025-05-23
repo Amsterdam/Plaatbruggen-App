@@ -42,7 +42,7 @@ repos:
         verbose: true
 
       - id: run-unit-tests
-        name: Enhanced unit tests
+        name: Unit tests
         entry: python run_enhanced_tests.py
         language: system
         stages: [pre-push]

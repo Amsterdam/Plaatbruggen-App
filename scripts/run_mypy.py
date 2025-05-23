@@ -44,11 +44,11 @@ def run_mypy():
             else:
                 fail_msg = safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
                 print(colored_text(fail_msg, Colors.RED, bold=True))
-                
+
                 # Count errors from output
                 error_lines = [line for line in lines if ": error:" in line or ": note:" in line]
                 error_count = len([line for line in lines if ": error:" in line])
-                
+
                 count_msg = f"Type checking: {error_count} errors found"
                 print(colored_text(count_msg, Colors.RED))
                 help_msg = "\nFor detailed output, run:"
