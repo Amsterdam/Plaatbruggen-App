@@ -28,6 +28,7 @@ def print_concise_summary(result):
         print(colored_text(success_msg, Colors.GREEN, bold=True))
         count_msg = f"Tests: {total_tests} passed"
         print(colored_text(count_msg, Colors.GREEN))
+        print(colored_text("All tests passed, ready to push!", Colors.GREEN, bold=True))
     else:
         fail_msg = safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
         print(colored_text(fail_msg, Colors.RED, bold=True))
@@ -49,6 +50,7 @@ def print_concise_summary(result):
         print(colored_text(help_header, Colors.CYAN))
         help_cmd = "  python run_enhanced_tests.py"
         print(colored_text(help_cmd, Colors.WHITE))
+        print(colored_text("Tests failed, please fix before pushing!", Colors.RED, bold=True))
 
 
 def print_detailed_summary(result):
@@ -78,7 +80,7 @@ def main():
     concise_mode = is_subprocess or should_use_concise_mode()
 
     # Enable colors for Git environments (like Git Bash) even if detection is conservative
-    if any(os.environ.get(var) for var in ['MSYSTEM', 'MINGW_PREFIX', 'TERM']):
+    if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "TERM"]):
         os.environ["FORCE_COLOR"] = "1"
 
     # In concise mode, don't show startup message

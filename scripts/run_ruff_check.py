@@ -21,11 +21,11 @@ def run_ruff_check():
     # This is a fallback in case our environment detection doesn't work
     is_subprocess = os.environ.get("_") != sys.executable
     force_concise = is_subprocess or should_use_concise_mode()
-    
+
     # Enable colors for Git environments (like Git Bash) even if detection is conservative
-    if any(os.environ.get(var) for var in ['MSYSTEM', 'MINGW_PREFIX', 'TERM']):
+    if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "TERM"]):
         os.environ["FORCE_COLOR"] = "1"
-    
+
     try:
         result = subprocess.run(
             [sys.executable, "-m", "ruff", "check", "--config=.ruff.toml"],
@@ -47,6 +47,7 @@ def run_ruff_check():
                 print(colored_text(success_msg, Colors.GREEN, bold=True))
                 detail_msg = "Code style: No issues found"
                 print(colored_text(detail_msg, Colors.GREEN))
+                print(colored_text("Code style check passed, ready to continue!", Colors.GREEN, bold=True))
             else:
                 fail_msg = safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
                 print(colored_text(fail_msg, Colors.RED, bold=True))
@@ -78,6 +79,7 @@ def run_ruff_check():
                 print(colored_text(help_msg, Colors.CYAN))
                 cmd_msg = "  python -m ruff check --config=.ruff.toml"
                 print(colored_text(cmd_msg, Colors.WHITE))
+                print(colored_text("Code style check failed, please fix before pushing!", Colors.RED, bold=True))
         else:
             # In detailed mode, show full output
             if result.stdout:
