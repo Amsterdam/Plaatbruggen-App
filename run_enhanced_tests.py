@@ -25,30 +25,30 @@ def print_concise_summary(result):
     # Always show a summary line for git hooks
     if failures == 0 and errors == 0:
         success_msg = safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
-        print(success_msg)
+        print(colored_text(success_msg, Colors.GREEN, bold=True))
         count_msg = f"Tests: {total_tests} passed"
-        print(count_msg)
+        print(colored_text(count_msg, Colors.GREEN))
     else:
         fail_msg = safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
-        print(fail_msg)
+        print(colored_text(fail_msg, Colors.RED, bold=True))
         count_msg = f"Tests: {failures} failed, {errors} errors, {successes} passed, {total_tests} total"
-        print(count_msg)
+        print(colored_text(count_msg, Colors.WHITE))
 
         # Show failed test details concisely
         if hasattr(result, "_concise_failures") and result._concise_failures:
-            fail_header = "Failed tests:"
-            print(fail_header)
+            fail_header = "\nFailed tests:"
+            print(colored_text(fail_header, Colors.YELLOW, bold=True))
             for failure in result._concise_failures:
                 status = "ERROR" if failure["is_error"] else "FAIL"
                 test_line = f"  {status}: {failure['test_class']}.{failure['test_name']}"
-                print(test_line)
+                print(colored_text(test_line, Colors.RED))
                 error_line = f"    {failure['error_msg']}"
-                print(error_line)
+                print(colored_text(error_line, Colors.WHITE))
 
-        help_header = "For detailed output, run:"
-        print(help_header)
+        help_header = "\nFor detailed output, run:"
+        print(colored_text(help_header, Colors.CYAN))
         help_cmd = "  python run_enhanced_tests.py"
-        print(help_cmd)
+        print(colored_text(help_cmd, Colors.WHITE))
 
 
 def print_detailed_summary(result):
@@ -74,7 +74,7 @@ def main():
     """Run all tests with enhanced reporting."""
     # Force concise mode for pre-commit by detecting if we're running in a subprocess
     # This is a fallback in case our environment detection doesn't work
-    is_subprocess = os.environ.get('_') != sys.executable
+    is_subprocess = os.environ.get("_") != sys.executable
     concise_mode = is_subprocess or should_use_concise_mode()
 
     # In concise mode, don't show startup message

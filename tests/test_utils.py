@@ -18,20 +18,20 @@ def is_git_hook_environment() -> bool:
     # Also check if we're in a pre-commit hook (common environment)
     if any(os.environ.get(indicator) for indicator in git_hook_indicators):
         return True
-    
+
     # Check if running under pre-commit (multiple possible indicators)
     pre_commit_indicators = ["PRE_COMMIT", "PRE_COMMIT_HOME", "_PRE_COMMIT_HOOK_ID", "PRE_COMMIT_COLOR"]
     if any(os.environ.get(indicator) for indicator in pre_commit_indicators):
         return True
-    
+
     # Check if we're being called from a hook script (common pattern)
     if any("hook" in str(arg).lower() for arg in sys.argv):
         return True
-        
+
     # Check for Windows (often has encoding issues with emojis)
     if sys.platform.startswith("win"):
         return True
-        
+
     return False
 
 
@@ -62,11 +62,16 @@ class Colors:
     @classmethod
     def disable_on_windows_if_needed(cls) -> None:
         """Disable colors on Windows if ANSI support is not available."""
-        if should_use_concise_mode():  # Use concise mode logic instead of separate check
-            # Disable colors completely in concise mode
-            for attr in dir(cls):
-                if not attr.startswith("_") and attr != "disable_on_windows_if_needed":
-                    setattr(cls, attr, "")
+        # Only disable colors if we're in a very restrictive environment
+        # Most modern Windows terminals support ANSI colors fine
+        if sys.platform.startswith("win"):
+            try:
+                # Try to enable ANSI support on Windows 10+
+                import os
+                os.system("")  # This enables ANSI on Windows 10+
+            except Exception:
+                # Only disable if we really can't enable ANSI
+                pass
 
 
 def colored_text(text: str, color: str, bold: bool = False) -> str:
