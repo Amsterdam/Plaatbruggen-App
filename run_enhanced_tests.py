@@ -77,6 +77,10 @@ def main():
     is_subprocess = os.environ.get("_") != sys.executable
     concise_mode = is_subprocess or should_use_concise_mode()
 
+    # Enable colors for Git environments (like Git Bash) even if detection is conservative
+    if any(os.environ.get(var) for var in ['MSYSTEM', 'MINGW_PREFIX', 'TERM']):
+        os.environ["FORCE_COLOR"] = "1"
+
     # In concise mode, don't show startup message
     if not concise_mode:
         print(colored_text(safe_emoji_text("🚀 STARTING ENHANCED TEST SUITE! 🚀", "STARTING ENHANCED TEST SUITE!"), Colors.BLUE, bold=True))

@@ -21,7 +21,11 @@ def run_mypy():
     # This is a fallback in case our environment detection doesn't work
     is_subprocess = os.environ.get("_") != sys.executable
     force_concise = is_subprocess or should_use_concise_mode()
-
+    
+    # Enable colors for Git environments (like Git Bash) even if detection is conservative
+    if any(os.environ.get(var) for var in ['MSYSTEM', 'MINGW_PREFIX', 'TERM']):
+        os.environ["FORCE_COLOR"] = "1"
+    
     try:
         result = subprocess.run(
             [sys.executable, "-m", "mypy", "."], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=project_root, check=False

@@ -28,16 +28,47 @@ def is_git_hook_environment() -> bool:
     if any("hook" in str(arg).lower() for arg in sys.argv):
         return True
 
-    # Check for Windows (often has encoding issues with emojis)
-    if sys.platform.startswith("win"):
-        return True
-
     return False
 
 
 def should_use_concise_mode() -> bool:
     """Determine if we should use concise output mode (for git hooks)."""
     return is_git_hook_environment() or os.environ.get("TEST_CONCISE_MODE") == "1"
+
+
+def supports_color() -> bool:
+    """Check if the current terminal supports ANSI colors."""
+    # Force color support if explicitly requested
+    if os.environ.get("FORCE_COLOR") == "1":
+        return True
+        
+    # Check if NO_COLOR is set (universal way to disable colors)
+    if os.environ.get("NO_COLOR"):
+        return False
+    
+    # Check if stdout is a TTY
+    if not hasattr(sys.stdout, 'isatty') or not sys.stdout.isatty():
+        return False
+    
+    # Check for common terminals that support colors
+    term = os.environ.get('TERM', '').lower()
+    if any(color_term in term for color_term in ['color', 'xterm', 'screen', 'tmux', 'ansi']):
+        return True
+    
+    # Check for Git Bash and other Windows terminals that support colors
+    if sys.platform.startswith("win"):
+        # Git Bash sets these environment variables
+        if any(os.environ.get(var) for var in ['MSYSTEM', 'MINGW_PREFIX', 'MSYSTEM_PREFIX']):
+            return True
+        # Windows Terminal and other modern terminals
+        if os.environ.get('WT_SESSION') or os.environ.get('TERM_PROGRAM'):
+            return True
+    
+    # Default to True for most Unix-like systems
+    if not sys.platform.startswith("win"):
+        return True
+        
+    return False
 
 
 class Colors:
@@ -61,24 +92,18 @@ class Colors:
 
     @classmethod
     def disable_on_windows_if_needed(cls) -> None:
-        """Disable colors on Windows if ANSI support is not available."""
-        # Only disable colors if we're in a very restrictive environment
-        # Most modern Windows terminals support ANSI colors fine
-        if sys.platform.startswith("win"):
-            try:
-                # Try to enable ANSI support on Windows 10+
-                import os
-
-                os.system("")  # This enables ANSI on Windows 10+
-            except Exception:
-                # Only disable if we really can't enable ANSI
-                pass
+        """Disable colors if the terminal doesn't support them."""
+        if not supports_color():
+            # Disable all colors
+            for attr in dir(cls):
+                if not attr.startswith("_") and attr != "disable_on_windows_if_needed":
+                    setattr(cls, attr, "")
 
 
 def colored_text(text: str, color: str, bold: bool = False) -> str:
     """Create colored text with optional bold styling."""
-    # In git hooks, just return plain text
-    if is_git_hook_environment():
+    # Respect color support detection, but allow override
+    if not supports_color() and not os.environ.get("FORCE_COLOR"):
         return text
 
     style = Colors.BOLD if bold else ""
