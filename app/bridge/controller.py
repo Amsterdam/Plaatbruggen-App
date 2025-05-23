@@ -59,6 +59,8 @@ from viktor.views import (
     PlotlyView,  # Import PlotlyView
 )
 
+from src.report.report_functions import create_export_report  # Import the report creation function
+
 # Import parametrization from the separate file
 from .parametrization import (
     MAX_LOAD_ZONE_SEGMENT_FIELDS,  # Import the constant
@@ -416,8 +418,6 @@ class BridgeController(ViktorController):
 
         """
         # using File object
-        file1 = File.from_path(OUTPUT_REPORT_PATH)
-        with file1.open_binary() as f1:
-            pdf = convert_word_to_pdf(f1)
+        pdf = create_export_report(params)
 
         return PDFResult(file=pdf)

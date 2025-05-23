@@ -8,3 +8,4 @@ plotly
 shapely
 trimesh
 networkx
+docxtpl
