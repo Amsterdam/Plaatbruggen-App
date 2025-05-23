@@ -44,8 +44,8 @@ repos:
   - repo: local
     hooks:
       - id: run-unit-tests
-        name: Run unit tests
-        entry: python -m unittest discover tests
-        language: system # Assumes python is in the system PATH
+        name: Run enhanced unit tests
+        entry: python run_enhanced_tests.py
+        language: system
         stages: [pre-push]
-        pass_filenames: false # We want to run all tests, not just changed files
+        pass_filenames: false
