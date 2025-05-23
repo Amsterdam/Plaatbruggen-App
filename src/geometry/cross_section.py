@@ -303,7 +303,8 @@ def create_cross_section_view(params: dict | Munch, section_loc: float) -> go.Fi
 
     return fig
 
+
 def calculate_max_array(params: object, **kwargs) -> int:  # noqa: ARG001
     """Calculate the maximum number of reinforcement zones based on the number of bridge segments."""
-    sections = len(params.bridge_segments_array)    # type: ignore[attr-defined]
+    sections = len(params.bridge_segments_array)  # type: ignore[attr-defined]
     return 3 * (sections - 1)

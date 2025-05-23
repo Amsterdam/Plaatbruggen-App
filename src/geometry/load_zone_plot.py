@@ -319,34 +319,34 @@ def build_load_zones_figure(
     for zone_idx, zone_param_data in enumerate(load_zones_data_params):
         zone_type_text = zone_param_data.get("zone_type", f"Zone {zone_idx + 1}")
         # Ensure access via get for TypedDict compatibility
-        zone_widths_per_d: list[float] = zone_param_data.get("zone_widths_per_d", []) # type: ignore[assignment]
-        y_coords_top_of_current_zone: list[float] = zone_param_data.get("y_coords_top_current_zone", []) # type: ignore[assignment]
+        zone_widths_per_d: list[float] = zone_param_data.get("zone_widths_per_d", [])  # type: ignore[assignment]
+        y_coords_top_of_current_zone: list[float] = zone_param_data.get("y_coords_top_current_zone", [])  # type: ignore[assignment]
 
         if not zone_widths_per_d or not y_coords_top_of_current_zone:
             # Skip this zone if essential data is missing, or handle error appropriately
             # This might happen if LoadZoneDataRow is not correctly populated
             # For now, let's assume valid data structure from earlier processing steps.
             # If this becomes an issue, add more robust error handling or default value generation.
-            pass # Or continue to next iteration
+            pass  # Or continue to next iteration
 
         # Extract y_bridge_bottom_at_d_points from bridge_geom (list[list[float]] -> list[float])
         # Using the first element [0] of each [min_y, max_y] pair
         y_bridge_bottom_at_d_points = [bottom_edge[0] for bottom_edge in y_coords_bridge_bottom_edge]
 
         y_coords_bottom_of_current_zone: list[float] = calculate_zone_bottom_y_coords(
-            zone_idx, len(load_zones_data_params), num_defined_d_points,
-            y_coords_top_of_current_zone, y_bridge_bottom_at_d_points, zone_param_data
+            zone_idx, len(load_zones_data_params), num_defined_d_points, y_coords_top_of_current_zone, y_bridge_bottom_at_d_points, zone_param_data
         )
 
         # Determine if any part of this zone is lower than the absolute bridge bottom
         # (e.g., due to errors or extreme parameters)
         exceeds_limits = any(
-            y_coords_bottom_of_current_zone[d_idx] < y_coords_bridge_bottom_edge[d_idx][0] - 1e-3 # Compare y_coord of zone with min_y of bridge bottom
+            y_coords_bottom_of_current_zone[d_idx]
+            < y_coords_bridge_bottom_edge[d_idx][0] - 1e-3  # Compare y_coord of zone with min_y of bridge bottom
             for d_idx in range(num_defined_d_points)
         )
         # Check if the zone exceeds the top of the bridge
         exceeds_limits = exceeds_limits or any(
-            y_coords_top_of_current_zone[d_idx] > y_coords_bridge_top_edge[d_idx] + 1e-3 # Compare y_coord of zone with y_coord of bridge top
+            y_coords_top_of_current_zone[d_idx] > y_coords_bridge_top_edge[d_idx] + 1e-3  # Compare y_coord of zone with y_coord of bridge top
             for d_idx in range(num_defined_d_points)
         )
 

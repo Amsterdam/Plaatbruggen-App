@@ -647,7 +647,7 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
             # This case should ideally be caught by the check for empty bridge_segments_array,
             # but as a safeguard if segments somehow produce no vertices/faces:
             # Log this? Or handle as error?
-            return trimesh.Scene() # Return an empty scene
+            return trimesh.Scene()  # Return an empty scene
 
         final_vertices = np.vstack(all_segment_vertices)
         final_faces = np.vstack(all_segment_faces)

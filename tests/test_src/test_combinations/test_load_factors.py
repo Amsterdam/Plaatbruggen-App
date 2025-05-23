@@ -1,10 +1,18 @@
 import unittest
-from src.combinations.load_factors import _clamp, validate_input, get_interpolation_data, PSI_FACTORS, get_psi_factor # Import the function to be tested and validate_input
+
 import numpy as np
 from numpy.testing import assert_array_equal
 
-class TestLoadFactorsClamp(unittest.TestCase):
+from src.combinations.load_factors import (  # Import the function to be tested and validate_input
+    PSI_FACTORS,
+    _clamp,
+    get_interpolation_data,
+    get_psi_factor,
+    validate_input,
+)
 
+
+class TestLoadFactorsClamp(unittest.TestCase):
     def test_clamp_value_within_range(self):
         # Arrange
         value = 50.0
@@ -60,8 +68,8 @@ class TestLoadFactorsClamp(unittest.TestCase):
         # Assert
         self.assertEqual(result, expected)
 
-class TestLoadFactorsValidateInput(unittest.TestCase):
 
+class TestLoadFactorsValidateInput(unittest.TestCase):
     def test_validate_input_valid_values(self):
         # Arrange
         span = 50.0
@@ -78,7 +86,7 @@ class TestLoadFactorsValidateInput(unittest.TestCase):
         # Arrange
         span = 10.0  # Below 20
         ref_period = 15.0
-        expected_clamped_span = 20.0 # Should be clamped to 20
+        expected_clamped_span = 20.0  # Should be clamped to 20
         # Act
         clamped_span, _ = validate_input(span, ref_period)
         # Assert
@@ -86,9 +94,9 @@ class TestLoadFactorsValidateInput(unittest.TestCase):
 
     def test_validate_input_span_above_clamp_range(self):
         # Arrange
-        span = 250.0 # Above 200
+        span = 250.0  # Above 200
         ref_period = 15.0
-        expected_clamped_span = 200.0 # Should be clamped to 200
+        expected_clamped_span = 200.0  # Should be clamped to 200
         # Act
         clamped_span, _ = validate_input(span, ref_period)
         # Assert
@@ -149,7 +157,7 @@ class TestLoadFactorsValidateInput(unittest.TestCase):
     def test_validate_input_ref_period_too_high(self):
         # Arrange
         span = 50.0
-        ref_period = 101.0 # Max is 100 from PSI_FACTORS
+        ref_period = 101.0  # Max is 100 from PSI_FACTORS
         # Act & Assert
         # The message includes the max value, so we check for the start of the message.
         with self.assertRaisesRegex(ValueError, "Reference period must not exceed 100 years"):
@@ -158,7 +166,7 @@ class TestLoadFactorsValidateInput(unittest.TestCase):
     def test_validate_input_ref_period_at_max_boundary(self):
         # Arrange
         span = 50.0
-        ref_period = 100.0 # Max is 100
+        ref_period = 100.0  # Max is 100
         expected_clamped_span = 50.0
         expected_ref_period = 100.0
         # Act
@@ -169,7 +177,7 @@ class TestLoadFactorsValidateInput(unittest.TestCase):
 
     def test_validate_input_ref_period_at_min_valid_boundary(self):
         # min_valid_period = 1/12
-        min_valid_period = 1.0/12.0 
+        min_valid_period = 1.0 / 12.0
         # Arrange
         span = 50.0
         ref_period = min_valid_period
@@ -181,8 +189,8 @@ class TestLoadFactorsValidateInput(unittest.TestCase):
         self.assertEqual(clamped_span, expected_clamped_span)
         self.assertEqual(result_ref_period, expected_ref_period)
 
-class TestLoadFactorsGetInterpolationData(unittest.TestCase):
 
+class TestLoadFactorsGetInterpolationData(unittest.TestCase):
     def test_get_interpolation_data_return_types(self):
         # Act
         spans, periods, values = get_interpolation_data()
@@ -190,7 +198,7 @@ class TestLoadFactorsGetInterpolationData(unittest.TestCase):
         self.assertIsInstance(spans, np.ndarray)
         self.assertIsInstance(periods, np.ndarray)
         self.assertIsInstance(values, np.ndarray)
-        self.assertEqual(len(get_interpolation_data()), 3) # Check it returns a tuple of 3 items
+        self.assertEqual(len(get_interpolation_data()), 3)  # Check it returns a tuple of 3 items
 
     def test_get_interpolation_data_spans_content_and_order(self):
         # Arrange
@@ -234,30 +242,30 @@ class TestLoadFactorsGetInterpolationData(unittest.TestCase):
         # Example 2: Bottom-right corner (Min period, Max span)
         # Min period (last in periods_arr) should be 1/12
         # Max span (last in spans_arr) should be 200
-        self.assertEqual(values_arr[period_to_idx[1.0/12.0], span_to_idx[200]], PSI_FACTORS[1.0/12.0][200])
+        self.assertEqual(values_arr[period_to_idx[1.0 / 12.0], span_to_idx[200]], PSI_FACTORS[1.0 / 12.0][200])
 
         # Example 3: A middle value
         # Period 15, Span 50
-        if 15.0 in period_to_idx and 50 in span_to_idx: # Ensure these keys exist for safety
+        if 15.0 in period_to_idx and 50 in span_to_idx:  # Ensure these keys exist for safety
             self.assertEqual(values_arr[period_to_idx[15.0], span_to_idx[50]], PSI_FACTORS[15.0][50])
         else:
             self.fail("Key 15.0 or 50 not found in period/span index maps for spot check")
 
         # Example 4: Another middle value
         # Period 1.0, Span 100
-        if 1.0 in period_to_idx and 100 in span_to_idx: # Ensure these keys exist
+        if 1.0 in period_to_idx and 100 in span_to_idx:  # Ensure these keys exist
             self.assertEqual(values_arr[period_to_idx[1.0], span_to_idx[100]], PSI_FACTORS[1.0][100])
         else:
             self.fail("Key 1.0 or 100 not found in period/span index maps for spot check")
 
-class TestLoadFactorsGetPsiFactor(unittest.TestCase):
 
+class TestLoadFactorsGetPsiFactor(unittest.TestCase):
     def test_get_psi_factor_exact_grid_points(self):
         # Test with values directly from PSI_FACTORS table
         self.assertEqual(get_psi_factor(span=20, reference_period=100), PSI_FACTORS[100][20])
         self.assertEqual(get_psi_factor(span=50, reference_period=50), PSI_FACTORS[50][50])
         self.assertEqual(get_psi_factor(span=100, reference_period=15), PSI_FACTORS[15][100])
-        self.assertEqual(get_psi_factor(span=200, reference_period=1.0/12.0), PSI_FACTORS[1.0/12.0][200])
+        self.assertEqual(get_psi_factor(span=200, reference_period=1.0 / 12.0), PSI_FACTORS[1.0 / 12.0][200])
         self.assertEqual(get_psi_factor(span=100, reference_period=1.0), PSI_FACTORS[1.0][100])
 
     def test_get_psi_factor_interpolated_span(self):
@@ -290,16 +298,16 @@ class TestLoadFactorsGetPsiFactor(unittest.TestCase):
         # For now, we can check if it runs and returns a float in the expected range.
         result = get_psi_factor(span=75, reference_period=7.5)
         self.assertIsInstance(result, float)
-        self.assertTrue(0.8 < result < 1.0) # General expected range for psi factors
+        self.assertTrue(0.8 < result < 1.0)  # General expected range for psi factors
 
     def test_get_psi_factor_clamped_span_low(self):
         # Span 10 (clamps to 20), period 1. Should be same as span 20, period 1.
-        expected = PSI_FACTORS[1.0][20] # 0.95
+        expected = PSI_FACTORS[1.0][20]  # 0.95
         self.assertEqual(get_psi_factor(span=10, reference_period=1), expected)
 
     def test_get_psi_factor_clamped_span_high(self):
         # Span 300 (clamps to 200), period 30. Should be same as span 200, period 30.
-        expected = PSI_FACTORS[30.0][200] # 0.97
+        expected = PSI_FACTORS[30.0][200]  # 0.97
         self.assertEqual(get_psi_factor(span=300, reference_period=30), expected)
 
     # Tests for exceptions propagated from validate_input
@@ -327,4 +335,4 @@ class TestLoadFactorsGetPsiFactor(unittest.TestCase):
         # Test with period at max boundary (100)
         self.assertEqual(get_psi_factor(span=50, reference_period=100), PSI_FACTORS[100][50])
         # Test with period at min boundary (1/12)
-        self.assertEqual(get_psi_factor(span=50, reference_period=1.0/12.0), PSI_FACTORS[1.0/12.0][50]) 
+        self.assertEqual(get_psi_factor(span=50, reference_period=1.0 / 12.0), PSI_FACTORS[1.0 / 12.0][50])
