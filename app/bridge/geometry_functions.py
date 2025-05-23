@@ -20,6 +20,6 @@ def get_steel_qualities() -> list[str]:
         csv_reader = csv.DictReader(f, delimiter=";")
         for row in csv_reader:
             # The first column header is "Betonstaalkwaliteit"
-            steel_qualities.append(row["Betonstaalkwaliteit"].strip('"'))
+            steel_qualities.append(row["Betonstaalkwaliteit"].strip('"'))  # noqa: PERF401
 
     return steel_qualities

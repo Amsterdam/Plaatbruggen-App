@@ -331,7 +331,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901,
             shear_positions, y_offset, zone_dims["bz"], zone_params, z_positions, x_offset, zone_dims["height_start"], zone_dims["height_end"]
         )
 
-    return rebar_scene
+    return rebar_scene  # type: ignore[return-value]  # Scene is functionally compatible with Trimesh in this context
 
 
 # Function to create the X, Y, and Z axes

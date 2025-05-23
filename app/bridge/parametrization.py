@@ -3,7 +3,6 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -21,6 +20,8 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
+
+from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 
 from .geometry_functions import get_steel_qualities
 
