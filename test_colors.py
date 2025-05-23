@@ -9,7 +9,7 @@ import sys
 # Add the project root to Python path
 sys.path.insert(0, ".")
 
-from tests.test_utils import Colors, colored_text, supports_color
+from tests.test_utils import Colors, colored_text, supports_color, safe_emoji_text
 
 def main():
     """Test color output in the current terminal."""
@@ -23,12 +23,12 @@ def main():
     print(f"NO_COLOR: {os.environ.get('NO_COLOR', 'Not set')}")
     print()
     
-    # Test colors
+    # Test colors (using safe_emoji_text to avoid encoding issues)
     print("=== COLOR TESTS ===")
-    print(colored_text("✅ This should be GREEN and BOLD", Colors.GREEN, bold=True))
-    print(colored_text("❌ This should be RED and BOLD", Colors.RED, bold=True))
-    print(colored_text("ℹ️ This should be CYAN", Colors.CYAN))
-    print(colored_text("⚠️ This should be YELLOW", Colors.YELLOW))
+    print(colored_text(safe_emoji_text("✅ This should be GREEN and BOLD", "[PASS] This should be GREEN and BOLD"), Colors.GREEN, bold=True))
+    print(colored_text(safe_emoji_text("❌ This should be RED and BOLD", "[FAIL] This should be RED and BOLD"), Colors.RED, bold=True))
+    print(colored_text(safe_emoji_text("ℹ️ This should be CYAN", "[INFO] This should be CYAN"), Colors.CYAN))
+    print(colored_text(safe_emoji_text("⚠️ This should be YELLOW", "[WARN] This should be YELLOW"), Colors.YELLOW))
     print(colored_text("This should be WHITE", Colors.WHITE))
     print()
     

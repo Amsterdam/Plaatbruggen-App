@@ -46,11 +46,7 @@ def supports_color() -> bool:
     if os.environ.get("NO_COLOR"):
         return False
     
-    # Check if stdout is a TTY
-    if not hasattr(sys.stdout, 'isatty') or not sys.stdout.isatty():
-        return False
-    
-    # Check for common terminals that support colors
+    # Check for common terminals that support colors (even if not TTY in subprocess)
     term = os.environ.get('TERM', '').lower()
     if any(color_term in term for color_term in ['color', 'xterm', 'screen', 'tmux', 'ansi']):
         return True
@@ -64,10 +60,15 @@ def supports_color() -> bool:
         if os.environ.get('WT_SESSION') or os.environ.get('TERM_PROGRAM'):
             return True
     
+    # Check if stdout is a TTY (but don't make this a hard requirement)
+    if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty():
+        return True
+    
     # Default to True for most Unix-like systems
     if not sys.platform.startswith("win"):
         return True
         
+    # Conservative fallback for Windows
     return False
 
 
