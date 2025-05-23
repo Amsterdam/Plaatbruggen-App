@@ -322,22 +322,33 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.staalsoort = OptionField(
         "Staalsoort",
         options=get_steel_qualities(),
-        default="B500B",  # Changed to more modern default
+        default="B500B",
         description="De kwaliteit van het betonstaal dat wordt toegepast in de brug.",
     )
 
-    input.geometrie_wapening.dekking = NumberField(
-        "Betondekking",
-        default=55.0,
-        suffix="mm",
-        description="De betondekking is de afstand tussen de buitenkant van het beton en de buitenste wapeningslaag.",
-    )
     input.geometrie_wapening.langswapening_buiten = BooleanField(
         "Langswapening aan buitenzijde?",
         default=True,
         description=(
             "Indien aangevinkt ligt de langswapening aan de buitenzijde van het beton. Indien uitgevinkt ligt de dwarswapening aan de buitenzijde."
         ),
+    )
+
+    input.geometrie_wapening.lb1 = LineBreak()
+
+    input.geometrie_wapening.dekking_boven = NumberField(
+        "Betondekking boven",
+        default=55.0,
+        suffix="mm",
+        flex=30,
+        description="De betondekking aan de bovenzijde van de plaat.",
+    )
+    input.geometrie_wapening.dekking_onder = NumberField(
+        "Betondekking onder",
+        default=55.0,
+        suffix="mm",
+        flex=30,
+        description="De betondekking aan de onderzijde van de plaat.",
     )
 
     input.geometrie_wapening.zones = DynamicArray(
@@ -384,7 +395,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         "Zone nummer", options=define_options_numbering, description="Dit is het zone nummer dat correspondeert met de zone in de brug."
     )
 
-    input.geometrie_wapening.zones.lb1 = LineBreak()
+    input.geometrie_wapening.zones.lb2 = LineBreak()
 
     # Main reinforcement - Longitudinal top
     input.geometrie_wapening.zones.hoofdwapening_langs_boven_diameter = NumberField(
@@ -393,7 +404,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.zones.hoofdwapening_langs_boven_hart_op_hart = NumberField(
         "H.o.h. afstand hoofdwapening langsrichting boven", default=150.0, suffix="mm", flex=53
     )
-    input.geometrie_wapening.zones.lb2 = LineBreak()
+    input.geometrie_wapening.zones.lb3 = LineBreak()
 
     # Main reinforcement - Longitudinal bottom
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_diameter = NumberField(
@@ -402,7 +413,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_hart_op_hart = NumberField(
         "H.o.h. afstand hoofdwapening langsrichting onder", default=150.0, suffix="mm", flex=53
     )
-    input.geometrie_wapening.zones.lb3 = LineBreak()
+    input.geometrie_wapening.zones.lb4 = LineBreak()
 
     # Main reinforcement - Transverse
 
@@ -415,7 +426,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     )
 
     # Visual separator for bijlegwapening
-    input.geometrie_wapening.zones.separator1 = LineBreak()
+    input.geometrie_wapening.zones.lb5 = LineBreak()
 
     # Additional reinforcement toggle
     input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)
@@ -426,7 +437,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         operand=Lookup("$row.heeft_bijlegwapening"),
     )
 
-    input.geometrie_wapening.zones.lb4 = LineBreak()
+    input.geometrie_wapening.zones.lb6 = LineBreak()
 
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(
         "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
@@ -435,7 +446,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         "H.o.h. afstand bijlegwapening langsrichting boven", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
-    input.geometrie_wapening.zones.lb5 = LineBreak()
+    input.geometrie_wapening.zones.lb7 = LineBreak()
 
     # Additional reinforcement - Longitudinal bottom
     input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
@@ -445,7 +456,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         "H.o.h. afstand bijlegwapening langsrichting onder", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
-    input.geometrie_wapening.zones.lb6 = LineBreak()
+    input.geometrie_wapening.zones.lb8 = LineBreak()
 
     # Additional reinforcement - Transverse
     input.geometrie_wapening.zones.bijlegwapening_dwars_diameter = NumberField(
