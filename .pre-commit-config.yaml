@@ -14,11 +14,16 @@
 #    The hooks will run again and the commit will only be made if they all pass.
 # 5. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
 # 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.3
+#
+# Since we are using pre-commit on push we need to run the following commands one time:
+# pre-commit migrate-config
+# pre-commit install --hook-type pre-push
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.7
-    hooks:      # Run the linter.
+    hooks:      
+      # Run the linter.
       - id: ruff
         args: [ --fix, --config=.ruff.toml ]
         stages: [pre-push]
