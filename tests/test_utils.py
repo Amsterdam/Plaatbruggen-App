@@ -68,6 +68,7 @@ class Colors:
             try:
                 # Try to enable ANSI support on Windows 10+
                 import os
+
                 os.system("")  # This enables ANSI on Windows 10+
             except Exception:
                 # Only disable if we really can't enable ANSI
