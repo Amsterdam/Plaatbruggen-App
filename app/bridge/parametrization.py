@@ -162,9 +162,45 @@ def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     return option_list
 
 
+# --- Helper function to get min and max values of the model ---
+def _get_model_xmax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    max_value = sum(segment.l for segment in params.bridge_segments_array)
+    return max_value - 0.01
+
+
+def _get_model_ymin(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    max_b_z2 = max(segment.bz2 for segment in params.bridge_segments_array)
+    max_b_z3 = max(segment.bz3 for segment in params.bridge_segments_array)
+    return -max_b_z2 / 2 - max_b_z3
+
+
+def _get_model_ymax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    max_b_z1 = max(segment.bz1 for segment in params.bridge_segments_array)
+    max_b_z2 = max(segment.bz2 for segment in params.bridge_segments_array)
+    max_value = max_b_z2 / 2 + max_b_z1
+    return max_value - 0.01
+
+
+def _get_model_zmin(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    dz = max(segment.dz for segment in params.bridge_segments_array)
+    return -dz
+
+
+def _get_model_zmax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    dz_max = max(segment.dz_2 - segment.dz for segment in params.bridge_segments_array)
+    max_value = dz_max
+    return max_value - 0.01
+
+
+# ----------------------------------
+# --- Main Parametrization Class ---
+# ----------------------------------
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
 
+    # ----------------------------------
+    # --- Info Page ---
+    # ----------------------------------
     info = Page("Info", views=["get_bridge_map_view", "get_bridge_summary_view"])
 
     # Bridge identification section
@@ -216,6 +252,10 @@ Use the tabs below to view geometric properties, load configurations, and analys
     )
     info.assessment_notes = TextAreaField("Assessment Notes", default="", description="Notes about the assessment process or findings")
 
+    # ----------------------------------
+    # --- Invoer Page ---
+    # ----------------------------------
+
     input = Page(
         "Invoer",
         views=[
@@ -228,10 +268,6 @@ Use the tabs below to view geometric properties, load configurations, and analys
         ],
     )
 
-    ###############################################
-    ## Invoer Page
-    ##############################################
-
     # --- Tabs within Invoer Page ---
     input.dimensions = Tab("Dimensies")
     input.geometrie_wapening = Tab("Wapening")
@@ -243,7 +279,7 @@ Use the tabs below to view geometric properties, load configurations, and analys
     input.belastingcombinaties.uls_comb_factor = MultiSelectField("Belastingscombinaties", options=["ULS", "SLS", "FAT"])
 
     # ----------------------------------------
-    ## Dimensions tab
+    # --- Invoer Page -> Dimensions tab ---
     # ----------------------------------------
 
     input.dimensions.segment_explanation = Text(
@@ -295,16 +331,25 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.dimensions.toggle_sections = BooleanField("Toon locaties van de doorsneden in het 3D model", default=False, flex=100)
     input.dimensions.lb2 = LineBreak()
     input.dimensions.horizontal_section_loc = NumberField(
-        "Horizontale doorsnede z =", default=-1.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Horizontale doorsnede z =",
+        default=-1.0,
+        suffix="m",
+        visible=Lookup("input.dimensions.toggle_sections"),
+        min=_get_model_zmin,
+        max=_get_model_zmax,
     )
     input.dimensions.lb3 = LineBreak()
     input.dimensions.longitudinal_section_loc = NumberField(
-        "Langsdoorsnede y =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Langsdoorsnede y =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections"), min=_get_model_ymin, max=_get_model_ymax
     )
     input.dimensions.lb4 = LineBreak()
     input.dimensions.cross_section_loc = NumberField(
-        "Dwarsdoorsnede x =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Dwarsdoorsnede x =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections"), min=0, max=_get_model_xmax
     )
+
+    # ----------------------------------------
+    # --- Invoer Page -> rebar tab ---
+    # ----------------------------------------
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
     input.geometrie_wapening.explanation = Text(
@@ -467,6 +512,10 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         "H.o.h. afstand bijlegwapening dwarsrichting", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
+    # ----------------------------------------
+    # --- Invoer Page -> loadzones tab ---
+    # ----------------------------------------
+
     # --- Load Zones (in belastingzones tab) ---
     input.belastingzones.info_text = Text(
         "Definieer hier de belastingzones. Elke zone wordt gestapeld vanaf één zijde van de brug. "
@@ -500,7 +549,24 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         )
         setattr(input.belastingzones.load_zones_array, f"d{_idx_field}_width", _field)
 
-    # --- Added Pages ---
+    # ----------------------------------------
+    # --- Invoer Page -> loadcases tab ---
+    # ----------------------------------------
+
+    # ----------------------------------
+    # --- SCIA Page ---
+    # ----------------------------------
+
     scia = Page("SCIA")
+
+    # ----------------------------------
+    # --- Calculations Page ---
+    # ----------------------------------
+
     berekening = Page("Berekening")
+
+    # ----------------------------------
+    # --- Report Page ---
+    # ----------------------------------
+
     rapport = Page("Rapport", views=["get_output_report"])
