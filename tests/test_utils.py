@@ -204,26 +204,28 @@ class EnhancedTestResult(unittest.TestResult):
     def _print_detailed_error(self, test, err, error_type):
         """Print a detailed error message with colors."""
         exc_type, exc_value, exc_traceback = err
-        
+
         # Extract relevant information
         test_name = test._testMethodName
         test_class = test.__class__.__name__
         error_msg = str(exc_value)
-        
+
         # In concise mode, just store the failure for later summary
         if should_use_concise_mode():
             # Store failure info for summary (we'll add this to the class)
-            if not hasattr(self, '_concise_failures'):
+            if not hasattr(self, "_concise_failures"):
                 self._concise_failures = []
-            self._concise_failures.append({
-                'test_class': test_class,
-                'test_name': test_name,
-                'error_type': exc_type.__name__,
-                'error_msg': error_msg,
-                'is_error': error_type == "ERROR"
-            })
+            self._concise_failures.append(
+                {
+                    "test_class": test_class,
+                    "test_name": test_name,
+                    "error_type": exc_type.__name__,
+                    "error_msg": error_msg,
+                    "is_error": error_type == "ERROR",
+                }
+            )
             return
-        
+
         # Create detailed header
         if error_type == "ERROR":
             header = colored_text(safe_emoji_text("💥 TEST ERROR! 💥", "TEST ERROR!"), Colors.RED, bold=True)
@@ -231,7 +233,7 @@ class EnhancedTestResult(unittest.TestResult):
         else:
             header = colored_text(safe_emoji_text("❌ TEST FAILURE! ❌", "TEST FAILURE!"), Colors.YELLOW, bold=True)
             emoji = safe_emoji_text("💔", "FAILED:")
-        
+
         # Format the message
         detailed_msg = f"""
 {header}
@@ -244,9 +246,9 @@ class EnhancedTestResult(unittest.TestResult):
 
 {colored_text(safe_emoji_text("📍 Stack trace:", "Stack trace:"), Colors.BLUE, bold=True)}
 """
-        
+
         print(detailed_msg)
-        
+
         # Print a simplified stack trace with colors
         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         for line in tb_lines[-5:]:  # Show last 5 lines of traceback
@@ -256,7 +258,7 @@ class EnhancedTestResult(unittest.TestResult):
                 print(colored_text(line.strip(), Colors.YELLOW))
             else:
                 print(colored_text(line.strip(), Colors.WHITE))
-        
+
         print(colored_text("=" * 60, Colors.BLUE))
 
 
