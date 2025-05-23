@@ -23,20 +23,24 @@ def run_ruff_check():
             text=True,
             encoding="utf-8",
             errors="replace",
-            cwd=project_root, check=False
+            cwd=project_root,
+            check=False,
         )
-
+        
         if should_use_concise_mode():
             # Combine stdout and stderr for analysis
             output = (result.stdout or "") + (result.stderr or "")
             lines = output.strip().split("\n") if output else []
-
+            
             if result.returncode == 0:
-                print(colored_text(safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!"), Colors.GREEN, bold=True))
-                print(colored_text("Code style: No issues found", Colors.GREEN))
+                success_msg = safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!")
+                print(success_msg)
+                detail_msg = "Code style: No issues found"
+                print(detail_msg)
             else:
-                print(colored_text(safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED"), Colors.RED, bold=True))
-
+                fail_msg = safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
+                print(fail_msg)
+                
                 # Try to extract error count from output
                 error_count = 0
                 for line in lines:
@@ -50,26 +54,32 @@ def run_ruff_check():
                                     break
                         except (IndexError, ValueError):
                             pass
-
+                
                 if error_count == 0:
                     # Count actual error lines as fallback
-                    error_lines = [line for line in lines if line.strip() and (":" in line) and not line.startswith("Found") and not line.startswith("No fixes")]
+                    error_lines = [
+                        line for line in lines if line.strip() and (":" in line) and not line.startswith("Found") and not line.startswith("No fixes")
+                    ]
                     error_count = len(error_lines)
-
-                print(colored_text(f"Code style: {error_count} issues found", Colors.RED))
-                print(colored_text("\nFor detailed output, run:", Colors.CYAN))
-                print(colored_text("  python -m ruff check --config=.ruff.toml", Colors.WHITE))
+                
+                count_msg = f"Code style: {error_count} issues found"
+                print(count_msg)
+                help_msg = "\nFor detailed output, run:"
+                print(help_msg)
+                cmd_msg = "  python -m ruff check --config=.ruff.toml"
+                print(cmd_msg)
         else:
             # In detailed mode, show full output
             if result.stdout:
                 print(result.stdout)
             if result.stderr:
                 print(result.stderr, file=sys.stderr)
-
+        
         return result.returncode
-
+        
     except Exception as e:
-        print(colored_text(f"Error running ruff: {e}", Colors.RED))
+        error_msg = f"Error running ruff: {e}"
+        print(error_msg)
         return 1
 
 

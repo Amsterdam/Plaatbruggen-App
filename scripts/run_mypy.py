@@ -18,43 +18,51 @@ def run_mypy():
     """Run mypy and provide concise summary."""
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "mypy", "."],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            cwd=project_root, check=False
+            [sys.executable, "-m", "mypy", "."], 
+            capture_output=True, 
+            text=True, 
+            encoding="utf-8", 
+            errors="replace", 
+            cwd=project_root, 
+            check=False
         )
-
+        
         if should_use_concise_mode():
             # Combine stdout and stderr for analysis
             output = (result.stdout or "") + (result.stderr or "")
             lines = output.strip().split("\n") if output else []
-
+            
             if result.returncode == 0:
-                print(colored_text(safe_emoji_text("✅ MYPY CHECK PASSED!", "MYPY CHECK PASSED!"), Colors.GREEN, bold=True))
-                print(colored_text("Type checking: No issues found", Colors.GREEN))
+                success_msg = safe_emoji_text("✅ MYPY CHECK PASSED!", "MYPY CHECK PASSED!")
+                print(success_msg)
+                detail_msg = "Type checking: No issues found"
+                print(detail_msg)
             else:
-                print(colored_text(safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED"), Colors.RED, bold=True))
-
+                fail_msg = safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
+                print(fail_msg)
+                
                 # Count errors from output
                 error_lines = [line for line in lines if ": error:" in line or ": note:" in line]
                 error_count = len([line for line in lines if ": error:" in line])
-
-                print(colored_text(f"Type checking: {error_count} errors found", Colors.RED))
-                print(colored_text("\nFor detailed output, run:", Colors.CYAN))
-                print(colored_text("  python -m mypy .", Colors.WHITE))
+                
+                count_msg = f"Type checking: {error_count} errors found"
+                print(count_msg)
+                help_msg = "\nFor detailed output, run:"
+                print(help_msg)
+                cmd_msg = "  python -m mypy ."
+                print(cmd_msg)
         else:
             # In detailed mode, show full output
             if result.stdout:
                 print(result.stdout)
             if result.stderr:
                 print(result.stderr, file=sys.stderr)
-
+        
         return result.returncode
-
+        
     except Exception as e:
-        print(colored_text(f"Error running mypy: {e}", Colors.RED))
+        error_msg = f"Error running mypy: {e}"
+        print(error_msg)
         return 1
 
 

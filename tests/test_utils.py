@@ -15,7 +15,19 @@ def is_git_hook_environment() -> bool:
     # Check for common git hook environment variables
     git_hook_indicators = ["GIT_DIR", "GIT_INDEX_FILE", "GIT_AUTHOR_NAME", "CI", "GITHUB_ACTIONS", "GITLAB_CI"]
 
-    return any(os.environ.get(indicator) for indicator in git_hook_indicators)
+    # Also check if we're in a pre-commit hook (common environment)
+    if any(os.environ.get(indicator) for indicator in git_hook_indicators):
+        return True
+    
+    # Check if running under pre-commit
+    if "PRE_COMMIT" in os.environ or "PRE_COMMIT_HOME" in os.environ:
+        return True
+        
+    # Check for Windows (often has encoding issues with emojis)
+    if sys.platform.startswith("win"):
+        return True
+        
+    return False
 
 
 def should_use_concise_mode() -> bool:
@@ -43,19 +55,13 @@ class Colors:
     RESET = "\033[0m"
 
     @classmethod
-    def disable_on_windows_if_needed(cls):
+    def disable_on_windows_if_needed(cls) -> None:
         """Disable colors on Windows if ANSI support is not available."""
-        if sys.platform.startswith("win") or is_git_hook_environment():
-            try:
-                # Try to enable ANSI support on Windows 10+
-                import os
-
-                os.system("color")
-            except:
-                # Fallback: disable colors
-                for attr in dir(cls):
-                    if not attr.startswith("_") and attr != "disable_on_windows_if_needed":
-                        setattr(cls, attr, "")
+        if should_use_concise_mode():  # Use concise mode logic instead of separate check
+            # Disable colors completely in concise mode
+            for attr in dir(cls):
+                if not attr.startswith("_") and attr != "disable_on_windows_if_needed":
+                    setattr(cls, attr, "")
 
 
 def colored_text(text: str, color: str, bold: bool = False) -> str:
@@ -70,7 +76,8 @@ def colored_text(text: str, color: str, bold: bool = False) -> str:
 
 def safe_emoji_text(emoji_text: str, plain_text: str) -> str:
     """Return emoji text if supported, otherwise plain text."""
-    if is_git_hook_environment():
+    # Always use plain text in concise mode to avoid encoding issues
+    if should_use_concise_mode():
         return plain_text
 
     try:

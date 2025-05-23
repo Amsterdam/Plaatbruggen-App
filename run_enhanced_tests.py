@@ -23,22 +23,31 @@ def print_concise_summary(result):
 
     # Always show a summary line for git hooks
     if failures == 0 and errors == 0:
-        print(colored_text(safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!"), Colors.GREEN, bold=True))
-        print(colored_text(f"Tests: {total_tests} passed", Colors.GREEN))
+        success_msg = safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
+        print(success_msg)
+        count_msg = f"Tests: {total_tests} passed"
+        print(count_msg)
     else:
-        print(colored_text(safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED"), Colors.RED, bold=True))
-        print(colored_text(f"Tests: {failures} failed, {errors} errors, {successes} passed, {total_tests} total", Colors.WHITE))
+        fail_msg = safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
+        print(fail_msg)
+        count_msg = f"Tests: {failures} failed, {errors} errors, {successes} passed, {total_tests} total"
+        print(count_msg)
 
         # Show failed test details concisely
         if hasattr(result, "_concise_failures") and result._concise_failures:
-            print(colored_text("\nFailed tests:", Colors.YELLOW, bold=True))
+            fail_header = "Failed tests:"
+            print(fail_header)
             for failure in result._concise_failures:
                 status = "ERROR" if failure["is_error"] else "FAIL"
-                print(colored_text(f"  {status}: {failure['test_class']}.{failure['test_name']}", Colors.RED))
-                print(colored_text(f"    {failure['error_msg']}", Colors.WHITE))
+                test_line = f"  {status}: {failure['test_class']}.{failure['test_name']}"
+                print(test_line)
+                error_line = f"    {failure['error_msg']}"
+                print(error_line)
 
-        print(colored_text("\nFor detailed output, run:", Colors.CYAN))
-        print(colored_text("  python run_enhanced_tests.py", Colors.WHITE))
+        help_header = "For detailed output, run:"
+        print(help_header)
+        help_cmd = "  python run_enhanced_tests.py"
+        print(help_cmd)
 
 
 def print_detailed_summary(result):
