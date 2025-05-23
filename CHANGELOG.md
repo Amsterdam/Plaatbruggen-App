@@ -6,6 +6,7 @@ Semantic versioning is used to denote different versions of this project.
 
 ## [`v0.0.6`] - 2025-xx-xx
 ### Added
+- Horizontal spawn arrow to the topview
 ### Changed
 ### Fixed
 
