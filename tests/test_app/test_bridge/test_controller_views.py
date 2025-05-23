@@ -57,21 +57,21 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Access the original method by getting the function from the class
         # The VIKTOR decorator wraps the method, so we need to access __wrapped__ or the original
         original_method = self.controller.__class__.get_bridge_summary_view
-        
+
         # Call the method directly, bypassing the decorator
         result = original_method(self.controller, self.default_params)
 
         # Assert - verify return type and structure
         from viktor.views import DataResult
-        
+
         self.assertIsInstance(result, DataResult)
         self.assertIsNotNone(result.data)
-        
+
         # Verify specific data items are present
         # DataGroup extends dict, so DataItems are stored as values
         data_items = list(result.data.values())
         self.assertTrue(len(data_items) > 0)
-        
+
         # Check for expected labels (DataItem uses _label attribute)
         labels = [item._label for item in data_items]
         expected_labels = ["Bridge ID (OBJECTNUMM)", "Bridge Name", "Location Description"]
@@ -90,13 +90,13 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Access the original method directly
         original_method = self.controller.__class__.get_3d_view
-        
+
         # Act - call bypassing decorator
         result = original_method(self.controller, self.default_params)
 
         # Assert
         from viktor.views import GeometryResult
-        
+
         self.assertIsInstance(result, GeometryResult)
         mock_create_3d.assert_called_once_with(self.default_params, section_planes=True)
         mock_export_glb.assert_called_once_with(mock_scene)
@@ -111,7 +111,7 @@ class TestBridgeControllerViews(unittest.TestCase):
         mock_top_view_data = {"bridge_lines": [], "structural_polygons": []}
         mock_create_2d.return_value = mock_top_view_data
         mock_validate_widths.return_value = []
-        
+
         mock_fig = Mock()
         mock_fig.to_json.return_value = '{"data": [], "layout": {}}'
         mock_build_figure.return_value = mock_fig
@@ -124,11 +124,11 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Assert
         from viktor.views import PlotlyResult
-        
+
         self.assertIsInstance(result, PlotlyResult)
         mock_create_2d.assert_called_once_with(self.default_params)
         mock_build_figure.assert_called_once()
-        
+
         # Verify JSON result is valid - PlotlyResult stores figure in .figure attribute
         json_result = json.loads(result.figure)
         self.assertIn("data", json_result)
@@ -151,13 +151,10 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Assert
         from viktor.views import PlotlyResult
-        
+
         self.assertIsInstance(result, PlotlyResult)
-        mock_create_horizontal.assert_called_once_with(
-            self.default_params, 
-            self.default_params.input.dimensions.horizontal_section_loc
-        )
-        
+        mock_create_horizontal.assert_called_once_with(self.default_params, self.default_params.input.dimensions.horizontal_section_loc)
+
         # Verify JSON result - PlotlyResult stores figure in .figure attribute
         json_result = json.loads(result.figure)
         self.assertIn("layout", json_result)
@@ -179,12 +176,9 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Assert
         from viktor.views import PlotlyResult
-        
+
         self.assertIsInstance(result, PlotlyResult)
-        mock_create_longitudinal.assert_called_once_with(
-            self.default_params, 
-            self.default_params.input.dimensions.longitudinal_section_loc
-        )
+        mock_create_longitudinal.assert_called_once_with(self.default_params, self.default_params.input.dimensions.longitudinal_section_loc)
 
     @patch("app.bridge.controller.create_cross_section_view")
     @view_test_wrapper("get_2d_cross_section")
@@ -203,12 +197,9 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Assert
         from viktor.views import PlotlyResult
-        
+
         self.assertIsInstance(result, PlotlyResult)
-        mock_create_cross.assert_called_once_with(
-            self.default_params, 
-            self.default_params.input.dimensions.cross_section_loc
-        )
+        mock_create_cross.assert_called_once_with(self.default_params, self.default_params.input.dimensions.cross_section_loc)
 
     @patch("app.bridge.controller.build_load_zones_figure")
     @view_test_wrapper("get_load_zones_view")
@@ -227,9 +218,9 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Assert
         from viktor.views import PlotlyResult
-        
+
         self.assertIsInstance(result, PlotlyResult)
-        
+
         # Verify JSON result
         json_result = json.loads(result.figure)
         self.assertIn("data", json_result)
@@ -250,9 +241,9 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Assert
         from viktor.views import PlotlyResult
-        
+
         self.assertIsInstance(result, PlotlyResult)
-        
+
         # Should return a figure with appropriate message
         json_result = json.loads(result.figure)
         self.assertIn("layout", json_result)
@@ -263,16 +254,16 @@ class TestBridgeControllerViews(unittest.TestCase):
         """Test get_bridge_map_view with invalid entity ID."""
         # Access the original method directly
         original_method = self.controller.__class__.get_bridge_map_view
-        
+
         # Act - call bypassing decorator with entity_id in kwargs
         result = original_method(self.controller, self.default_params, entity_id=None)
 
         # Assert
         from viktor.views import MapResult
-        
+
         self.assertIsInstance(result, MapResult)
         self.assertTrue(len(result.features) > 0)
-        
+
         # Should contain error message
         error_point = result.features[0]
         self.assertIn("Ongeldige entity ID", error_point._description)
@@ -293,7 +284,7 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Assert
         from viktor.views import PDFResult
-        
+
         self.assertIsInstance(result, PDFResult)
         mock_convert_pdf.assert_called_once()
 
@@ -330,9 +321,9 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Assert
         from viktor.views import PlotlyResult
-        
+
         self.assertIsInstance(result, PlotlyResult)
-        
+
         # Should return error figure
         json_result = json.loads(result.figure)
         self.assertIn("layout", json_result)
@@ -363,15 +354,15 @@ class TestBridgeControllerViews(unittest.TestCase):
         """Test bridge summary view with complex seed data."""
         # Access the original method directly
         original_method = self.controller.__class__.get_bridge_summary_view
-        
+
         # Act - call bypassing decorator
         result = original_method(self.controller, self.complex_params)
 
         # Assert
         from viktor.views import DataResult
-        
+
         self.assertIsInstance(result, DataResult)
-        
+
         # Verify data items contain complex data values
         # DataGroup extends dict, so DataItems are stored as values
         data_items = list(result.data.values())

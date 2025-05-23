@@ -31,7 +31,7 @@ def print_concise_summary(result):
 
         # Overall status message (appears at the end since tests run last)
         print()
-        print(colored_text("All checks done! Check the logs above.", Colors.YELLOW, bold=True))
+        print(colored_text("All checks done! Check the logs above for possible issues.", Colors.YELLOW, bold=True))
     else:
         fail_msg = safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
         print(colored_text(fail_msg, Colors.RED, bold=True))
