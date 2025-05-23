@@ -1,14 +1,13 @@
 import unittest
-from unittest.mock import patch, MagicMock
-import numpy as np
-import plotly.graph_objects as go
-from munch import Munch # type: ignore[import-untyped]
 from typing import Any
+from unittest.mock import patch
+
+import plotly.graph_objects as go
 
 from src.geometry.top_view_plot import build_top_view_figure
 
-class TestTopViewPlot(unittest.TestCase):
 
+class TestTopViewPlot(unittest.TestCase):
     def _create_default_geometric_data(self) -> dict[str, Any]:
         """Helper to create a basic geometric data dictionary."""
         return {
@@ -25,8 +24,8 @@ class TestTopViewPlot(unittest.TestCase):
         fig = build_top_view_figure(geo_data)
 
         self.assertIsInstance(fig, go.Figure)
-        self.assertEqual(len(fig.data), 0) # No traces expected
-        self.assertEqual(len(fig.layout.annotations), 0) # No annotations expected
+        self.assertEqual(len(fig.data), 0)  # No traces expected
+        self.assertEqual(len(fig.layout.annotations), 0)  # No annotations expected
 
         # Check basic layout properties
         self.assertEqual(fig.layout.title.text, "Bovenaanzicht (Top View)")
@@ -51,7 +50,7 @@ class TestTopViewPlot(unittest.TestCase):
 
         self.assertIsInstance(fig, go.Figure)
         self.assertEqual(len(fig.data), 0)
-        self.assertEqual(len(fig.layout.annotations), 1) # One consolidated warning annotation
+        self.assertEqual(len(fig.layout.annotations), 1)  # One consolidated warning annotation
 
         warning_annotation = fig.layout.annotations[0]
         self.assertIn("<b>Waarschuwing (Belastingzones):</b> Warning 1", warning_annotation.text)
@@ -63,18 +62,15 @@ class TestTopViewPlot(unittest.TestCase):
         """Test figure creation with zone polygon data."""
         geo_data = self._create_default_geometric_data()
         geo_data["zone_polygons"] = [
+            {"vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "color": "rgba(255,0,0,0.5)"},
             {
-                "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]],
-                "color": "rgba(255,0,0,0.5)"
+                "vertices": [[2, 2], [3, 2], [3, 3], [2, 3]],  # Polygon without color
             },
-            {
-                "vertices": [[2, 2], [3, 2], [3, 3], [2, 3]], # Polygon without color
-            },
-            {"vertices": []} # Empty vertices, should be skipped
+            {"vertices": []},  # Empty vertices, should be skipped
         ]
         fig = build_top_view_figure(geo_data)
 
-        self.assertEqual(len(fig.data), 2) # Two valid polygons
+        self.assertEqual(len(fig.data), 2)  # Two valid polygons
         polygon_trace_1 = fig.data[0]
         self.assertEqual(list(polygon_trace_1.x), [0, 1, 1, 0, 0])
         self.assertEqual(list(polygon_trace_1.y), [0, 0, 1, 1, 0])
@@ -87,13 +83,13 @@ class TestTopViewPlot(unittest.TestCase):
         polygon_trace_2 = fig.data[1]
         self.assertEqual(list(polygon_trace_2.x), [2, 3, 3, 2, 2])
         self.assertEqual(list(polygon_trace_2.y), [2, 2, 3, 3, 2])
-        self.assertEqual(polygon_trace_2.fillcolor, "rgba(128,128,128,0.1)") # Default color
+        self.assertEqual(polygon_trace_2.fillcolor, "rgba(128,128,128,0.1)")  # Default color
 
     def test_build_top_view_figure_with_bridge_lines(self):
         """Test figure creation with bridge line data."""
         geo_data = self._create_default_geometric_data()
         geo_data["bridge_lines"] = [
-            {"start": [0, 0], "end": [10, 0], "name_hint": "Segment 0"}, # Added name_hint for clarity in test
+            {"start": [0, 0], "end": [10, 0], "name_hint": "Segment 0"},  # Added name_hint for clarity in test
             {"start": [0, 5], "end": [10, 5], "name_hint": "Segment 1"},
         ]
         fig = build_top_view_figure(geo_data)
@@ -102,37 +98,37 @@ class TestTopViewPlot(unittest.TestCase):
         # We expect 2 traces from bridge_lines based on the input
         self.assertEqual(len(fig.data), 2, "Incorrect number of data traces found for bridge lines.")
 
-        # --- Check Trace 0 --- 
+        # --- Check Trace 0 ---
         trace_0_name = "Bridge Outline Segment 0"
         bridge_line_trace_0 = None
         for trace in fig.data:
             if hasattr(trace, "name") and trace.name == trace_0_name:
                 bridge_line_trace_0 = trace
                 break
-        
+
         self.assertIsNotNone(bridge_line_trace_0, f"Trace '{trace_0_name}' not found.")
-        assert bridge_line_trace_0 is not None # for mypy
+        assert bridge_line_trace_0 is not None  # for mypy
 
         self.assertEqual(bridge_line_trace_0.mode, "lines")
         expected_x_0 = [geo_data["bridge_lines"][0]["start"][0], geo_data["bridge_lines"][0]["end"][0]]
         expected_y_0 = [geo_data["bridge_lines"][0]["start"][1], geo_data["bridge_lines"][0]["end"][1]]
         self.assertEqual(list(bridge_line_trace_0.x), expected_x_0)
         self.assertEqual(list(bridge_line_trace_0.y), expected_y_0)
-        self.assertEqual(bridge_line_trace_0.line.color, "blue") # SUT uses blue
+        self.assertEqual(bridge_line_trace_0.line.color, "blue")  # SUT uses blue
         self.assertEqual(bridge_line_trace_0.line.width, 2)
         self.assertEqual(bridge_line_trace_0.hoverinfo, "none")
         self.assertFalse(bridge_line_trace_0.showlegend)
 
-        # --- Check Trace 1 --- 
+        # --- Check Trace 1 ---
         trace_1_name = "Bridge Outline Segment 1"
         bridge_line_trace_1 = None
         for trace in fig.data:
             if hasattr(trace, "name") and trace.name == trace_1_name:
                 bridge_line_trace_1 = trace
                 break
-        
+
         self.assertIsNotNone(bridge_line_trace_1, f"Trace '{trace_1_name}' not found.")
-        assert bridge_line_trace_1 is not None # for mypy
+        assert bridge_line_trace_1 is not None  # for mypy
 
         self.assertEqual(bridge_line_trace_1.mode, "lines")
         expected_x_1 = [geo_data["bridge_lines"][1]["start"][0], geo_data["bridge_lines"][1]["end"][0]]
@@ -166,12 +162,12 @@ class TestTopViewPlot(unittest.TestCase):
         """Test figure creation with dimension text data, covering different alignments."""
         geo_data = self._create_default_geometric_data()
         geo_data["dimension_texts"] = [
-            {"x": 1, "y": 1, "text": "Default", "type": "width"}, # Default (left, middle)
-            {"x": 2, "y": 2, "text": "Length", "type": "length"}, # (center, bottom)
-            {"x": 3, "y": 3, "text": "Rotated 180", "textangle": 180}, # (right, middle)
-            {"x": 4, "y": 4, "text": "Rotated 90", "textangle": 90}, # (center, middle)
-            {"x": 5, "y": 5, "text": "Rotated -90", "textangle": -90}, # (center, middle)
-            {"x": 6, "y": 6, "text": "Explicit Center", "align": "center", "xanchor": "center", "yanchor": "middle"} # Explicit values
+            {"x": 1, "y": 1, "text": "Default", "type": "width"},  # Default (left, middle)
+            {"x": 2, "y": 2, "text": "Length", "type": "length"},  # (center, bottom)
+            {"x": 3, "y": 3, "text": "Rotated 180", "textangle": 180},  # (right, middle)
+            {"x": 4, "y": 4, "text": "Rotated 90", "textangle": 90},  # (center, middle)
+            {"x": 5, "y": 5, "text": "Rotated -90", "textangle": -90},  # (center, middle)
+            {"x": 6, "y": 6, "text": "Explicit Center", "align": "center", "xanchor": "center", "yanchor": "middle"},  # Explicit values
         ]
         fig = build_top_view_figure(geo_data)
         self.assertEqual(len(fig.layout.annotations), 6)
@@ -208,7 +204,7 @@ class TestTopViewPlot(unittest.TestCase):
         geo_data = self._create_default_geometric_data()
         cs_label_data = [{"x": 1, "y": 1, "text": "CS1"}]
         geo_data["cross_section_labels"] = cs_label_data
-        
+
         mock_cs_annotations = [go.layout.Annotation(text="Mocked CS Anno")]
         mock_create_text_annotations.return_value = mock_cs_annotations
 
@@ -229,29 +225,29 @@ class TestTopViewPlot(unittest.TestCase):
     def test_build_top_view_figure_with_all_data_types(self, mock_create_text_annotations):
         """Test with all data types present and a validation warning."""
         geo_data = {
-            "zone_polygons": [{"vertices": [[0,0],[1,0],[0,1]], "color":"red"}],
-            "bridge_lines": [{"start":[0,0], "end":[1,0]}],
-            "zone_annotations": [{"x":0.5, "y":0.5, "text":"Z1"}],
-            "dimension_texts": [{"x":1, "y":1, "text":"Dim1", "type":"length"}],
-            "cross_section_labels": [{"x":2, "y":2, "text":"CS-A"}]
+            "zone_polygons": [{"vertices": [[0, 0], [1, 0], [0, 1]], "color": "red"}],
+            "bridge_lines": [{"start": [0, 0], "end": [1, 0]}],
+            "zone_annotations": [{"x": 0.5, "y": 0.5, "text": "Z1"}],
+            "dimension_texts": [{"x": 1, "y": 1, "text": "Dim1", "type": "length"}],
+            "cross_section_labels": [{"x": 2, "y": 2, "text": "CS-A"}],
         }
         warnings = ["Test Warning"]
-        
+
         mock_cs_anno_instance = go.layout.Annotation(text="Mocked CS Anno for All Data")
         mock_create_text_annotations.return_value = [mock_cs_anno_instance]
 
         fig = build_top_view_figure(geo_data, validation_messages=warnings)
 
         self.assertIsInstance(fig, go.Figure)
-        self.assertEqual(len(fig.data), 2) # 1 polygon + 1 line
-        self.assertEqual(len(fig.layout.annotations), 4) # zone, dim, cs, warning
+        self.assertEqual(len(fig.data), 2)  # 1 polygon + 1 line
+        self.assertEqual(len(fig.layout.annotations), 4)  # zone, dim, cs, warning
 
         # Check polygon trace
-        self.assertEqual(list(fig.data[0].x), [0,1,0,0])
+        self.assertEqual(list(fig.data[0].x), [0, 1, 0, 0])
         self.assertEqual(fig.data[0].fillcolor, "red")
 
         # Check line trace
-        self.assertEqual(list(fig.data[1].x), [0,1])
+        self.assertEqual(list(fig.data[1].x), [0, 1])
 
         # Check presence of annotations (order might vary, so check by content or type)
         texts = [ann.text for ann in fig.layout.annotations]
@@ -262,7 +258,7 @@ class TestTopViewPlot(unittest.TestCase):
 
         mock_create_text_annotations.assert_called_once_with(
             label_data=geo_data["cross_section_labels"],
-            font_size=15, # Match args in build_top_view_figure
+            font_size=15,  # Match args in build_top_view_figure
             font_color="black",
             align="center",
             xanchor="center",
@@ -271,5 +267,6 @@ class TestTopViewPlot(unittest.TestCase):
 
     # Add more tests for zone polygons, bridge lines, zone annotations, dimension texts, cross section labels
 
+
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

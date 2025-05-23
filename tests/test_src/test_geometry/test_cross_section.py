@@ -1,56 +1,55 @@
 import unittest
-from munch import Munch # type: ignore[import-untyped]
-import plotly.graph_objects as go
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import numpy as np
+import plotly.graph_objects as go
 import trimesh
+from munch import Munch  # type: ignore[import-untyped]
 
 from src.geometry.cross_section import create_cross_section_annotations, create_cross_section_view
+
 # Remove the specific module import if it's no longer needed for patch.object
 # from src.geometry import cross_section as cross_section_module_to_patch # Likely remove
 
+
 # Helper to create a default segment for params
 def _create_segment_data(l_val=10.0, bz1=2.0, bz2=3.0, bz3=2.5, dz=0.5, dz_2=0.6) -> Munch:
-    return Munch({
-        "l": l_val,
-        "bz1": bz1,
-        "bz2": bz2,
-        "bz3": bz3,
-        "dz": dz,
-        "dz_2": dz_2,
-    })
+    return Munch(
+        {
+            "l": l_val,
+            "bz1": bz1,
+            "bz2": bz2,
+            "bz3": bz3,
+            "dz": dz,
+            "dz_2": dz_2,
+        }
+    )
+
 
 class TestCreateCrossSectionAnnotations(unittest.TestCase):
-
     def test_empty_segments_array_returns_empty_list(self):
         # Arrange
-        params = Munch({
-            "bridge_segments_array": [],
-            "input": Munch({"dimensions": Munch({"cross_section_loc": 5.0})})
-        })
+        params = Munch({"bridge_segments_array": [], "input": Munch({"dimensions": Munch({"cross_section_loc": 5.0})})})
         all_z = [-1.0, 0.0]
-        
+
         # Act
         annotations = create_cross_section_annotations(params, all_z)
-        
+
         # Assert
         self.assertEqual(annotations, [])
 
     def test_segment_index_determination_single_segment(self):
         # Arrange
         segment1 = _create_segment_data(l_val=20.0)
-        params = Munch({
-            "bridge_segments_array": [segment1],
-            "input": Munch({"dimensions": Munch({"cross_section_loc": 10.0})})
-        })
+        params = Munch({"bridge_segments_array": [segment1], "input": Munch({"dimensions": Munch({"cross_section_loc": 10.0})})})
         all_z = [-0.5, 0.5]
-        
+
         # Act: We are primarily testing the internal segment_index calculation implicitly
         # by checking the annotation text which includes the segment_index.
         annotations = create_cross_section_annotations(params, all_z)
-        
+
         # Assert
-        self.assertEqual(len(annotations), 9) # 3 zone + 3 width + 3 height
+        self.assertEqual(len(annotations), 9)  # 3 zone + 3 width + 3 height
         # Check one zone label for correct segment index (should be 0)
         zone1_label = next(a for a in annotations if a.x == (segment1.bz2 / 2 + segment1.bz1 / 2) and "Z1" in a.text)
         self.assertIn("Z1-0", zone1_label.text)
@@ -59,15 +58,17 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
         # Arrange
         segment1 = _create_segment_data(l_val=10.0, bz1=2, bz2=3, bz3=2, dz=0.5, dz_2=0.6)
         segment2 = _create_segment_data(l_val=15.0, bz1=2.5, bz2=3.5, bz3=2.5, dz=0.55, dz_2=0.65)
-        params = Munch({
-            "bridge_segments_array": [segment1, segment2],
-            "input": Munch({"dimensions": Munch({"cross_section_loc": 12.0})}) # Should be in segment 2 (index 1)
-        })
+        params = Munch(
+            {
+                "bridge_segments_array": [segment1, segment2],
+                "input": Munch({"dimensions": Munch({"cross_section_loc": 12.0})}),  # Should be in segment 2 (index 1)
+            }
+        )
         all_z = [-1.0, 1.0]
-        
+
         # Act
         annotations = create_cross_section_annotations(params, all_z)
-        
+
         # Assert
         self.assertEqual(len(annotations), 9)
         # Check zone label for segment index 1
@@ -83,12 +84,14 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
         # Arrange
         segment1 = _create_segment_data(l_val=10.0)
         segment2 = _create_segment_data(l_val=10.0)
-        params = Munch({
-            "bridge_segments_array": [segment1, segment2],
-            "input": Munch({"dimensions": Munch({"cross_section_loc": 10.0})}) # Exactly at end of segment1
-        })
+        params = Munch(
+            {
+                "bridge_segments_array": [segment1, segment2],
+                "input": Munch({"dimensions": Munch({"cross_section_loc": 10.0})}),  # Exactly at end of segment1
+            }
+        )
         all_z = [-1.0, 0.0]
-         # Act
+        # Act
         annotations = create_cross_section_annotations(params, all_z)
         # Assert: Function logic (<= cumulative_length) means it picks the first segment whose end includes the point.
         # So, for loc = 10.0, and l_values_cumulative = [10.0, 20.0], it picks segment_index = 0.
@@ -98,10 +101,12 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_segment_index_loc_beyond_last_segment(self):
         # Arrange
         segment1 = _create_segment_data(l_val=10.0)
-        params = Munch({
-            "bridge_segments_array": [segment1],
-            "input": Munch({"dimensions": Munch({"cross_section_loc": 100.0})}) # Way beyond
-        })
+        params = Munch(
+            {
+                "bridge_segments_array": [segment1],
+                "input": Munch({"dimensions": Munch({"cross_section_loc": 100.0})}),  # Way beyond
+            }
+        )
         all_z = [-1.0, 0.0]
         # Act
         annotations = create_cross_section_annotations(params, all_z)
@@ -112,18 +117,15 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_basic_annotation_properties_zone_labels(self):
         # Arrange
         seg_data = _create_segment_data(l_val=10, bz1=2, bz2=4, bz3=2, dz=0.5, dz_2=0.6)
-        params = Munch({
-            "bridge_segments_array": [seg_data],
-            "input": Munch({"dimensions": Munch({"cross_section_loc": 5.0})})
-        })
+        params = Munch({"bridge_segments_array": [seg_data], "input": Munch({"dimensions": Munch({"cross_section_loc": 5.0})})})
         all_z = [-1.0, 0.0]
         # Act
         annotations = create_cross_section_annotations(params, all_z)
         # Assert
         # Zone 1 Label (Z1-0)
         ann_z1 = next(a for a in annotations if a.text == "<b>Z1-0</b>")
-        self.assertAlmostEqual(ann_z1.x, seg_data.bz2 / 2 + seg_data.bz1 / 2) # (4/2 + 2/2) = 3
-        self.assertAlmostEqual(ann_z1.y, -seg_data.dz / 2) # -0.5 / 2 = -0.25
+        self.assertAlmostEqual(ann_z1.x, seg_data.bz2 / 2 + seg_data.bz1 / 2)  # (4/2 + 2/2) = 3
+        self.assertAlmostEqual(ann_z1.y, -seg_data.dz / 2)  # -0.5 / 2 = -0.25
         self.assertEqual(ann_z1.font.size, 12)
         self.assertEqual(ann_z1.font.color, "black")
         self.assertEqual(ann_z1.xanchor, "center")
@@ -133,20 +135,17 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
         # Zone 2 Label (Z2-0)
         ann_z2 = next(a for a in annotations if a.text == "<b>Z2-0</b>")
         self.assertAlmostEqual(ann_z2.x, 0)
-        self.assertAlmostEqual(ann_z2.y, -seg_data.dz + seg_data.dz_2 / 2) # -0.5 + 0.6/2 = -0.2
-        
+        self.assertAlmostEqual(ann_z2.y, -seg_data.dz + seg_data.dz_2 / 2)  # -0.5 + 0.6/2 = -0.2
+
         # Zone 3 Label (Z3-0)
         ann_z3 = next(a for a in annotations if a.text == "<b>Z3-0</b>")
-        self.assertAlmostEqual(ann_z3.x, -seg_data.bz2 / 2 - seg_data.bz3 / 2) # -(4/2) - (2/2) = -3
-        self.assertAlmostEqual(ann_z3.y, -seg_data.dz / 2) # -0.25
+        self.assertAlmostEqual(ann_z3.x, -seg_data.bz2 / 2 - seg_data.bz3 / 2)  # -(4/2) - (2/2) = -3
+        self.assertAlmostEqual(ann_z3.y, -seg_data.dz / 2)  # -0.25
 
     def test_basic_annotation_properties_width_labels(self):
         # Arrange
         seg_data = _create_segment_data(l_val=10, bz1=2.2, bz2=3.3, bz3=4.4, dz=0.5, dz_2=0.6)
-        params = Munch({
-            "bridge_segments_array": [seg_data],
-            "input": Munch({"dimensions": Munch({"cross_section_loc": 5.0})})
-        })
+        params = Munch({"bridge_segments_array": [seg_data], "input": Munch({"dimensions": Munch({"cross_section_loc": 5.0})})})
         min_z_val = -2.0
         all_z = [min_z_val, 0.0, 1.0]
         # Act
@@ -171,10 +170,7 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_basic_annotation_properties_height_labels(self):
         # Arrange
         seg_data = _create_segment_data(l_val=10, bz1=2, bz2=4, bz3=2, dz=0.5, dz_2=0.6)
-        params = Munch({
-            "bridge_segments_array": [seg_data],
-            "input": Munch({"dimensions": Munch({"cross_section_loc": 5.0})})
-        })
+        params = Munch({"bridge_segments_array": [seg_data], "input": Munch({"dimensions": Munch({"cross_section_loc": 5.0})})})
         all_z = [-1.0, 0.0]
         # Act
         annotations = create_cross_section_annotations(params, all_z)
@@ -187,29 +183,26 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
 
         # Height Zone 1 (dz)
         ann_h1 = next(a for a in annotations if a.text == f"<b>h = {seg_data.dz}m</b>" and abs(a.x - expected_x_h1) < 1e-9)
-        self.assertAlmostEqual(ann_h1.x, expected_x_h1) 
-        self.assertAlmostEqual(ann_h1.y, -seg_data.dz / 2) 
+        self.assertAlmostEqual(ann_h1.x, expected_x_h1)
+        self.assertAlmostEqual(ann_h1.y, -seg_data.dz / 2)
         self.assertEqual(ann_h1.font.color, "blue")
         self.assertEqual(ann_h1.textangle, -90)
         self.assertEqual(ann_h1.xanchor, "right")
 
         # Height Zone 2 (dz_2)
         ann_h2 = next(a for a in annotations if a.text == f"<b>h = {seg_data.dz_2}m</b>" and abs(a.x - expected_x_h2) < 1e-9)
-        self.assertAlmostEqual(ann_h2.x, expected_x_h2) 
-        self.assertAlmostEqual(ann_h2.y, -seg_data.dz + seg_data.dz_2/2) 
+        self.assertAlmostEqual(ann_h2.x, expected_x_h2)
+        self.assertAlmostEqual(ann_h2.y, -seg_data.dz + seg_data.dz_2 / 2)
 
         # Height Zone 3 (dz)
-        ann_h3 = next(a for a in annotations if a.text == f"<b>h = {seg_data.dz}m</b>" and abs(a.x - expected_x_h3) < 1e-9) 
-        self.assertAlmostEqual(ann_h3.x, expected_x_h3) 
-        self.assertAlmostEqual(ann_h3.y, -seg_data.dz / 2) 
+        ann_h3 = next(a for a in annotations if a.text == f"<b>h = {seg_data.dz}m</b>" and abs(a.x - expected_x_h3) < 1e-9)
+        self.assertAlmostEqual(ann_h3.x, expected_x_h3)
+        self.assertAlmostEqual(ann_h3.y, -seg_data.dz / 2)
 
     def test_input_params_as_dict(self):
         # Test that it handles params as dict (gets converted to Munch internally)
         segment1_dict = {"l": 10.0, "bz1": 2.0, "bz2": 3.0, "bz3": 2.5, "dz": 0.5, "dz_2": 0.6}
-        params_dict = {
-            "bridge_segments_array": [segment1_dict],
-            "input": {"dimensions": {"cross_section_loc": 5.0}}
-        }
+        params_dict = {"bridge_segments_array": [segment1_dict], "input": {"dimensions": {"cross_section_loc": 5.0}}}
         all_z = [-0.5, 0.5]
         annotations = create_cross_section_annotations(params_dict, all_z)
         self.assertEqual(len(annotations), 9)
@@ -217,6 +210,7 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
         ann_z1 = next(a for a in annotations if a.text == "<b>Z1-0</b>")
         expected_x_z1 = segment1_dict["bz2"] / 2 + segment1_dict["bz1"] / 2
         self.assertAlmostEqual(ann_z1.x, expected_x_z1)
+
 
 class TestCreateCrossSectionView(unittest.TestCase):
     """Test suite for the `create_cross_section_view` function."""
@@ -292,12 +286,10 @@ class TestCreateCrossSectionView(unittest.TestCase):
         # Verify function calls
         mock_create_3d_model.assert_called_once_with(params, axes=False)
         mock_trimesh_module.util.concatenate.assert_any_call(list(mock_3d_geometry.values()))
-        
+
         # Verify create_cross_section was called with correct parameters
-        mock_create_cross_section_func.assert_called_once_with(
-            mock_combined_mesh, [section_loc, 0, 0], [1, 0, 0], axes=False
-        )
-        
+        mock_create_cross_section_func.assert_called_once_with(mock_combined_mesh, [section_loc, 0, 0], [1, 0, 0], axes=False)
+
         # Verify second concatenate call
         self.assertEqual(mock_trimesh_module.util.concatenate.call_count, 2)
         mock_trimesh_module.util.concatenate.assert_any_call(list(mock_2d_geometry.values()))
@@ -314,7 +306,7 @@ class TestCreateCrossSectionView(unittest.TestCase):
         self.assertEqual(fig.layout.title.text, "Dwarsdoorsnede (Cross Section)")
 
     @patch("src.geometry.cross_section.create_3d_model")
-    @patch("src.geometry.cross_section.create_cross_section")  
+    @patch("src.geometry.cross_section.create_cross_section")
     @patch("src.geometry.cross_section.create_cross_section_annotations")
     @patch("src.geometry.cross_section.trimesh")
     def test_create_cross_section_view_with_annotations(
@@ -348,11 +340,13 @@ class TestCreateCrossSectionView(unittest.TestCase):
         mock_create_cross_section_func.return_value = mock_2d_scene
 
         # Mock the 2D mesh with specific Z coordinates for annotation testing
-        mock_2d_combined_mesh.vertices = np.array([
-            [0, 0, 0.0],   # Point 0: z=0.0
-            [1, 1, 1.5],   # Point 1: z=1.5  
-            [0, 2, 2.0],   # Point 2: z=2.0
-        ])
+        mock_2d_combined_mesh.vertices = np.array(
+            [
+                [0, 0, 0.0],  # Point 0: z=0.0
+                [1, 1, 1.5],  # Point 1: z=1.5
+                [0, 2, 2.0],  # Point 2: z=2.0
+            ]
+        )
         mock_2d_combined_mesh.entities = [MagicMock(points=[0, 1, 2])]
 
         # Mock annotations with specific content
@@ -368,7 +362,7 @@ class TestCreateCrossSectionView(unittest.TestCase):
         mock_create_annotations.assert_called_once()
         args, kwargs = mock_create_annotations.call_args
         self.assertEqual(args[0], params)
-        
+
         # Verify all_z contains the Z coordinates from the mesh vertices
         all_z = args[1]
         expected_z_coords = [0.0, 1.5, 2.0]  # Z coordinates from points 0, 1, 2
@@ -376,10 +370,11 @@ class TestCreateCrossSectionView(unittest.TestCase):
 
         # Verify annotations were added to the figure
         self.assertEqual(fig.layout.annotations, tuple(expected_annotations))
-        
+
         # Verify the figure structure
         self.assertIsInstance(fig, go.Figure)
         self.assertGreater(len(fig.data), 0)  # Should have trace data
 
+
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

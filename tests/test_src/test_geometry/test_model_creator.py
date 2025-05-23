@@ -1,31 +1,38 @@
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import MagicMock, call, patch
+
 import numpy as np
-import trimesh # For type hints and potentially direct use in complex mocks
-from munch import Munch # type: ignore[import-untyped]
-from typing import Any
+import trimesh  # For type hints and potentially direct use in complex mocks
+from munch import Munch  # type: ignore[import-untyped]
 
 from src.geometry.model_creator import (
-    create_box,
+    BridgeSegmentDimensions,  # For test data construction
+    LoadZoneGeometryData,  # For type hints in assertions
+    create_2d_top_view,  # Added for future tests
+    create_3d_model,  # Added for future tests
     create_axes,
     create_black_dot,
+    create_box,
     create_cross_section,
-    create_section_planes, # Added for future tests
-    create_3d_model,       # Added for future tests
-    prepare_load_zone_geometry_data, # Added for future tests
-    create_2d_top_view,            # Added for future tests
-    BridgeSegmentDimensions,       # For test data construction
-    LoadZoneGeometryData,          # For type hints in assertions
-    DPointLabel                    # For test data construction
+    create_section_planes,  # Added for future tests
+    prepare_load_zone_geometry_data,  # Added for future tests
 )
 
-class TestModelCreator(unittest.TestCase):
 
+class TestModelCreator(unittest.TestCase):
     def test_create_box(self):
-        vertices = np.array([
-            [0,0,0], [1,0,0], [1,1,0], [0,1,0], # Bottom
-            [0,0,1], [1,0,1], [1,1,1], [0,1,1]  # Top
-        ])
+        vertices = np.array(
+            [
+                [0, 0, 0],
+                [1, 0, 0],
+                [1, 1, 0],
+                [0, 1, 0],  # Bottom
+                [0, 0, 1],
+                [1, 0, 1],
+                [1, 1, 1],
+                [0, 1, 1],  # Top
+            ]
+        )
         color = [100, 100, 100, 255]
         box_mesh = create_box(vertices, color)
 
@@ -38,7 +45,7 @@ class TestModelCreator(unittest.TestCase):
     def test_create_axes(self):
         scene = create_axes(length=1.0, radius=0.02)
         self.assertIsInstance(scene, trimesh.Scene)
-        self.assertEqual(len(scene.geometry), 3) # X, Y, Z lines
+        self.assertEqual(len(scene.geometry), 3)  # X, Y, Z lines
 
         found_axes = {"X": False, "Y": False, "Z": False}
         expected_colors = {
@@ -50,14 +57,14 @@ class TestModelCreator(unittest.TestCase):
         expected_radius = 0.02
 
         # Iterate through scene.geometry.values() to get geometry objects
-        for geom_idx, geom in enumerate(scene.geometry.values()): 
+        for geom_idx, geom in enumerate(scene.geometry.values()):
             if not isinstance(geom, trimesh.Trimesh):
                 continue
 
             actual_color = None
-            if geom.visual and hasattr(geom.visual, 'face_colors') and geom.visual.face_colors is not None and geom.visual.face_colors.shape[0] > 0:
+            if geom.visual and hasattr(geom.visual, "face_colors") and geom.visual.face_colors is not None and geom.visual.face_colors.shape[0] > 0:
                 actual_color = geom.visual.face_colors[0]
-            
+
             if actual_color is None:
                 continue
 
@@ -66,15 +73,15 @@ class TestModelCreator(unittest.TestCase):
                 if np.allclose(actual_color, color_val_map):
                     identified_axis_char = axis_char_map
                     break
-            
+
             if not identified_axis_char:
                 continue
-            
+
             if found_axes[identified_axis_char]:
                 continue
 
             # Check the orientation by analyzing the geometry's extent pattern
-            # Since the SUT applies rotations directly to vertices, we need to check 
+            # Since the SUT applies rotations directly to vertices, we need to check
             # the bounding box to determine orientation
             extents = geom.bounding_box.extents
             extents_sorted = sorted(extents)
@@ -86,8 +93,7 @@ class TestModelCreator(unittest.TestCase):
             # - The longest extent should be along the axis direction
             # - The two shorter extents should be equal (diameter in both perpendicular directions)
             length_matches = np.isclose(length_from_extents, expected_length)
-            radius_matches = (np.isclose(radius_from_extents1, expected_radius) and 
-                             np.isclose(radius_from_extents0, expected_radius))
+            radius_matches = np.isclose(radius_from_extents1, expected_radius) and np.isclose(radius_from_extents0, expected_radius)
 
             # Check orientation by looking at which axis has the maximum extent
             # This tells us which direction the cylinder is pointing
@@ -96,7 +102,7 @@ class TestModelCreator(unittest.TestCase):
                 # X-axis cylinder should extend primarily in X direction (index 0)
                 orientation_correct = max_extent_idx == 0
             elif identified_axis_char == "Y":
-                # Y-axis cylinder should extend primarily in Y direction (index 1)  
+                # Y-axis cylinder should extend primarily in Y direction (index 1)
                 orientation_correct = max_extent_idx == 1
             elif identified_axis_char == "Z":
                 # Z-axis cylinder should extend primarily in Z direction (index 2)
@@ -114,25 +120,25 @@ class TestModelCreator(unittest.TestCase):
     def test_create_black_dot(self):
         test_radius = 0.25
         dot_mesh = create_black_dot(radius=test_radius)
-        self.assertIsInstance(dot_mesh, trimesh.Trimesh) # Icosphere returns a Trimesh
-        
+        self.assertIsInstance(dot_mesh, trimesh.Trimesh)  # Icosphere returns a Trimesh
+
         # Check if it resembles a sphere of the given radius by checking its bounding sphere
         # Trimesh objects have a bounding_sphere attribute which is a (center, radius) tuple
         # However, this is for the already created mesh. Icosphere is an approximation.
         # A simpler check might be that it's convex and its extents are around 2*radius.
         self.assertTrue(dot_mesh.is_convex)
-        self.assertAlmostEqual(np.max(dot_mesh.bounding_box.extents), 2 * test_radius, delta=test_radius*0.1) # Allow some tolerance
-        self.assertAlmostEqual(np.min(dot_mesh.bounding_box.extents), 2 * test_radius, delta=test_radius*0.1)
+        self.assertAlmostEqual(np.max(dot_mesh.bounding_box.extents), 2 * test_radius, delta=test_radius * 0.1)  # Allow some tolerance
+        self.assertAlmostEqual(np.min(dot_mesh.bounding_box.extents), 2 * test_radius, delta=test_radius * 0.1)
 
         # Check position (should be at origin by default from icosphere)
         expected_center = np.array([0, 0, 0], dtype=float)
-        actual_center = dot_mesh.centroid # Use centroid for Trimesh objects
+        actual_center = dot_mesh.centroid  # Use centroid for Trimesh objects
 
         np.testing.assert_array_almost_equal(actual_center, expected_center, decimal=5)
-        
+
         # Check color
-        self.assertTrue(hasattr(dot_mesh, 'visual'))
-        self.assertTrue(hasattr(dot_mesh.visual, 'face_colors'))
+        self.assertTrue(hasattr(dot_mesh, "visual"))
+        self.assertTrue(hasattr(dot_mesh.visual, "face_colors"))
         # Color is set to black [0,0,0,255]
         expected_color = np.array([0, 0, 0, 255], dtype=np.uint8)
         # All face colors should be black
@@ -149,8 +155,8 @@ class TestModelCreator(unittest.TestCase):
         # Mock create_axes to return a mock scene with a graph attribute
         mock_axes_scene = MagicMock(spec=trimesh.Scene)
         mock_axes_scene.graph = MagicMock()
-        mock_axes_scene.graph.to_edgelist.return_value = [] # Simulate no edges for simplicity
-        mock_axes_scene.geometry = {} # No actual geometry needed for this part of the mock
+        mock_axes_scene.graph.to_edgelist.return_value = []  # Simulate no edges for simplicity
+        mock_axes_scene.geometry = {}  # No actual geometry needed for this part of the mock
         mock_create_axes.return_value = mock_axes_scene
 
         # Act
@@ -158,7 +164,7 @@ class TestModelCreator(unittest.TestCase):
 
         # Assert
         self.assertIsInstance(section_scene, trimesh.Scene)
-        
+
         # 4. Assert properties of the slice
         # The slice of a box by a plane passing through its center (like Z=0) should be a Path2D polygon.
         # trimesh.intersections.mesh_plane returns a list of Path3D line segments.
@@ -174,7 +180,7 @@ class TestModelCreator(unittest.TestCase):
         #         path_geometry = geom_obj
         #         break
         # self.assertIsNotNone(path_geometry, "Path3D geometry not found in section scene")
-        
+
         # If axes=True, there will be axis geometries too. If axes=False, only section.
         # The function `create_cross_section` adds the created path as `section_0`
         # and also the plane itself as `plane_0` if `mesh.is_watertight` is false (which a simple box is).
@@ -187,12 +193,9 @@ class TestModelCreator(unittest.TestCase):
         # Given the slicing a box at z=0, we expect a rectangular path.
         # The exact number of geometries can be tricky due to how trimesh handles this.
         # Let's check if there's at least one significant geometry apart from axes.
-        non_axis_geometries = [ 
-            name for name in section_scene.geometry 
-            if not (name.startswith("axis_") or name.startswith("arrow_"))
-        ]
+        non_axis_geometries = [name for name in section_scene.geometry if not (name.startswith("axis_") or name.startswith("arrow_"))]
         self.assertGreaterEqual(len(non_axis_geometries), 1, "No section geometry found beyond axes")
-        
+
         # For a box sliced at Z=0, the section path should have 4 vertices if it's a simple rectangle.
         # However, mesh_plane returns line segments. If these are combined into a single Path3D,
         # it might have 4 vertices for the rectangle. If they are separate segments, more.
@@ -200,9 +203,9 @@ class TestModelCreator(unittest.TestCase):
         # For now, we'll assume the primary section geometry is one of these.
         section_geom_candidate_name = non_axis_geometries[0]
         section_geom_object = section_scene.geometry[section_geom_candidate_name]
-        self.assertIsInstance(section_geom_object, trimesh.path.Path3D) 
+        self.assertIsInstance(section_geom_object, trimesh.path.Path3D)
         self.assertGreaterEqual(len(section_geom_object.vertices), 4)
-        self.assertTrue(section_geom_object.is_closed) # A slice of a box should be closed
+        self.assertTrue(section_geom_object.is_closed)  # A slice of a box should be closed
 
     def test_prepare_load_zone_geometry_data(self):
         """Test the preparation of geometric data for load zone visualization."""
@@ -210,7 +213,7 @@ class TestModelCreator(unittest.TestCase):
         # Segment 1 (D1): length 0 (start), bz1=1, bz2=2, bz3=1 (total width 4)
         # Segment 2 (D2): length 10 from D1, bz1=1.5, bz2=2.5, bz3=1.5 (total width 5.5)
         bridge_dims_array = [
-            BridgeSegmentDimensions(bz1=1.0, bz2=2.0, bz3=1.0, segment_length=0), # First segment, length is effectively to itself
+            BridgeSegmentDimensions(bz1=1.0, bz2=2.0, bz3=1.0, segment_length=0),  # First segment, length is effectively to itself
             BridgeSegmentDimensions(bz1=1.5, bz2=2.5, bz3=1.5, segment_length=10.0),
         ]
         label_y_offset = 2.0
@@ -237,19 +240,17 @@ class TestModelCreator(unittest.TestCase):
         # Label D1
         label_d1 = result_data.d_point_label_data[0]
         self.assertEqual(label_d1.text, "D1")
-        self.assertEqual(label_d1.x, 0.0) # x_coord of D1
-        self.assertEqual(label_d1.y, 2.0 + label_y_offset) # y_top_edge_d1 + offset
+        self.assertEqual(label_d1.x, 0.0)  # x_coord of D1
+        self.assertEqual(label_d1.y, 2.0 + label_y_offset)  # y_top_edge_d1 + offset
         # Label D2
         label_d2 = result_data.d_point_label_data[1]
         self.assertEqual(label_d2.text, "D2")
-        self.assertEqual(label_d2.x, 10.0) # x_coord of D2
-        self.assertEqual(label_d2.y, 2.75 + label_y_offset) # y_top_edge_d2 + offset
+        self.assertEqual(label_d2.x, 10.0)  # x_coord of D2
+        self.assertEqual(label_d2.y, 2.75 + label_y_offset)  # y_top_edge_d2 + offset
 
     def test_prepare_load_zone_geometry_data_single_segment(self):
         """Test with a single bridge segment."""
-        bridge_dims_array = [
-            BridgeSegmentDimensions(bz1=1, bz2=2, bz3=1, segment_length=0)
-        ]
+        bridge_dims_array = [BridgeSegmentDimensions(bz1=1, bz2=2, bz3=1, segment_length=0)]
         label_y_offset = 1.0
         result_data = prepare_load_zone_geometry_data(bridge_dims_array, label_y_offset)
 
@@ -265,14 +266,16 @@ class TestModelCreator(unittest.TestCase):
 
     def _create_mock_bridge_segment_param(self, l=10.0, bz1=1.0, bz2=2.0, bz3=1.0, dz=0.5, dz_2=0.6, **kwargs) -> Munch:
         """Helper to create a single bridge segment Munch object for params."""
-        segment = Munch({
-            "l": l,
-            "bz1": bz1,
-            "bz2": bz2,
-            "bz3": bz3,
-            "dz": dz,
-            "dz_2": dz_2,
-        })
+        segment = Munch(
+            {
+                "l": l,
+                "bz1": bz1,
+                "bz2": bz2,
+                "bz3": bz3,
+                "dz": dz,
+                "dz_2": dz_2,
+            }
+        )
         segment.update(kwargs)
         return segment
 
@@ -291,7 +294,7 @@ class TestModelCreator(unittest.TestCase):
         for i in range(num_bridge_segments):
             # Use segment_length from BridgeSegmentDimensions which is length to *previous*
             # create_2d_top_view uses seg_end_data.l, which implies each segment defines its own length.
-            params.bridge_segments_array.append(self._create_mock_bridge_segment_param(l=10.0 + i*2, bz1=1, bz2=2, bz3=1))
+            params.bridge_segments_array.append(self._create_mock_bridge_segment_param(l=10.0 + i * 2, bz1=1, bz2=2, bz3=1))
 
         # Load Zones (less critical for simple case if structure is met)
         # create_2d_top_view seems to expect load_zones_data_array for its polygons.
@@ -346,7 +349,7 @@ class TestModelCreator(unittest.TestCase):
         # and then `num_cross_sections = len(segments_data)`. Then loops `range(num_cross_sections - 1)` for polygons.
         # So `num_load_zones` is NOT directly used by the SUT for polygon creation. `num_bridge_segments` IS.
 
-        params.input = Munch({"dimensions": Munch({})}) # For other parts of SUT that might access this. Minimally.
+        params.input = Munch({"dimensions": Munch({})})  # For other parts of SUT that might access this. Minimally.
         return params
 
     def test_create_2d_top_view_simple_case(self):
@@ -358,10 +361,10 @@ class TestModelCreator(unittest.TestCase):
         # The loop for zone_polygons is range(num_cross_sections - 1), which is range(0).
         # So, 0 zone polygons are expected.
         self.assertEqual(len(top_view_data["zone_polygons"]), 0)
-        
+
         # Bridge lines, D-labels etc. should still be generated for the single segment.
-        self.assertGreaterEqual(len(top_view_data["bridge_lines"]), 0) # Might have transverse lines for D1
-        self.assertEqual(len(top_view_data["cross_section_labels"]), 1) # D1 label
+        self.assertGreaterEqual(len(top_view_data["bridge_lines"]), 0)  # Might have transverse lines for D1
+        self.assertEqual(len(top_view_data["cross_section_labels"]), 1)  # D1 label
         self.assertEqual(top_view_data["cross_section_labels"][0]["text"], "D1")
 
     def test_create_2d_top_view_two_segments_makes_polygons(self):
@@ -379,7 +382,7 @@ class TestModelCreator(unittest.TestCase):
         self.assertIn("vertices", top_view_data["zone_polygons"][0])
         self.assertIsInstance(top_view_data["zone_polygons"][0]["vertices"], list)
         self.assertGreater(len(top_view_data["zone_polygons"][0]["vertices"]), 0)
-        self.assertIsInstance(top_view_data["zone_polygons"][0]["vertices"][0], list) # list of [x,y]
+        self.assertIsInstance(top_view_data["zone_polygons"][0]["vertices"][0], list)  # list of [x,y]
         self.assertEqual(len(top_view_data["zone_polygons"][0]["vertices"][0]), 2)
 
     def test_create_2d_top_view_multiple_zones_and_segments(self):
@@ -395,20 +398,28 @@ class TestModelCreator(unittest.TestCase):
         # Mock the return of trimesh.creation.box to be a mock that we can track
         mock_box_geom = MagicMock(spec=trimesh.Trimesh)
         mock_box_geom.visual = MagicMock()
-        mock_box_geom.visual.material = None # to avoid error if SUT tries to set it
+        mock_box_geom.visual.material = None  # to avoid error if SUT tries to set it
         mock_trimesh_creation_box.return_value = mock_box_geom
 
         seg1 = self._create_mock_bridge_segment_param(l=10, bz1=1, bz2=2, bz3=1, dz=0.5, dz_2=0.6)
         seg2 = self._create_mock_bridge_segment_param(l=12, bz1=1.5, bz2=2.5, bz3=1.5, dz=0.4, dz_2=0.5)
-        params = Munch({
-            "bridge_segments_array": [seg1, seg2],
-            "input": Munch({"dimensions": Munch({
-                "cross_section_loc": 5.0,
-                "horizontal_section_loc": 0.5,
-                "longitudinal_section_loc": 0.0,
-                # These flags are not used by create_section_planes, but by create_3d_model which calls it
-            })})
-        })
+        params = Munch(
+            {
+                "bridge_segments_array": [seg1, seg2],
+                "input": Munch(
+                    {
+                        "dimensions": Munch(
+                            {
+                                "cross_section_loc": 5.0,
+                                "horizontal_section_loc": 0.5,
+                                "longitudinal_section_loc": 0.0,
+                                # These flags are not used by create_section_planes, but by create_3d_model which calls it
+                            }
+                        )
+                    }
+                ),
+            }
+        )
 
         returned_scene = create_section_planes(params)
         self.assertIs(returned_scene, mock_scene_instance)
@@ -417,22 +428,22 @@ class TestModelCreator(unittest.TestCase):
         self.assertEqual(mock_trimesh_creation_box.call_count, 3)
         # Example: check extents for the first call (horizontal plane)
         # Need to recalculate expected extents based on SUT logic
-        original_length = seg1.l # SUT uses sum(segment.l for segment in params.bridge_segments_array)
-                                  # For this test params, it is just seg1.l (10)
-                                  # Ah, no, SUT has sum(segment.l ...), so 10+12 = 22.
+        original_length = seg1.l  # SUT uses sum(segment.l for segment in params.bridge_segments_array)
+        # For this test params, it is just seg1.l (10)
+        # Ah, no, SUT has sum(segment.l ...), so 10+12 = 22.
         original_length_sut = seg1.l + seg2.l
-        
-        max_width_z1 = max(seg1.bz1, seg2.bz1) # 1.5
-        max_width_z2 = max(seg1.bz2, seg2.bz2) # 2.5
-        max_width_z3 = max(seg1.bz3, seg2.bz3) # 1.5
-        original_width_sut = max_width_z1 + max_width_z2 + max_width_z3 # 1.5 + 2.5 + 1.5 = 5.5
 
-        max_hight_dz_2_sut = max(seg1.dz_2, seg2.dz_2) # 0.6
-        
-        padding_sut = 5 # from SUT
-        length_sut_padded = original_length_sut + padding_sut # 22+5 = 27
-        max_width_sut_padded = original_width_sut + padding_sut # 5.5+5 = 10.5
-        max_height_sut_padded = max_hight_dz_2_sut + padding_sut # 0.6+5 = 5.6
+        max_width_z1 = max(seg1.bz1, seg2.bz1)  # 1.5
+        max_width_z2 = max(seg1.bz2, seg2.bz2)  # 2.5
+        max_width_z3 = max(seg1.bz3, seg2.bz3)  # 1.5
+        original_width_sut = max_width_z1 + max_width_z2 + max_width_z3  # 1.5 + 2.5 + 1.5 = 5.5
+
+        max_hight_dz_2_sut = max(seg1.dz_2, seg2.dz_2)  # 0.6
+
+        padding_sut = 5  # from SUT
+        length_sut_padded = original_length_sut + padding_sut  # 22+5 = 27
+        max_width_sut_padded = original_width_sut + padding_sut  # 5.5+5 = 10.5
+        max_height_sut_padded = max_hight_dz_2_sut + padding_sut  # 0.6+5 = 5.6
 
         # Horizontal plane extents: [length, max_width, 0.01]
         expected_extents_horizontal = [length_sut_padded, max_width_sut_padded, 0.01]
@@ -442,9 +453,9 @@ class TestModelCreator(unittest.TestCase):
         expected_extents_cross = [0.01, max_width_sut_padded, max_height_sut_padded]
 
         call_args_list = mock_trimesh_creation_box.call_args_list
-        np.testing.assert_array_almost_equal(call_args_list[0][1]['extents'], expected_extents_horizontal)
-        np.testing.assert_array_almost_equal(call_args_list[1][1]['extents'], expected_extents_longitudinal)
-        np.testing.assert_array_almost_equal(call_args_list[2][1]['extents'], expected_extents_cross)
+        np.testing.assert_array_almost_equal(call_args_list[0][1]["extents"], expected_extents_horizontal)
+        np.testing.assert_array_almost_equal(call_args_list[1][1]["extents"], expected_extents_longitudinal)
+        np.testing.assert_array_almost_equal(call_args_list[2][1]["extents"], expected_extents_cross)
 
         # Check that add_geometry was called 3 times with the mocked box geometry
         self.assertEqual(mock_scene_instance.add_geometry.call_count, 3)
@@ -470,12 +481,22 @@ class TestModelCreator(unittest.TestCase):
         mock_box_geom.visual = MagicMock()
         mock_trimesh_creation_box.return_value = mock_box_geom
 
-        params = Munch({
-            "bridge_segments_array": [self._create_mock_bridge_segment_param(l=10)], # Minimal segment
-            "input": Munch({"dimensions": Munch({
-                "cross_section_loc": 1.0, "horizontal_section_loc": 0.1, "longitudinal_section_loc": 0.2,
-            })})
-        })
+        params = Munch(
+            {
+                "bridge_segments_array": [self._create_mock_bridge_segment_param(l=10)],  # Minimal segment
+                "input": Munch(
+                    {
+                        "dimensions": Munch(
+                            {
+                                "cross_section_loc": 1.0,
+                                "horizontal_section_loc": 0.1,
+                                "longitudinal_section_loc": 0.2,
+                            }
+                        )
+                    }
+                ),
+            }
+        )
         returned_scene = create_section_planes(params)
         self.assertIs(returned_scene, mock_scene_instance)
         self.assertEqual(mock_trimesh_creation_box.call_count, 3)
@@ -486,38 +507,48 @@ class TestModelCreator(unittest.TestCase):
     @patch("src.geometry.model_creator.create_section_planes")
     @patch("src.geometry.model_creator.create_rebars")
     @patch("trimesh.Scene.add_geometry")
-    def test_create_3d_model_with_axes_and_planes(self, mock_scene_add_geometry, mock_create_rebars, mock_create_section_planes, mock_create_axes, mock_create_box):
+    def test_create_3d_model_with_axes_and_planes(
+        self, mock_scene_add_geometry, mock_create_rebars, mock_create_section_planes, mock_create_axes, mock_create_box
+    ):
         """Test create_3d_model with axes and section planes enabled."""
-        params = Munch({
-            "bridge_segments_array": [
-                self._create_mock_bridge_segment_param(l=0, bz1=1, bz2=2, bz3=1, dz=0.5, dz_2=0.5),
-                self._create_mock_bridge_segment_param(l=10, bz1=1, bz2=2, bz3=1, dz=0.5, dz_2=0.5)
-            ],
-            "input": Munch({
-                "dimensions": Munch({
-                    "toggle_sections": True, # For section_planes to be added by create_3d_model
-                    "show_cross_section_plane": True, 
-                    "show_longitudinal_section_plane": True,
-                    "show_horizontal_section_plane": True,
-                    "cross_section_loc": 5.0, 
-                    "longitudinal_section_loc": 0.0,
-                    "horizontal_section_loc": 0.0
-                }),
-                "geometrie_wapening": Munch({ # Params for create_rebars
-                    "langswapening_buiten": True,
-                    "dekking": 25.0
-                })
-            }),
-            "reinforcement_zones_array": [] # Empty array for create_rebars
-        })
+        params = Munch(
+            {
+                "bridge_segments_array": [
+                    self._create_mock_bridge_segment_param(l=0, bz1=1, bz2=2, bz3=1, dz=0.5, dz_2=0.5),
+                    self._create_mock_bridge_segment_param(l=10, bz1=1, bz2=2, bz3=1, dz=0.5, dz_2=0.5),
+                ],
+                "input": Munch(
+                    {
+                        "dimensions": Munch(
+                            {
+                                "toggle_sections": True,  # For section_planes to be added by create_3d_model
+                                "show_cross_section_plane": True,
+                                "show_longitudinal_section_plane": True,
+                                "show_horizontal_section_plane": True,
+                                "cross_section_loc": 5.0,
+                                "longitudinal_section_loc": 0.0,
+                                "horizontal_section_loc": 0.0,
+                            }
+                        ),
+                        "geometrie_wapening": Munch(
+                            {  # Params for create_rebars
+                                "langswapening_buiten": True,
+                                "dekking": 25.0,
+                            }
+                        ),
+                    }
+                ),
+                "reinforcement_zones_array": [],  # Empty array for create_rebars
+            }
+        )
 
         mock_box_instance = MagicMock(spec=trimesh.Trimesh)
-        mock_box_instance.vertices = np.array([[0,0,0],[1,0,0],[0,1,0]])
-        mock_box_instance.faces = np.array([[0,1,2]])
+        mock_box_instance.vertices = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
+        mock_box_instance.faces = np.array([[0, 1, 2]])
         mock_create_box.return_value = mock_box_instance
-        
+
         mock_axes_scene_instance = MagicMock(spec=trimesh.Scene)
-        mock_axes_scene_instance.geometry = {"axis_X": MagicMock()} 
+        mock_axes_scene_instance.geometry = {"axis_X": MagicMock()}
         mock_create_axes.return_value = mock_axes_scene_instance
 
         mock_planes_scene_instance = MagicMock(spec=trimesh.Scene)
@@ -536,15 +567,17 @@ class TestModelCreator(unittest.TestCase):
         # SUT: if params.input.dimensions.toggle_sections and section_planes:
         # Test provides toggle_sections=True and calls with section_planes=True
         mock_create_section_planes.assert_called_once_with(params)
-        mock_create_rebars.assert_called_once_with(params, color=[0,0,0,255])
-        
-        self.assertEqual(mock_create_box.call_count, 3) 
+        mock_create_rebars.assert_called_once_with(params, color=[0, 0, 0, 255])
+
+        self.assertEqual(mock_create_box.call_count, 3)
         # add_geometry calls: 1 for bridge, 1 for rebars, 1 for axes, 1 for planes
-        self.assertEqual(mock_scene_add_geometry.call_count, 1 + 
-                         len(mock_rebar_scene_instance.geometry) + 
-                         len(mock_axes_scene_instance.geometry) + 
-                         len(mock_planes_scene_instance.geometry) + 
-                         (1 if mock_planes_scene_instance.geometry else 0) # for section_planes_scene itself if it has no geometry items
+        self.assertEqual(
+            mock_scene_add_geometry.call_count,
+            1
+            + len(mock_rebar_scene_instance.geometry)
+            + len(mock_axes_scene_instance.geometry)
+            + len(mock_planes_scene_instance.geometry)
+            + (1 if mock_planes_scene_instance.geometry else 0),  # for section_planes_scene itself if it has no geometry items
         )
         # Simpler: 1 (bridge) + 1 (rebars) + 1 (axes_scene) + 1 (planes_scene)
         # If these scenes are added directly. If their geometries are iterated, it's different.
@@ -557,4 +590,4 @@ class TestModelCreator(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

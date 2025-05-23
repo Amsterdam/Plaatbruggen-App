@@ -1,16 +1,13 @@
 """Tests for app.bridge.controller module."""
 
 import unittest
-from unittest.mock import patch, MagicMock
-from munch import Munch  # type: ignore[import-untyped]
+from unittest.mock import MagicMock, patch
 
-from viktor.testing import mock_API, MockedEntity  # VIKTOR testing utilities
-from viktor.errors import UserError
-
-from app.bridge.controller import BridgeController, BridgeSegmentParamRow
+from app.bridge.controller import BridgeController
 from src.geometry.model_creator import BridgeSegmentDimensions
-from tests.test_data.seed_loader import load_bridge_default_params, load_bridge_complex_params
-from tests.test_utils import controller_test_wrapper, colored_text, Colors
+from tests.test_data.seed_loader import load_bridge_complex_params, load_bridge_default_params
+from tests.test_utils import controller_test_wrapper
+from viktor.errors import UserError
 
 
 class TestBridgeController(unittest.TestCase):
@@ -21,7 +18,7 @@ class TestBridgeController(unittest.TestCase):
         self.controller = BridgeController()
         self.default_params = load_bridge_default_params()
         self.complex_params = load_bridge_complex_params()
-        
+
         # Sample bridge segment row for testing individual segment processing
         # Use data from seed file but ensure it has all needed fields for testing
         seed_segment = self.default_params.bridge_segments_array[0].copy()
@@ -33,7 +30,7 @@ class TestBridgeController(unittest.TestCase):
             "dz_2": seed_segment.get("dz_2", 3.0),
             "col_6": seed_segment.get("col_6", 0.0),
             "l": seed_segment.get("l", 10.0),
-            "is_first_segment": seed_segment.get("is_first_segment", False)
+            "is_first_segment": seed_segment.get("is_first_segment", False),
         }
 
     @controller_test_wrapper("BridgeController", "_create_bridge_segment_dimensions_from_params")
@@ -59,10 +56,10 @@ class TestBridgeController(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(UserError) as context:
             self.controller._create_bridge_segment_dimensions_from_params(incomplete_segment)
-        
+
         self.assertIn("brugsegmenten missen benodigde data", str(context.exception))
 
-    @patch('app.bridge.controller.prepare_load_zone_geometry_data')
+    @patch("app.bridge.controller.prepare_load_zone_geometry_data")
     @controller_test_wrapper("BridgeController", "_prepare_bridge_geometry_for_plotting")
     def test_prepare_bridge_geometry_for_plotting_with_valid_segments(self, mock_prepare_geometry):
         """Test preparing bridge geometry with valid segment data."""
@@ -83,6 +80,7 @@ class TestBridgeController(unittest.TestCase):
         self.assertTrue(len(call_args) > 0)
         # Verify the first item is a BridgeSegmentDimensions object
         from src.geometry.model_creator import BridgeSegmentDimensions
+
         self.assertIsInstance(call_args[0], BridgeSegmentDimensions)
 
     def test_prepare_bridge_geometry_for_plotting_empty_segments(self):
@@ -131,13 +129,13 @@ class TestBridgeController(unittest.TestCase):
         """Test bridge entity data method structure without actual API calls."""
         # This test verifies the method exists and has the right signature
         # without testing the actual API integration
-        
+
         # Arrange - invalid entity ID
         entity_id = None
-        
+
         # Act
         objectnumm, name, error_result = self.controller._get_bridge_entity_data(entity_id)
-        
+
         # Assert - with invalid ID, should return None values and error
         self.assertIsNone(objectnumm)
         self.assertIsNone(name)
@@ -150,13 +148,13 @@ class TestBridgeController(unittest.TestCase):
         self.assertIn("bz2", self.sample_segment_row)
         self.assertIn("bz3", self.sample_segment_row)
         self.assertIn("l", self.sample_segment_row)
-        
+
         # Test values are what we expect from seed data
         self.assertEqual(self.sample_segment_row["bz1"], self.sample_segment_row["bz1"])
         self.assertEqual(self.sample_segment_row["bz2"], self.sample_segment_row["bz2"])
         self.assertEqual(self.sample_segment_row["bz3"], self.sample_segment_row["bz3"])
         self.assertEqual(self.sample_segment_row["l"], self.sample_segment_row["l"])
-        
+
         # Test data types
         self.assertIsInstance(self.sample_segment_row["bz1"], (int, float))
         self.assertIsInstance(self.sample_segment_row["bz2"], (int, float))
@@ -171,7 +169,7 @@ class TestBridgeController(unittest.TestCase):
         self.assertIn("bridge_segments_array", self.default_params)
         self.assertIn("load_zones_data_array", self.default_params)
         self.assertIn("reinforcement_zones_array", self.default_params)
-        
+
         # Check specific values
         self.assertEqual(self.default_params.info.bridge_objectnumm, "BRIDGE-001")
         self.assertEqual(len(self.default_params.bridge_segments_array), 2)
@@ -185,7 +183,7 @@ class TestBridgeController(unittest.TestCase):
         self.assertIn("bridge_segments_array", self.complex_params)
         self.assertIn("load_zones_data_array", self.complex_params)
         self.assertIn("reinforcement_zones_array", self.complex_params)
-        
+
         # Check specific values
         self.assertEqual(self.complex_params.info.bridge_objectnumm, "BRIDGE-COMPLEX-001")
         self.assertEqual(len(self.complex_params.bridge_segments_array), 3)
@@ -195,12 +193,12 @@ class TestBridgeController(unittest.TestCase):
         """Test that bridge segments in seed data have correct structure."""
         # Test first segment in default params
         first_segment = self.default_params.bridge_segments_array[0]
-        
+
         # Check required fields exist
         required_fields = ["bz1", "bz2", "bz3", "l"]
         for field in required_fields:
             self.assertIn(field, first_segment)
-        
+
         # Check types
         self.assertIsInstance(first_segment["bz1"], (int, float))
         self.assertIsInstance(first_segment["bz2"], (int, float))
@@ -208,5 +206,5 @@ class TestBridgeController(unittest.TestCase):
         self.assertIsInstance(first_segment["l"], (int, float))
 
 
-if __name__ == '__main__':
-    unittest.main() 
+if __name__ == "__main__":
+    unittest.main()

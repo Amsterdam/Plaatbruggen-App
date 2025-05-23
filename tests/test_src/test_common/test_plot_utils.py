@@ -1,9 +1,11 @@
 import unittest
+
 import plotly.graph_objects as go
-from src.common.plot_utils import create_text_annotations_from_data, create_structural_polygons_traces, create_bridge_outline_traces
+
+from src.common.plot_utils import create_bridge_outline_traces, create_structural_polygons_traces, create_text_annotations_from_data
+
 
 class TestPlotUtilsCreateTextAnnotations(unittest.TestCase):
-
     def test_empty_label_data(self):
         # Arrange
         label_data = []
@@ -100,13 +102,13 @@ class TestPlotUtilsCreateTextAnnotations(unittest.TestCase):
         annotations = create_text_annotations_from_data(label_data, font_size=20, arrowwidth=2)
         # Assert
         ann = annotations[0]
-        self.assertEqual(ann.font.size, 20) # Overridden
-        self.assertEqual(ann.font.color, "black") # Default
-        self.assertEqual(ann.arrowwidth, 2) # Kwarg
-        self.assertEqual(ann.xanchor, "center") # Default
+        self.assertEqual(ann.font.size, 20)  # Overridden
+        self.assertEqual(ann.font.color, "black")  # Default
+        self.assertEqual(ann.arrowwidth, 2)  # Kwarg
+        self.assertEqual(ann.xanchor, "center")  # Default
+
 
 class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
-
     def test_empty_polygons_data(self):
         # Arrange
         zone_polygons_data = []
@@ -118,7 +120,7 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
 
     def test_polygon_no_vertices_key(self):
         # Arrange
-        zone_polygons_data = [{ "color": "blue" }] # No 'vertices' key
+        zone_polygons_data = [{"color": "blue"}]  # No 'vertices' key
         # Act
         traces = create_structural_polygons_traces(zone_polygons_data)
         # Assert
@@ -126,7 +128,7 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
 
     def test_polygon_empty_vertices_list(self):
         # Arrange
-        zone_polygons_data = [{ "vertices": [] }]
+        zone_polygons_data = [{"vertices": []}]
         # Act
         traces = create_structural_polygons_traces(zone_polygons_data)
         # Assert
@@ -134,7 +136,7 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
 
     def test_polygon_insufficient_vertices(self):
         # Arrange
-        zone_polygons_data = [{ "vertices": [[0,0], [1,1]] }] # Only 2 vertices
+        zone_polygons_data = [{"vertices": [[0, 0], [1, 1]]}]  # Only 2 vertices
         # Act
         traces = create_structural_polygons_traces(zone_polygons_data)
         # Assert
@@ -142,10 +144,10 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
 
     def test_single_valid_polygon_default_color(self):
         # Arrange
-        vertices = [[0,0], [1,0], [0,1]]
+        vertices = [[0, 0], [1, 0], [0, 1]]
         zone_polygons_data = [{"vertices": vertices}]
-        expected_x = [0, 1, 0, 0] # Closed polygon
-        expected_y = [0, 0, 1, 0] # Closed polygon
+        expected_x = [0, 1, 0, 0]  # Closed polygon
+        expected_y = [0, 0, 1, 0]  # Closed polygon
         default_fill_color = "rgba(220,220,220,0.4)"
         default_line_color = "rgba(100, 100, 100, 0.5)"
         default_line_width = 0.5
@@ -169,8 +171,8 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
 
     def test_single_valid_polygon_specified_color(self):
         # Arrange
-        vertices = [[0,0], [1,1], [0,1]]
-        specified_color = "rgba(0,0,255,0.5)" # Blueish
+        vertices = [[0, 0], [1, 1], [0, 1]]
+        specified_color = "rgba(0,0,255,0.5)"  # Blueish
         zone_polygons_data = [{"vertices": vertices, "color": specified_color}]
         expected_x = [0, 1, 0, 0]
         expected_y = [0, 1, 1, 0]
@@ -188,30 +190,30 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
     def test_multiple_polygons_mixed_validity_and_color(self):
         # Arrange
         zone_polygons_data = [
-            {"vertices": [[0,0], [1,0], [0,1]]}, # Valid, default color
-            {"vertices": [[10,10], [11,10]]},     # Invalid (2 points)
-            {"vertices": [[5,5], [6,5], [6,6], [5,6]], "color": "red"}, # Valid, red color
-            {"vertices": []} # Invalid (empty vertices)
+            {"vertices": [[0, 0], [1, 0], [0, 1]]},  # Valid, default color
+            {"vertices": [[10, 10], [11, 10]]},  # Invalid (2 points)
+            {"vertices": [[5, 5], [6, 5], [6, 6], [5, 6]], "color": "red"},  # Valid, red color
+            {"vertices": []},  # Invalid (empty vertices)
         ]
 
         # Act
         traces = create_structural_polygons_traces(zone_polygons_data)
 
         # Assert
-        self.assertEqual(len(traces), 2) # Expecting only 2 valid traces
+        self.assertEqual(len(traces), 2)  # Expecting only 2 valid traces
 
         # Check first valid trace (default color)
         trace1 = traces[0]
         self.assertEqual(trace1.fillcolor, "rgba(220,220,220,0.4)")
-        self.assertListEqual(list(trace1.x), [0,1,0,0])
+        self.assertListEqual(list(trace1.x), [0, 1, 0, 0])
 
         # Check second valid trace (red color)
         trace2 = traces[1]
         self.assertEqual(trace2.fillcolor, "red")
-        self.assertListEqual(list(trace2.x), [5,6,6,5,5])
+        self.assertListEqual(list(trace2.x), [5, 6, 6, 5, 5])
+
 
 class TestPlotUtilsCreateBridgeOutlineTraces(unittest.TestCase):
-
     def test_empty_lines_data(self):
         # Arrange
         bridge_lines_data = []
@@ -224,8 +226,8 @@ class TestPlotUtilsCreateBridgeOutlineTraces(unittest.TestCase):
     def test_line_missing_start_or_end_key(self):
         # Arrange
         bridge_lines_data = [
-            {"end": [1,1]}, # Missing start
-            {"start": [0,0]}  # Missing end
+            {"end": [1, 1]},  # Missing start
+            {"start": [0, 0]},  # Missing end
         ]
         # Act
         traces = create_bridge_outline_traces(bridge_lines_data)
@@ -234,10 +236,7 @@ class TestPlotUtilsCreateBridgeOutlineTraces(unittest.TestCase):
 
     def test_line_start_or_end_is_none(self):
         # Arrange
-        bridge_lines_data = [
-            {"start": None, "end": [1,1]},
-            {"start": [0,0], "end": None}
-        ]
+        bridge_lines_data = [{"start": None, "end": [1, 1]}, {"start": [0, 0], "end": None}]
         # Act
         traces = create_bridge_outline_traces(bridge_lines_data)
         # Assert
@@ -245,8 +244,8 @@ class TestPlotUtilsCreateBridgeOutlineTraces(unittest.TestCase):
 
     def test_single_valid_line_defaults(self):
         # Arrange
-        start_point = [0,0]
-        end_point = [10,5]
+        start_point = [0, 0]
+        end_point = [10, 5]
         bridge_lines_data = [{"start": start_point, "end": end_point}]
         expected_x = [start_point[0], end_point[0]]
         expected_y = [start_point[1], end_point[1]]
@@ -270,16 +269,11 @@ class TestPlotUtilsCreateBridgeOutlineTraces(unittest.TestCase):
 
     def test_single_valid_line_specified_color_width(self):
         # Arrange
-        start_point = [1,2]
-        end_point = [3,4]
+        start_point = [1, 2]
+        end_point = [3, 4]
         specified_color = "blue"
         specified_width = 3
-        bridge_lines_data = [{
-            "start": start_point, 
-            "end": end_point, 
-            "color": specified_color, 
-            "width": specified_width
-        }]
+        bridge_lines_data = [{"start": start_point, "end": end_point, "color": specified_color, "width": specified_width}]
         expected_x = [start_point[0], end_point[0]]
         expected_y = [start_point[1], end_point[1]]
 
@@ -297,26 +291,26 @@ class TestPlotUtilsCreateBridgeOutlineTraces(unittest.TestCase):
     def test_multiple_lines_mixed_validity(self):
         # Arrange
         bridge_lines_data = [
-            {"start": [0,0], "end": [1,1]}, # Valid, default
-            {"start": [2,2]},              # Invalid, missing end
-            {"start": [3,3], "end": [4,4], "color": "red", "width": 2}, # Valid, specified
-            {"start": None, "end": [5,5]}   # Invalid, start is None
+            {"start": [0, 0], "end": [1, 1]},  # Valid, default
+            {"start": [2, 2]},  # Invalid, missing end
+            {"start": [3, 3], "end": [4, 4], "color": "red", "width": 2},  # Valid, specified
+            {"start": None, "end": [5, 5]},  # Invalid, start is None
         ]
 
         # Act
         traces = create_bridge_outline_traces(bridge_lines_data)
 
         # Assert
-        self.assertEqual(len(traces), 2) # Expecting 2 valid traces
+        self.assertEqual(len(traces), 2)  # Expecting 2 valid traces
 
         # Check first valid trace (default color/width)
         trace1 = traces[0]
         self.assertEqual(trace1.line.color, "grey")
         self.assertEqual(trace1.line.width, 1)
-        self.assertListEqual(list(trace1.x), [0,1])
+        self.assertListEqual(list(trace1.x), [0, 1])
 
         # Check second valid trace (specified color/width)
         trace2 = traces[1]
         self.assertEqual(trace2.line.color, "red")
         self.assertEqual(trace2.line.width, 2)
-        self.assertListEqual(list(trace2.x), [3,4]) 
+        self.assertListEqual(list(trace2.x), [3, 4])

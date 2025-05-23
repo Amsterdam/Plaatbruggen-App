@@ -1,13 +1,13 @@
 """Tests for app.overview_bridges.controller module."""
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from munch import Munch  # type: ignore[import-untyped]
 
-from viktor.errors import UserError
-
 from app.overview_bridges.controller import OverviewBridgesController
-from tests.test_data.seed_loader import load_overview_bridges_default_params, create_mocked_entity_list
+from tests.test_data.seed_loader import create_mocked_entity_list, load_overview_bridges_default_params
+from viktor.errors import UserError
 
 
 class TestOverviewBridgesController(unittest.TestCase):
@@ -20,19 +20,16 @@ class TestOverviewBridgesController(unittest.TestCase):
 
     def _create_mock_params(self) -> Munch:
         """Helper to create mock overview bridges parametrization."""
-        return Munch({
-            "home": Munch({}),
-            "bridge_overview": Munch({})
-        })
+        return Munch({"home": Munch({}), "bridge_overview": Munch({})})
 
     def test_get_resource_paths_success(self):
         """Test successful resource path retrieval."""
         # This is a static method test - just verify it doesn't raise exceptions
-        with patch('app.overview_bridges.controller.get_resources_dir') as mock_get_res:
-            with patch('app.overview_bridges.controller.get_default_shapefile_path') as mock_get_shp:
-                with patch('app.overview_bridges.controller.get_filtered_bridges_json_path') as mock_get_json:
-                    with patch('app.overview_bridges.controller.validate_shapefile_exists') as mock_validate:
-                        with patch('os.path.exists') as mock_exists:
+        with patch("app.overview_bridges.controller.get_resources_dir") as mock_get_res:
+            with patch("app.overview_bridges.controller.get_default_shapefile_path") as mock_get_shp:
+                with patch("app.overview_bridges.controller.get_filtered_bridges_json_path") as mock_get_json:
+                    with patch("app.overview_bridges.controller.validate_shapefile_exists") as mock_validate:
+                        with patch("os.path.exists") as mock_exists:
                             # Arrange
                             mock_get_res.return_value = "/resources"
                             mock_get_shp.return_value = "/path/shapefile.shp"
@@ -49,8 +46,8 @@ class TestOverviewBridgesController(unittest.TestCase):
 
     def test_load_filtered_bridges_success(self):
         """Test successful loading of filtered bridges."""
-        with patch('builtins.open') as mock_open:
-            with patch('json.load') as mock_json_load:
+        with patch("builtins.open") as mock_open:
+            with patch("json.load") as mock_json_load:
                 # Arrange
                 mock_json_load.return_value = [{"OBJECTNUMM": "BRIDGE-001"}]
                 file_path = "/path/to/filtered_bridges.json"
@@ -64,7 +61,7 @@ class TestOverviewBridgesController(unittest.TestCase):
 
     def test_load_filtered_bridges_file_error(self):
         """Test loading filtered bridges with file error."""
-        with patch('builtins.open', side_effect=FileNotFoundError()):
+        with patch("builtins.open", side_effect=FileNotFoundError()):
             # Arrange
             file_path = "/nonexistent/filtered_bridges.json"
 
@@ -72,14 +69,14 @@ class TestOverviewBridgesController(unittest.TestCase):
             with self.assertRaises(UserError):
                 self.controller._load_filtered_bridges(file_path)
 
-    @patch('app.overview_bridges.controller.gpd.read_file')
+    @patch("app.overview_bridges.controller.gpd.read_file")
     def test_load_shapefile_and_names_success(self, mock_read_file):
         """Test successful loading of shapefile and name mapping."""
         # Arrange
         mock_gdf = MagicMock()
         mock_gdf.iterrows.return_value = [
             (0, {"OBJECTNUMM": "BRIDGE-001", "OBJECTNAAM": "Test Bridge"}),
-            (1, {"OBJECTNUMM": "BRIDGE-002", "OBJECTNAAM": "Another Bridge"})
+            (1, {"OBJECTNUMM": "BRIDGE-002", "OBJECTNAAM": "Another Bridge"}),
         ]
         mock_read_file.return_value = mock_gdf
         shapefile_path = "/path/to/shapefile.shp"
@@ -92,14 +89,14 @@ class TestOverviewBridgesController(unittest.TestCase):
         self.assertEqual(result["BRIDGE-001"], "Test Bridge")
         self.assertEqual(result["BRIDGE-002"], "Another Bridge")
 
-    @patch('app.overview_bridges.controller.gpd.read_file')
+    @patch("app.overview_bridges.controller.gpd.read_file")
     def test_load_shapefile_and_names_missing_names(self, mock_read_file):
         """Test loading shapefile with missing object names."""
         # Arrange
         mock_gdf = MagicMock()
         mock_gdf.iterrows.return_value = [
             (0, {"OBJECTNUMM": "BRIDGE-001", "OBJECTNAAM": None}),
-            (1, {"OBJECTNUMM": "BRIDGE-002", "OBJECTNAAM": "   "})  # Whitespace only
+            (1, {"OBJECTNUMM": "BRIDGE-002", "OBJECTNAAM": "   "}),  # Whitespace only
         ]
         mock_read_file.return_value = mock_gdf
         shapefile_path = "/path/to/shapefile.shp"
@@ -112,23 +109,23 @@ class TestOverviewBridgesController(unittest.TestCase):
         self.assertIsNone(result["BRIDGE-001"])
         self.assertIsNone(result["BRIDGE-002"])
 
-    @patch('viktor.api_v1.API')
+    @patch("viktor.api_v1.API")
     def test_get_existing_child_objectnumms_success(self, mock_api_class):
         """Test successful retrieval of existing child object numbers."""
         # Arrange
         mock_api = MagicMock()
         mock_api_class.return_value = mock_api
-        
+
         mock_entity = MagicMock()
         mock_api.get_entity.return_value = mock_entity
-        
+
         mock_child1 = MagicMock()
         mock_child1.last_saved_params = {"bridge_objectnumm": "BRIDGE-001"}
         mock_child2 = MagicMock()
         mock_child2.last_saved_params = {"bridge_objectnumm": "BRIDGE-002"}
-        
+
         mock_entity.children.return_value = [mock_child1, mock_child2]
-        
+
         entity_id = 123
 
         # Act
@@ -138,45 +135,37 @@ class TestOverviewBridgesController(unittest.TestCase):
         self.assertIsInstance(result, set)
         self.assertEqual(result, {"BRIDGE-001", "BRIDGE-002"})
 
-    @patch('viktor.api_v1.API')
+    @patch("viktor.api_v1.API")
     def test_get_existing_child_objectnumms_api_error(self, mock_api_class):
         """Test handling of API errors when getting existing children."""
         # Arrange
         mock_api = MagicMock()
         mock_api_class.return_value = mock_api
         mock_api.get_entity.side_effect = Exception("API Error")
-        
+
         entity_id = 123
 
         # Act & Assert
         with self.assertRaises(UserError):
             self.controller._get_existing_child_objectnumms(entity_id)
 
-    @patch('viktor.api_v1.API')
+    @patch("viktor.api_v1.API")
     def test_create_missing_children_success(self, mock_api_class):
         """Test successful creation of missing child entities."""
         # Arrange
         mock_api = MagicMock()
         mock_api_class.return_value = mock_api
-        
+
         mock_parent_entity = MagicMock()
         mock_api.get_entity.return_value = mock_parent_entity
-        
+
         parent_entity_id = 123
-        filtered_bridge_data = [
-            {"OBJECTNUMM": "BRIDGE-001"},
-            {"OBJECTNUMM": "BRIDGE-002"}
-        ]
-        objectnumm_to_name = {
-            "BRIDGE-001": "Test Bridge",
-            "BRIDGE-002": None
-        }
+        filtered_bridge_data = [{"OBJECTNUMM": "BRIDGE-001"}, {"OBJECTNUMM": "BRIDGE-002"}]
+        objectnumm_to_name = {"BRIDGE-001": "Test Bridge", "BRIDGE-002": None}
         existing_objectnumms = {"BRIDGE-001"}  # BRIDGE-001 already exists
 
         # Act
-        self.controller._create_missing_children(
-            parent_entity_id, filtered_bridge_data, objectnumm_to_name, existing_objectnumms
-        )
+        self.controller._create_missing_children(parent_entity_id, filtered_bridge_data, objectnumm_to_name, existing_objectnumms)
 
         # Assert
         # Should only create BRIDGE-002 (BRIDGE-001 already exists)
@@ -189,12 +178,12 @@ class TestOverviewBridgesController(unittest.TestCase):
         """Test handling of invalid bridge data during child creation."""
         # This test validates the method signature and basic error handling
         # without calling the actual VIKTOR API
-        
+
         # Arrange
         parent_entity_id = 123
         filtered_bridge_data = [
             {"OBJECTNUMM": None},  # Invalid - no OBJECTNUMM
-            {}  # Invalid - missing OBJECTNUMM
+            {},  # Invalid - missing OBJECTNUMM
         ]
         objectnumm_to_name = {}
         existing_objectnumms = set()
@@ -203,29 +192,24 @@ class TestOverviewBridgesController(unittest.TestCase):
         # but we're testing that the method handles invalid data gracefully
         # The API error is expected since we're not mocking the VIKTOR API properly
         try:
-            self.controller._create_missing_children(
-                parent_entity_id, 
-                filtered_bridge_data, 
-                objectnumm_to_name, 
-                existing_objectnumms
-            )
+            self.controller._create_missing_children(parent_entity_id, filtered_bridge_data, objectnumm_to_name, existing_objectnumms)
         except Exception as e:
             # This is expected due to API calls without proper mocking
             # The important thing is that the method exists and has the right signature
             self.assertIsInstance(e, (UserError, AttributeError, TypeError))
 
-    @patch.object(OverviewBridgesController, '_get_resource_paths')
-    @patch.object(OverviewBridgesController, '_load_filtered_bridges')
-    @patch.object(OverviewBridgesController, '_load_shapefile_and_names')
-    @patch.object(OverviewBridgesController, '_get_existing_child_objectnumms')
-    @patch.object(OverviewBridgesController, '_create_missing_children')
-    def test_regenerate_bridges_action_success(self, mock_create_children, mock_get_existing,
-                                               mock_load_shapefile, mock_load_filtered,
-                                               mock_get_paths):
+    @patch.object(OverviewBridgesController, "_get_resource_paths")
+    @patch.object(OverviewBridgesController, "_load_filtered_bridges")
+    @patch.object(OverviewBridgesController, "_load_shapefile_and_names")
+    @patch.object(OverviewBridgesController, "_get_existing_child_objectnumms")
+    @patch.object(OverviewBridgesController, "_create_missing_children")
+    def test_regenerate_bridges_action_success(
+        self, mock_create_children, mock_get_existing, mock_load_shapefile, mock_load_filtered, mock_get_paths
+    ):
         """Test successful bridge regeneration action."""
         # Arrange
         entity_id = 123
-        
+
         mock_get_paths.return_value = ("/resources", "/shapefile.shp", "/filtered.json")
         mock_load_filtered.return_value = [{"OBJECTNUMM": "BRIDGE-001"}]
         mock_load_shapefile.return_value = {"BRIDGE-001": "Test Bridge"}
@@ -260,7 +244,7 @@ class TestOverviewBridgesController(unittest.TestCase):
         # Assert
         self.assertIn("home", self.default_params)
         self.assertIn("bridge_overview", self.default_params)
-        
+
         # Check specific values
         self.assertIn("introduction", self.default_params.bridge_overview)
 
@@ -268,11 +252,11 @@ class TestOverviewBridgesController(unittest.TestCase):
         """Test creation of mocked entity list for testing."""
         # Act
         entities = create_mocked_entity_list(count=5)
-        
+
         # Assert
         self.assertIsInstance(entities, list)
         self.assertEqual(len(entities), 5)
-        
+
         for i, entity in enumerate(entities, 1):
             self.assertIn("OBJECTNUMM", entity)
             self.assertIn("OBJECTNAAM", entity)
@@ -284,11 +268,11 @@ class TestOverviewBridgesController(unittest.TestCase):
         """Test that controller methods have expected signatures."""
         # This test ensures the methods exist and can be called
         # without testing the actual VIKTOR API integration
-        
+
         # Check that methods exist
-        self.assertTrue(hasattr(self.controller, '_create_missing_children'))
-        self.assertTrue(callable(getattr(self.controller, '_create_missing_children')))
+        self.assertTrue(hasattr(self.controller, "_create_missing_children"))
+        self.assertTrue(callable(getattr(self.controller, "_create_missing_children")))
 
 
-if __name__ == '__main__':
-    unittest.main() 
+if __name__ == "__main__":
+    unittest.main()
