@@ -28,7 +28,10 @@ def print_concise_summary(result):
         print(colored_text(success_msg, Colors.GREEN, bold=True))
         count_msg = f"Tests: {total_tests} passed"
         print(colored_text(count_msg, Colors.GREEN))
-        print(colored_text("All tests passed, ready to push!", Colors.GREEN, bold=True))
+        
+        # Overall status message (appears at the end since tests run last)
+        print()
+        print(colored_text("All checks completed. Ready to push if no errors above!", Colors.GREEN, bold=True))
     else:
         fail_msg = safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
         print(colored_text(fail_msg, Colors.RED, bold=True))
@@ -50,7 +53,10 @@ def print_concise_summary(result):
         print(colored_text(help_header, Colors.CYAN))
         help_cmd = "  python run_enhanced_tests.py"
         print(colored_text(help_cmd, Colors.WHITE))
-        print(colored_text("Tests failed, please fix before pushing!", Colors.RED, bold=True))
+        
+        # Overall status message
+        print()
+        print(colored_text("Some checks failed, please fix before pushing!", Colors.RED, bold=True))
 
 
 def print_detailed_summary(result):

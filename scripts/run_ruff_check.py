@@ -47,7 +47,6 @@ def run_ruff_check():
                 print(colored_text(success_msg, Colors.GREEN, bold=True))
                 detail_msg = "Code style: No issues found"
                 print(colored_text(detail_msg, Colors.GREEN))
-                print(colored_text("Code style check passed, ready to continue!", Colors.GREEN, bold=True))
             else:
                 fail_msg = safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
                 print(colored_text(fail_msg, Colors.RED, bold=True))
@@ -79,7 +78,6 @@ def run_ruff_check():
                 print(colored_text(help_msg, Colors.CYAN))
                 cmd_msg = "  python -m ruff check --config=.ruff.toml"
                 print(colored_text(cmd_msg, Colors.WHITE))
-                print(colored_text("Code style check failed, please fix before pushing!", Colors.RED, bold=True))
         else:
             # In detailed mode, show full output
             if result.stdout:

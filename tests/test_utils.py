@@ -41,33 +41,33 @@ def supports_color() -> bool:
     # Force color support if explicitly requested
     if os.environ.get("FORCE_COLOR") == "1":
         return True
-        
+
     # Check if NO_COLOR is set (universal way to disable colors)
     if os.environ.get("NO_COLOR"):
         return False
-    
+
     # Check for common terminals that support colors (even if not TTY in subprocess)
-    term = os.environ.get('TERM', '').lower()
-    if any(color_term in term for color_term in ['color', 'xterm', 'screen', 'tmux', 'ansi']):
+    term = os.environ.get("TERM", "").lower()
+    if any(color_term in term for color_term in ["color", "xterm", "screen", "tmux", "ansi"]):
         return True
-    
+
     # Check for Git Bash and other Windows terminals that support colors
     if sys.platform.startswith("win"):
         # Git Bash sets these environment variables
-        if any(os.environ.get(var) for var in ['MSYSTEM', 'MINGW_PREFIX', 'MSYSTEM_PREFIX']):
+        if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "MSYSTEM_PREFIX"]):
             return True
         # Windows Terminal and other modern terminals
-        if os.environ.get('WT_SESSION') or os.environ.get('TERM_PROGRAM'):
+        if os.environ.get("WT_SESSION") or os.environ.get("TERM_PROGRAM"):
             return True
-    
+
     # Check if stdout is a TTY (but don't make this a hard requirement)
-    if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty():
+    if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
         return True
-    
+
     # Default to True for most Unix-like systems
     if not sys.platform.startswith("win"):
         return True
-        
+
     # Conservative fallback for Windows
     return False
 

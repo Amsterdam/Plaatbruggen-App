@@ -41,22 +41,20 @@ def run_mypy():
                 print(colored_text(success_msg, Colors.GREEN, bold=True))
                 detail_msg = "Type checking: No issues found"
                 print(colored_text(detail_msg, Colors.GREEN))
-                print(colored_text("Type checking passed, ready to continue!", Colors.GREEN, bold=True))
             else:
                 fail_msg = safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
                 print(colored_text(fail_msg, Colors.RED, bold=True))
-
+                
                 # Count errors from output
                 error_lines = [line for line in lines if ": error:" in line or ": note:" in line]
                 error_count = len([line for line in lines if ": error:" in line])
-
+                
                 count_msg = f"Type checking: {error_count} errors found"
                 print(colored_text(count_msg, Colors.RED))
                 help_msg = "\nFor detailed output, run:"
                 print(colored_text(help_msg, Colors.CYAN))
                 cmd_msg = "  python -m mypy ."
                 print(colored_text(cmd_msg, Colors.WHITE))
-                print(colored_text("Type checking failed, please fix before pushing!", Colors.RED, bold=True))
         else:
             # In detailed mode, show full output
             if result.stdout:

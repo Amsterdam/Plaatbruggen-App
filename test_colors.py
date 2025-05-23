@@ -11,6 +11,7 @@ sys.path.insert(0, ".")
 
 from tests.test_utils import Colors, colored_text, supports_color, safe_emoji_text
 
+
 def main():
     """Test color output in the current terminal."""
     print("=== COLOR SUPPORT TEST ===")
@@ -22,7 +23,7 @@ def main():
     print(f"FORCE_COLOR: {os.environ.get('FORCE_COLOR', 'Not set')}")
     print(f"NO_COLOR: {os.environ.get('NO_COLOR', 'Not set')}")
     print()
-    
+
     # Test colors (using safe_emoji_text to avoid encoding issues)
     print("=== COLOR TESTS ===")
     print(colored_text(safe_emoji_text("✅ This should be GREEN and BOLD", "[PASS] This should be GREEN and BOLD"), Colors.GREEN, bold=True))
@@ -31,15 +32,16 @@ def main():
     print(colored_text(safe_emoji_text("⚠️ This should be YELLOW", "[WARN] This should be YELLOW"), Colors.YELLOW))
     print(colored_text("This should be WHITE", Colors.WHITE))
     print()
-    
+
     # Raw ANSI test
     print("=== RAW ANSI TEST ===")
     print("\033[92m\033[1mRaw ANSI: GREEN and BOLD\033[0m")
     print("\033[91m\033[1mRaw ANSI: RED and BOLD\033[0m")
     print()
-    
+
     print("If you see colors above, your terminal supports ANSI colors!")
     print("If not, try running: FORCE_COLOR=1 python test_colors.py")
 
+
 if __name__ == "__main__":
-    main() 
+    main()
