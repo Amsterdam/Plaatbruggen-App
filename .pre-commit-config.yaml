@@ -40,3 +40,12 @@ repos:
             "types-shapely",
             # Add other types-* packages from requirements_dev.txt if needed
         ]
+
+  - repo: local
+    hooks:
+      - id: run-unit-tests
+        name: Run unit tests
+        entry: python -m unittest discover tests
+        language: system # Assumes python is in the system PATH
+        stages: [pre-push]
+        pass_filenames: false # We want to run all tests, not just changed files
