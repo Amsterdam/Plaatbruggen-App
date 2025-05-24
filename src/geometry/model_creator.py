@@ -56,7 +56,7 @@ def create_box(vertices: np.ndarray, color: list) -> trimesh.Trimesh:
     return box_mesh
 
 
-def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901, PLR0915
+def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, PLR0915
     """
     Create a mesh representing rebars based on specified parameters.
 
@@ -65,7 +65,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901,
         color (list): RGBA color for the rebars, format [R, G, B, A].
 
     Returns:
-        trimesh.Trimesh: A trimesh object representing the rebars.
+        trimesh.Scene: A trimesh object representing the rebars.
 
     """
 
@@ -628,7 +628,7 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
 
         if not params.bridge_segments_array:
             # If there are no segments, return an empty scene
-            # TODO: Consider if specific error or logging is needed
+            # NOTE: Empty scene is the expected behavior for no segments
             return trimesh.Scene()
 
         for i, segment_params in enumerate(params.bridge_segments_array):

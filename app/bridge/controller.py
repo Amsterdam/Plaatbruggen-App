@@ -375,7 +375,7 @@ class BridgeController(ViktorController):
         bridge_geom_arg: BridgeBaseGeometry = {
             "x_coords_d_points": bridge_geom_data.x_coords_d_points,
             "y_coords_bridge_top_edge": bridge_geom_data.y_top_structural_edge_at_d_points,
-            "y_coords_bridge_bottom_edge": bridge_geom_data.y_bridge_bottom_at_d_points,
+            "y_coords_bridge_bottom_edge": [[y_bottom, y_bottom] for y_bottom in bridge_geom_data.y_bridge_bottom_at_d_points],
             "num_defined_d_points": bridge_geom_data.num_defined_d_points,
         }
         styling_defaults_arg: ZoneStylingDefaults = {

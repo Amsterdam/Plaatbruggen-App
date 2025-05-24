@@ -1,3 +1,9 @@
+"""
+Test module for horizontal section geometry functionality.
+
+This module contains tests for creating horizontal section views and related geometry operations.
+"""
+import math
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -13,20 +19,34 @@ from src.geometry.horizontal_section import create_horizontal_section_annotation
 
 
 class TestHorizontalSection(unittest.TestCase):
-    def _create_mock_segment_param(self, l=10.0, bz1=1.0, bz2=2.0, bz3=1.0, dz=0.5, dz_2=0.6) -> Munch:
-        return Munch({"l": l, "bz1": bz1, "bz2": bz2, "bz3": bz3, "dz": dz, "dz_2": dz_2})
+    """Test cases for horizontal section geometry creation."""
 
-    def _create_default_params_for_annotations(self, num_segments=1, horizontal_section_loc=-1.0) -> Munch:
+    def _create_mock_segment_param(  # noqa: PLR0913
+        self,
+        length: float = 10.0,
+        bz1: float = 2.0,
+        bz2: float = 3.0,
+        bz3: float = 2.5,
+        dz: float = 0.5,
+        dz_2: float = 0.6,
+    ) -> Munch:
+        return Munch({"l": length, "bz1": bz1, "bz2": bz2, "bz3": bz3, "dz": dz, "dz_2": dz_2})
+
+    def _create_default_params_for_annotations(
+        self,
+        num_segments: int = 1,
+        horizontal_section_loc: float = -1.0
+    ) -> Munch:
         # horizontal_section_loc < 0 means all zones (1,2,3) are considered for annotations
         # horizontal_section_loc >= 0 means only_zone2 = True
-        segments = []
-        for i in range(num_segments):
-            # Create segments with varying bz values to make annotation checks more distinct
-            segments.append(self._create_mock_segment_param(l=10.0 + i * 5, bz1=1.0 + i * 0.1, bz2=2.0 + i * 0.1, bz3=1.0 + i * 0.1))
+        segments = [
+            self._create_mock_segment_param(l=10.0 + i * 5, bz1=1.0 + i * 0.1, bz2=2.0 + i * 0.1, bz3=1.0 + i * 0.1)
+            for i in range(num_segments)
+        ]
 
         return Munch({"bridge_segments_array": segments, "input": Munch({"dimensions": Munch({"horizontal_section_loc": horizontal_section_loc})})})
 
-    def test_create_horizontal_section_annotations_all_zones(self):
+    def test_create_horizontal_section_annotations_all_zones(self) -> None:
         """Test annotations when all zones (1,2,3) should be present."""
         params = self._create_default_params_for_annotations(num_segments=2, horizontal_section_loc=-1.0)  # only_zone2 = False
         all_y_mock = [-2.0, 0, 2.0]  # Mock y-range for min/max calculations
@@ -61,12 +81,11 @@ class TestHorizontalSection(unittest.TestCase):
         expected_width_dims = 3 * num_segments  # bz1, bz2, bz3 for each D-point definition in segments_array
         total_expected_annotations = expected_d_labels + expected_z_labels + expected_len_dims + expected_width_dims
 
-        self.assertEqual(len(annotations), total_expected_annotations)
+        assert len(annotations) == total_expected_annotations
 
         # Spot check some: D1 label, a Z1 label, a length, a width for bz1 of D1
         seg0 = params.bridge_segments_array[0]
         seg1 = params.bridge_segments_array[1]
-        # l_values_cumulative in SUT is [seg0.l, seg0.l + seg1.l, ...]
         # These are the x-coordinates for D-1, D-2, ...
         sut_d_point_x_coords = []
         current_sum_sut = 0.0
@@ -76,14 +95,14 @@ class TestHorizontalSection(unittest.TestCase):
 
         # D1 label (corresponds to l_values_cumulative[0] in SUT)
         d1_label = next(ann for ann in annotations if ann.text == "<b>D-1</b>")
-        self.assertAlmostEqual(d1_label.x, sut_d_point_x_coords[0])  # Should be seg0.l
-        self.assertAlmostEqual(d1_label.y, max(all_y_mock) + 0.5)
+        assert math.isclose(d1_label.x, sut_d_point_x_coords[0])  # Should be seg0.l
+        assert math.isclose(d1_label.y, max(all_y_mock) + 0.5)
 
         # D2 label (corresponds to l_values_cumulative[1] in SUT)
         if num_segments > 1:
             d2_label = next(ann for ann in annotations if ann.text == "<b>D-2</b>")
-            self.assertAlmostEqual(d2_label.x, sut_d_point_x_coords[1])  # Should be seg0.l + seg1.l
-            self.assertAlmostEqual(d2_label.y, max(all_y_mock) + 0.5)
+            assert math.isclose(d2_label.x, sut_d_point_x_coords[1])  # Should be seg0.l + seg1.l
+            assert math.isclose(d2_label.y, max(all_y_mock) + 0.5)
 
         # Zone labels and length dimensions are for segment *parts* between D-points
         # SUT's zone_center_x = [cum + val / 2 for cum, val in zip(l_values_cumulative, l_values[1:])]
@@ -91,15 +110,10 @@ class TestHorizontalSection(unittest.TestCase):
         # l_values in SUT: [L0, L1, L2, ...]
         # l_values[1:] in SUT: [L1, L2, ...]
         # For 2 segments (L0, L1):
-        #   l_values_cumulative = [L0, L0+L1]
-        #   l_values[1:] = [L1]
-        #   zip gives one pair: (cum=L0, val=L1)
-        #   zone_center_x = [L0 + L1/2]
         # This is the center of the second segment (length L1), placed relative to the end of the first segment.
 
         # Correcting `l_coords_d_points_expected` for the test spot check:
-        expected_d1_x_sut = seg0.l  # D-1 is at end of first segment
-        expected_d2_x_sut = seg0.l + seg1.l if num_segments > 1 else None
+        seg0.l + seg1.l if num_segments > 1 else None
 
         # Re-calculate zone_center_x_actual based on SUT's logic
         sut_l_values = [p.l for p in params.bridge_segments_array]
@@ -124,24 +138,24 @@ class TestHorizontalSection(unittest.TestCase):
 
         if zone_center_x_actual:  # If there are zone centers calculated
             z1_1_label = next(ann for ann in annotations if ann.text == "<b>Z1-1</b>")
-            self.assertAlmostEqual(z1_1_label.x, zone_center_x_actual[0])
+            assert math.isclose(z1_1_label.x, zone_center_x_actual[0])
             # Y-coord uses seg0.bz values because SUT's zoneX_center_y[0] corresponds to seg0
-            self.assertAlmostEqual(z1_1_label.y, seg0.bz2 / 2 + seg0.bz1 / 2)
+            assert math.isclose(z1_1_label.y, seg0.bz2 / 2 + seg0.bz1 / 2)
 
             # Length for this segment part (length should be L1 (sut_l_values[1]) based on SUT's dimension_annotations)
             # SUT uses zip(l_values[1:], zone_center_x) for length dimensions
             # So for 2 segments, length=sut_l_values[1]=L1, zcx=zone_center_x_actual[0]
             len_label = next(ann for ann in annotations if f"l = {sut_l_values[1]}m" in ann.text)
-            self.assertAlmostEqual(len_label.x, zone_center_x_actual[0])
+            assert math.isclose(len_label.x, zone_center_x_actual[0])
 
         # Width bz1 at D1 (x should be sut_d_point_x_coords[0] - 1 for D1)
         # SUT width annotations use l_values_cumulative for x-coordinates (zcx in its loop)
         # So for bz1 of D1, zcx = sut_d_point_x_coords[0] = L0.
         # y-coord is zone1_center_y[0] = seg0.bz2/2 + seg0.bz1/2
         width_bz1_d1 = next(ann for ann in annotations if f"b = {seg0.bz1}m" in ann.text and ann.y == (seg0.bz2 / 2 + seg0.bz1 / 2))
-        self.assertAlmostEqual(width_bz1_d1.x, sut_d_point_x_coords[0] - 1)
+        assert math.isclose(width_bz1_d1.x, sut_d_point_x_coords[0] - 1)
 
-    def test_create_horizontal_section_annotations_only_zone2(self):
+    def test_create_horizontal_section_annotations_only_zone2(self) -> None:
         """Test annotations when only_zone2 is True."""
         params = self._create_default_params_for_annotations(num_segments=1, horizontal_section_loc=0.5)  # only_zone2 = True
         all_y_mock = [-1.0, 0, 1.0]
@@ -159,28 +173,32 @@ class TestHorizontalSection(unittest.TestCase):
         expected_width_dims = 1 * num_segments  # Only bz2 for each D-point definition (1 for D1)
         total_expected_annotations = expected_d_labels + expected_z_labels + expected_len_dims + expected_width_dims
 
-        self.assertEqual(len(annotations), total_expected_annotations)  # Should be 1 D-label + 1 width = 2. Original error was 2 != 4
+        assert len(annotations) == total_expected_annotations  # Should be 1 D-label + 1 width = 2. Original error was 2 != 4
 
         # Check that no Z1 or Z3 labels are present
-        self.assertFalse(any("Z1-" in ann.text for ann in annotations))
-        self.assertFalse(any("Z3-" in ann.text for ann in annotations))
+        assert not any("Z1-" in ann.text for ann in annotations)
+        assert not any("Z3-" in ann.text for ann in annotations)
         # Check that NO Z2 label is present due to num_segment_parts logic for zone_center_x
-        self.assertFalse(any("Z2-" in ann.text for ann in annotations))
+        assert not any("Z2-" in ann.text for ann in annotations)
 
         # Check that only bz2 width annotations are present
         # For D1 (params.bridge_segments_array[0])
         seg0 = params.bridge_segments_array[0]
-        self.assertTrue(any(f"b = {seg0.bz2}m" in ann.text for ann in annotations))
-        self.assertFalse(any(f"b = {seg0.bz1}m" in ann.text for ann in annotations))
-        self.assertFalse(any(f"b = {seg0.bz3}m" in ann.text for ann in annotations))
+        assert any(f"b = {seg0.bz2}m" in ann.text for ann in annotations)
+        assert not any(f"b = {seg0.bz1}m" in ann.text for ann in annotations)
+        assert not any(f"b = {seg0.bz3}m" in ann.text for ann in annotations)
 
     @patch("src.geometry.horizontal_section.create_3d_model")
     @patch("src.geometry.horizontal_section.trimesh")  # Patch trimesh module used in horizontal_section
     @patch("src.geometry.horizontal_section.create_cross_section")  # This is from model_creator
     @patch("src.geometry.horizontal_section.create_horizontal_section_annotations")
     def test_create_horizontal_section_view_basic_flow(
-        self, mock_create_horizontal_annotations, mock_model_creator_create_cross_section, mock_trimesh_module, mock_create_3d_model
-    ):
+        self,
+        mock_create_horizontal_annotations: MagicMock,
+        mock_model_creator_create_cross_section: MagicMock,
+        mock_trimesh_module: MagicMock,
+        mock_create_3d_model: MagicMock
+    ) -> None:
         """Test basic flow of create_horizontal_section_view with mocks."""
         params = Munch(
             {
@@ -226,7 +244,7 @@ class TestHorizontalSection(unittest.TestCase):
 
         # Assertions
         mock_create_3d_model.assert_called_once_with(params, axes=False)
-        self.assertEqual(mock_trimesh_module.util.concatenate.call_count, 2)
+        assert mock_trimesh_module.util.concatenate.call_count == 2
         mock_trimesh_module.util.concatenate.assert_any_call(mock_3d_geometry_collection.values())
 
         expected_plane_origin = [0, 0, section_loc_z_val]
@@ -237,24 +255,24 @@ class TestHorizontalSection(unittest.TestCase):
         mock_trimesh_module.util.concatenate.assert_any_call(mock_2d_geometry_collection_cs.values())
 
         # Check traces from entities (plot uses x and y from vertices array)
-        self.assertEqual(len(fig.data), 1)  # From mock_combined_2d_mesh.entities
+        assert len(fig.data) == 1  # From mock_combined_2d_mesh.entities
         trace0 = fig.data[0]
-        self.assertEqual(list(trace0.x), [0, 1, 1])  # Vertices[points][0]
-        self.assertEqual(list(trace0.y), [0, 1, 0])  # Vertices[points][1]
-        self.assertEqual(trace0.line.color, "black")
+        assert list(trace0.x) == [0, 1, 1]  # Vertices[points][0]
+        assert list(trace0.y) == [0, 1, 0]  # Vertices[points][1]
+        assert trace0.line.color == "black"
 
         # Check call to annotation function
         all_y_from_mock_mesh = [0, 1, 0]  # vertices[:, 1]
         mock_create_horizontal_annotations.assert_called_once_with(params, all_y_from_mock_mesh)
-        self.assertEqual(fig.layout.annotations, tuple(mock_annotation_list))
+        assert fig.layout.annotations == tuple(mock_annotation_list)
 
         # Check layout
-        self.assertEqual(fig.layout.title.text, "Horizontale doorsnede (Horizontal Section)")
-        self.assertEqual(fig.layout.xaxis.title.text, "X-as - Lengte [m]")
-        self.assertEqual(fig.layout.yaxis.title.text, "Y-as - Breedte [m]")
-        self.assertEqual(fig.layout.yaxis.scaleanchor, "x")
-        self.assertEqual(fig.layout.yaxis.scaleratio, 1)
-        self.assertFalse(fig.layout.showlegend)
+        assert fig.layout.title.text == "Horizontale doorsnede (Horizontal Section)"
+        assert fig.layout.xaxis.title.text == "X-as - Lengte [m]"
+        assert fig.layout.yaxis.title.text == "Y-as - Breedte [m]"
+        assert fig.layout.yaxis.scaleanchor == "x"
+        assert fig.layout.yaxis.scaleratio == 1
+        assert not fig.layout.showlegend
 
 
 if __name__ == "__main__":

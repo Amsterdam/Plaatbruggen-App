@@ -12,7 +12,7 @@ def get_test_data_dir() -> Path:
     return Path(__file__).parent
 
 
-def dict_to_munch(data: dict | list | Any) -> Munch | list | Any:
+def dict_to_munch(data: dict | list | Any) -> Munch | list | Any:  # noqa: ANN401
     """
     Recursively convert dictionaries to Munch objects for attribute access.
 
@@ -85,7 +85,11 @@ def create_mocked_entity_list(count: int = 3) -> list[dict[str, Any]]:
         List of dictionaries representing bridge entities
 
     """
-    entities = []
-    for i in range(1, count + 1):
-        entities.append({"OBJECTNUMM": f"BRIDGE-{i:03d}", "OBJECTNAAM": f"Test Bridge {i}", "geometry": f"Mock geometry data for bridge {i}"})
-    return entities
+    return [
+        {
+            "OBJECTNUMM": f"BRIDGE-{i:03d}",
+            "OBJECTNAAM": f"Test Bridge {i}",
+            "geometry": f"Mock geometry data for bridge {i}",
+        }
+        for i in range(1, count + 1)
+    ]

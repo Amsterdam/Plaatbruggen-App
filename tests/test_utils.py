@@ -1,13 +1,12 @@
-"""
-Test utilities for enhanced error reporting and colorful output.
-"""
+"""Test utilities for enhanced error reporting and colorful output."""
 
 import functools
 import os
 import sys
 import traceback
 import unittest
-from typing import Callable
+from collections.abc import Callable
+from typing import Any, TextIO
 
 
 def is_git_hook_environment() -> bool:
@@ -25,10 +24,7 @@ def is_git_hook_environment() -> bool:
         return True
 
     # Check if we're being called from a hook script (common pattern)
-    if any("hook" in str(arg).lower() for arg in sys.argv):
-        return True
-
-    return False
+    return bool(any("hook" in str(arg).lower() for arg in sys.argv))
 
 
 def should_use_concise_mode() -> bool:
@@ -39,37 +35,20 @@ def should_use_concise_mode() -> bool:
 def supports_color() -> bool:
     """Check if the current terminal supports ANSI colors."""
     # Force color support if explicitly requested
-    if os.environ.get("FORCE_COLOR") == "1":
+    if os.environ.get("FORCE_COLOR", "").lower() in ("1", "true", "yes"):
         return True
 
-    # Check if NO_COLOR is set (universal way to disable colors)
-    if os.environ.get("NO_COLOR"):
+    # Force no color if explicitly requested
+    if os.environ.get("NO_COLOR", "").lower() in ("1", "true", "yes"):
         return False
 
-    # Check for common terminals that support colors (even if not TTY in subprocess)
-    term = os.environ.get("TERM", "").lower()
-    if any(color_term in term for color_term in ["color", "xterm", "screen", "tmux", "ansi"]):
+    # Check for common CI environments that support color
+    ci_environments = ("GITHUB_ACTIONS", "GITLAB_CI", "TRAVIS", "CIRCLECI")
+    if any(os.environ.get(env) for env in ci_environments):
         return True
 
-    # Check for Git Bash and other Windows terminals that support colors
-    if sys.platform.startswith("win"):
-        # Git Bash sets these environment variables
-        if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "MSYSTEM_PREFIX"]):
-            return True
-        # Windows Terminal and other modern terminals
-        if os.environ.get("WT_SESSION") or os.environ.get("TERM_PROGRAM"):
-            return True
-
-    # Check if stdout is a TTY (but don't make this a hard requirement)
-    if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
-        return True
-
-    # Default to True for most Unix-like systems
-    if not sys.platform.startswith("win"):
-        return True
-
-    # Conservative fallback for Windows
-    return False
+    # Check if we're in a TTY and return result directly
+    return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
 
 
 class Colors:
@@ -112,23 +91,14 @@ def colored_text(text: str, color: str, bold: bool = False) -> str:
 
 
 def safe_emoji_text(emoji_text: str, plain_text: str) -> str:
-    """Return emoji text if supported, otherwise plain text."""
-    # Always use plain text in concise mode to avoid encoding issues
-    if should_use_concise_mode():
-        return plain_text
-
+    """Return emoji text if supported by terminal, otherwise plain text."""
     try:
-        # Test if we can encode the emoji to the console's encoding
-        console_encoding = sys.stdout.encoding or "utf-8"
-        emoji_text.encode(console_encoding)
-
-        # Additional check for Windows cp1252 which claims to support unicode but doesn't handle emojis well
-        if console_encoding.lower() in ("cp1252", "windows-1252"):
-            return plain_text
-
-        return emoji_text
+        # Test if emoji can be encoded to the default encoding
+        emoji_text.encode(sys.stdout.encoding or "utf-8")
     except (UnicodeEncodeError, AttributeError, LookupError):
         return plain_text
+    else:
+        return emoji_text
 
 
 def detailed_failure_message(test_name: str, view_name: str, function_name: str, error_details: str) -> str:
@@ -151,12 +121,12 @@ def detailed_failure_message(test_name: str, view_name: str, function_name: str,
 """
 
 
-def view_test_wrapper(view_name: str):
+def view_test_wrapper(view_name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for view tests that provides detailed failure messages."""
 
-    def decorator(test_func: Callable) -> Callable:
+    def decorator(test_func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(test_func)
-        def wrapper(self, *args, **kwargs):
+        def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
             try:
                 return test_func(self, *args, **kwargs)
             except Exception as e:
@@ -169,12 +139,11 @@ def view_test_wrapper(view_name: str):
                         break
 
                 # Create detailed failure message
-                detailed_msg = detailed_failure_message(
+                detailed_failure_message(
                     test_name=test_func.__name__, view_name=view_name, function_name=function_name, error_details=f"{type(e).__name__}: {e!s}"
                 )
 
                 # Print the detailed message
-                print(detailed_msg)
 
                 # Re-raise the original exception
                 raise
@@ -184,12 +153,12 @@ def view_test_wrapper(view_name: str):
     return decorator
 
 
-def controller_test_wrapper(controller_name: str, method_name: str):
+def controller_test_wrapper(controller_name: str, method_name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for controller method tests that provides detailed failure messages."""
 
-    def decorator(test_func: Callable) -> Callable:
+    def decorator(test_func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(test_func)
-        def wrapper(self, *args, **kwargs):
+        def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
             try:
                 return test_func(self, *args, **kwargs)
             except Exception as e:
@@ -200,7 +169,7 @@ def controller_test_wrapper(controller_name: str, method_name: str):
                 method_info = colored_text(f"Method: {method_name}", Colors.MAGENTA)
                 error_header = colored_text(safe_emoji_text("💀 Error Details:", "Error Details:"), Colors.RED, bold=True)
 
-                detailed_msg = f"""
+                f"""
 {header}
 {test_info}
 {controller_info}
@@ -212,7 +181,6 @@ def controller_test_wrapper(controller_name: str, method_name: str):
 """
 
                 # Print the detailed message
-                print(detailed_msg)
 
                 # Re-raise the original exception
                 raise
@@ -225,33 +193,37 @@ def controller_test_wrapper(controller_name: str, method_name: str):
 class EnhancedTestResult(unittest.TestResult):
     """Custom TestResult class with enhanced failure reporting and colors."""
 
-    def __init__(self, stream=None, descriptions=None, verbosity=None, **kwargs):
+    def __init__(self, stream: TextIO | None = None, descriptions: bool | None = None, verbosity: int | None = None) -> None:
+        """Initialize the enhanced test result with color support and verbosity control."""
         super().__init__(stream, descriptions, verbosity)
         Colors.disable_on_windows_if_needed()
         self.stream = stream
-        self.show_all = verbosity > 1
+        self.show_all = verbosity is not None and verbosity > 1
         self.dots = verbosity == 1
 
-    def addError(self, test, err):
+    def addError(self, test: unittest.TestCase, err: tuple[type[BaseException], BaseException, Any]) -> None:  # noqa: N802
+        """Add an error result and print detailed error information."""
         super().addError(test, err)
         self._print_detailed_error(test, err, "ERROR")
 
-    def addFailure(self, test, err):
+    def addFailure(self, test: unittest.TestCase, err: tuple[type[BaseException], BaseException, Any]) -> None:  # noqa: N802
+        """Add a failure result and print detailed failure information."""
         super().addFailure(test, err)
         self._print_detailed_error(test, err, "FAILURE")
 
-    def addSuccess(self, test):
+    def addSuccess(self, test: unittest.TestCase) -> None:  # noqa: N802
+        """Add a success result."""
         super().addSuccess(test)
         # In concise mode (git hooks), don't print individual test results
         if not should_use_concise_mode():
-            print(colored_text(safe_emoji_text(f"✅ {test._testMethodName}", f"OK {test._testMethodName}"), Colors.GREEN))
+            pass
 
-    def _print_detailed_error(self, test, err, error_type):
+    def _print_detailed_error(self, test: unittest.TestCase, err: tuple[type[BaseException], BaseException, Any], error_type: str) -> None:
         """Print a detailed error message with colors."""
         exc_type, exc_value, exc_traceback = err
 
         # Extract relevant information
-        test_name = test._testMethodName
+        test_name = test._testMethodName  # noqa: SLF001
         test_class = test.__class__.__name__
         error_msg = str(exc_value)
 
@@ -280,7 +252,7 @@ class EnhancedTestResult(unittest.TestResult):
             emoji = safe_emoji_text("💔", "FAILED:")
 
         # Format the message
-        detailed_msg = f"""
+        f"""
 {header}
 {colored_text(f"Test Class: {test_class}", Colors.CYAN)}
 {colored_text(f"Test Method: {test_name}", Colors.MAGENTA)}
@@ -292,31 +264,27 @@ class EnhancedTestResult(unittest.TestResult):
 {colored_text(safe_emoji_text("📍 Stack trace:", "Stack trace:"), Colors.BLUE, bold=True)}
 """
 
-        print(detailed_msg)
-
         # Print a simplified stack trace with colors
         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         for line in tb_lines[-5:]:  # Show last 5 lines of traceback
-            if 'File "' in line:
-                print(colored_text(line.strip(), Colors.CYAN))
-            elif line.strip().startswith(("assert", "self.assert")):
-                print(colored_text(line.strip(), Colors.YELLOW))
+            if 'File "' in line or line.strip().startswith(("assert", "self.assert")):
+                pass
             else:
-                print(colored_text(line.strip(), Colors.WHITE))
+                pass
 
-        print(colored_text("=" * 60, Colors.BLUE))
 
 
 class EnhancedTestRunner(unittest.TextTestRunner):
     """Custom test runner that uses EnhancedTestResult."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        """Initialize the enhanced test runner with custom result class."""
         kwargs["resultclass"] = EnhancedTestResult
         kwargs["verbosity"] = 0  # We handle our own output
         super().__init__(*args, **kwargs)
 
 
-def run_enhanced_tests(test_suite):
+def run_enhanced_tests(test_suite: unittest.TestSuite) -> unittest.TestResult:
     """Run tests with enhanced failure reporting."""
     runner = EnhancedTestRunner()
     result = runner.run(test_suite)
@@ -325,17 +293,11 @@ def run_enhanced_tests(test_suite):
     total_tests = result.testsRun
     failures = len(result.failures)
     errors = len(result.errors)
-    successes = total_tests - failures - errors
-
-    print("\n" + colored_text(safe_emoji_text("🎯 TEST SUMMARY", "TEST SUMMARY"), Colors.BLUE, bold=True))
-    print(colored_text(safe_emoji_text(f"✅ Successes: {successes}", f"Successes: {successes}"), Colors.GREEN))
-    print(colored_text(safe_emoji_text(f"❌ Failures: {failures}", f"Failures: {failures}"), Colors.YELLOW))
-    print(colored_text(safe_emoji_text(f"💥 Errors: {errors}", f"Errors: {errors}"), Colors.RED))
-    print(colored_text(safe_emoji_text(f"📊 Total: {total_tests}", f"Total: {total_tests}"), Colors.CYAN))
+    total_tests - failures - errors
 
     if failures == 0 and errors == 0:
-        print(colored_text(safe_emoji_text("🎉 ALL TESTS PASSED! 🎉", "ALL TESTS PASSED!"), Colors.GREEN, bold=True))
+        pass
     else:
-        print(colored_text(safe_emoji_text("🔥 SOME TESTS FAILED! TIME TO DEBUG! 🔥", "SOME TESTS FAILED! TIME TO DEBUG!"), Colors.RED, bold=True))
+        pass
 
     return result

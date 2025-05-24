@@ -158,11 +158,11 @@ def create_zone_fill_trace(
         mode="none",
         fill="toself",
         fillcolor=appearance_props["fill_color"],
-        fillpattern=dict(
-            shape=appearance_props.get("pattern_shape", ""),
-            fgcolor=appearance_props.get("pattern_fgcolor"),
-            solidity=appearance_props.get("pattern_solidity"),
-        ),
+        fillpattern={
+            "shape": appearance_props.get("pattern_shape", ""),
+            "fgcolor": appearance_props.get("pattern_fgcolor"),
+            "solidity": appearance_props.get("pattern_solidity"),
+        },
         hoverinfo="skip",
         showlegend=False,
     )

@@ -1,84 +1,60 @@
 #!/usr/bin/env python3
-"""
-Enhanced test runner with colorful output and detailed failure reporting.
-"""
+"""Enhanced test runner with colorful output and detailed failure reporting."""
 
 import os
 import sys
 import unittest
 from pathlib import Path
+from typing import TextTestResult
 
 # Add the project root to Python path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import Colors, EnhancedTestResult, colored_text, safe_emoji_text, should_use_concise_mode
+from tests.test_utils import EnhancedTestResult, safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
-def print_concise_summary(result):
+def print_concise_summary(result: TextTestResult) -> None:
     """Print a concise summary for git hooks."""
     total_tests = result.testsRun
     failures = len(result.failures)
     errors = len(result.errors)
-    successes = total_tests - failures - errors
+    total_tests - failures - errors
 
     # Always show a summary line for git hooks
     if failures == 0 and errors == 0:
-        success_msg = safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
-        print(colored_text(success_msg, Colors.GREEN, bold=True))
-        count_msg = f"Tests: {total_tests} passed"
-        print(colored_text(count_msg, Colors.GREEN))
+        safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
 
         # Overall status message (appears at the end since tests run last)
-        print()
-        print(colored_text("All checks done! Check the logs above for possible issues.", Colors.YELLOW, bold=True))
     else:
-        fail_msg = safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
-        print(colored_text(fail_msg, Colors.RED, bold=True))
-        count_msg = f"Tests: {failures} failed, {errors} errors, {successes} passed, {total_tests} total"
-        print(colored_text(count_msg, Colors.WHITE))
+        safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
 
         # Show failed test details concisely
-        if hasattr(result, "_concise_failures") and result._concise_failures:
-            fail_header = "\nFailed tests:"
-            print(colored_text(fail_header, Colors.YELLOW, bold=True))
-            for failure in result._concise_failures:
+        if hasattr(result, "_concise_failures") and result._concise_failures:  # noqa: SLF001
+            for failure in result._concise_failures:  # noqa: SLF001
                 status = "ERROR" if failure["is_error"] else "FAIL"
-                test_line = f"  {status}: {failure['test_class']}.{failure['test_name']}"
-                print(colored_text(test_line, Colors.RED))
-                error_line = f"    {failure['error_msg']}"
-                print(colored_text(error_line, Colors.WHITE))
+                f"  {status}: {failure['test_class']}.{failure['test_name']}"
+                f"    {failure['error_msg']}"
 
-        help_header = "\nFor detailed output, run:"
-        print(colored_text(help_header, Colors.CYAN))
-        help_cmd = "  python run_enhanced_tests.py"
-        print(colored_text(help_cmd, Colors.WHITE))
 
         # Overall status message
-        print()
-        print(colored_text("Some checks failed, please fix before pushing!", Colors.RED, bold=True))
 
 
-def print_detailed_summary(result):
+def print_detailed_summary(result: TextTestResult) -> None:
     """Print detailed summary for manual runs."""
     total_tests = result.testsRun
     failures = len(result.failures)
     errors = len(result.errors)
-    successes = total_tests - failures - errors
+    total_tests - failures - errors
 
-    print("\n" + colored_text(safe_emoji_text("🎯 TEST SUMMARY", "TEST SUMMARY"), Colors.BLUE, bold=True))
-    print(colored_text(safe_emoji_text(f"✅ Successes: {successes}", f"Successes: {successes}"), Colors.GREEN))
-    print(colored_text(safe_emoji_text(f"❌ Failures: {failures}", f"Failures: {failures}"), Colors.YELLOW))
-    print(colored_text(safe_emoji_text(f"💥 Errors: {errors}", f"Errors: {errors}"), Colors.RED))
-    print(colored_text(safe_emoji_text(f"📊 Total: {total_tests}", f"Total: {total_tests}"), Colors.CYAN))
 
     if failures == 0 and errors == 0:
-        print(colored_text(safe_emoji_text("🎉 ALL TESTS PASSED! 🎉", "ALL TESTS PASSED!"), Colors.GREEN, bold=True))
+        pass
     else:
-        print(colored_text(safe_emoji_text("🔥 SOME TESTS FAILED! TIME TO DEBUG! 🔥", "SOME TESTS FAILED! TIME TO DEBUG!"), Colors.RED, bold=True))
+        pass
 
 
-def main():
+def main() -> None:
     """Run all tests with enhanced reporting."""
     # Force concise mode for pre-commit by detecting if we're running in a subprocess
     # This is a fallback in case our environment detection doesn't work
@@ -91,15 +67,14 @@ def main():
 
     # In concise mode, don't show startup message
     if not concise_mode:
-        print(colored_text(safe_emoji_text("🚀 STARTING ENHANCED TEST SUITE! 🚀", "STARTING ENHANCED TEST SUITE!"), Colors.BLUE, bold=True))
-        print(colored_text("=" * 60, Colors.BLUE))
+        pass
 
     # Discover all tests
     loader = unittest.TestLoader()
     test_suite = loader.discover("tests", pattern="test_*.py")
 
     # Create enhanced test runner with minimal output in concise mode
-    verbosity = 0 if concise_mode else 0
+    verbosity = 0  # Always use minimal verbosity for both modes
     runner = unittest.TextTestRunner(resultclass=EnhancedTestResult, verbosity=verbosity, stream=sys.stdout)
 
     # Run tests

@@ -1,3 +1,10 @@
+"""
+Test module for load zone geometry calculations.
+
+This module contains tests for calculating load zone geometry properties such as
+bottom coordinates and related geometric operations.
+"""
+import math
 import unittest
 
 from src.geometry.load_zone_geometry import (
@@ -7,7 +14,10 @@ from src.geometry.load_zone_geometry import (
 
 
 class TestCalculateZoneBottomYCoords(unittest.TestCase):
-    def test_last_zone_returns_bridge_bottom_coords(self):
+    """Test cases for calculating zone bottom Y coordinates."""
+
+    def test_last_zone_returns_bridge_bottom_coords(self) -> None:
+        """Test that the last zone returns bridge bottom coordinates."""
         # Arrange
         zone_idx = 1
         num_load_zones = 2  # Current zone is the last one
@@ -20,10 +30,11 @@ class TestCalculateZoneBottomYCoords(unittest.TestCase):
         result = calculate_zone_bottom_y_coords(zone_idx, num_load_zones, num_defined_d_points, y_coords_top, y_bridge_bottom, zone_params)
 
         # Assert
-        self.assertEqual(result, y_bridge_bottom)
-        self.assertIsNot(result, y_bridge_bottom)  # Ensure it's a copy
+        assert result == y_bridge_bottom
+        assert result is not y_bridge_bottom  # Ensure it's a copy
 
-    def test_non_last_zone_basic_calculation(self):
+    def test_non_last_zone_basic_calculation(self) -> None:
+        """Test basic calculation for non-last zone bottom Y coordinates."""
         # Arrange
         zone_idx = 0
         num_load_zones = 2  # Current zone is NOT the last one
@@ -45,11 +56,12 @@ class TestCalculateZoneBottomYCoords(unittest.TestCase):
         result = calculate_zone_bottom_y_coords(zone_idx, num_load_zones, num_defined_d_points, y_coords_top, y_bridge_bottom, zone_params)
 
         # Assert
-        self.assertEqual(len(result), num_defined_d_points)
+        assert len(result) == num_defined_d_points
         for i in range(num_defined_d_points):
-            self.assertAlmostEqual(result[i], expected_y_bottom[i])
+            assert math.isclose(result[i], expected_y_bottom[i])
 
-    def test_non_last_zone_missing_d_width_defaults_to_zero(self):
+    def test_non_last_zone_missing_d_width_defaults_to_zero(self) -> None:
+        """Test that missing d_width values default to zero for non-last zones."""
         # Arrange
         zone_idx = 0
         num_load_zones = 2
@@ -70,11 +82,12 @@ class TestCalculateZoneBottomYCoords(unittest.TestCase):
         # Act
         result = calculate_zone_bottom_y_coords(zone_idx, num_load_zones, num_defined_d_points, y_coords_top, y_bridge_bottom, zone_params)
         # Assert
-        self.assertEqual(len(result), num_defined_d_points)
+        assert len(result) == num_defined_d_points
         for i in range(num_defined_d_points):
-            self.assertAlmostEqual(result[i], expected_y_bottom[i])
+            assert math.isclose(result[i], expected_y_bottom[i])
 
-    def test_non_last_zone_invalid_d_width_type_defaults_to_zero(self):
+    def test_non_last_zone_invalid_d_width_type_defaults_to_zero(self) -> None:
+        """Test that invalid d_width types default to zero for non-last zones."""
         # Arrange
         zone_idx = 0
         num_load_zones = 2
@@ -83,8 +96,9 @@ class TestCalculateZoneBottomYCoords(unittest.TestCase):
         y_bridge_bottom = [0.0, 0.0]
         zone_params: LoadZoneDataRow = {
             "d1_width": 1.0,
-            "d2_width": "should_be_float",  # Invalid type
         }
+        # Intentionally add invalid type for testing error handling
+        zone_params["d2_width"] = "should_be_float"  # type: ignore[typeddict-item]
         expected_y_bottom = [
             5.0 - 1.0,  # 4.0
             5.0 - 0.0,  # 5.0 (d2_width defaults to 0 due to invalid type)
@@ -92,26 +106,28 @@ class TestCalculateZoneBottomYCoords(unittest.TestCase):
         # Act
         result = calculate_zone_bottom_y_coords(zone_idx, num_load_zones, num_defined_d_points, y_coords_top, y_bridge_bottom, zone_params)
         # Assert
-        self.assertEqual(len(result), num_defined_d_points)
-        self.assertAlmostEqual(result[0], expected_y_bottom[0])
-        self.assertAlmostEqual(result[1], expected_y_bottom[1])
+        assert len(result) == num_defined_d_points
+        assert math.isclose(result[0], expected_y_bottom[0])
+        assert math.isclose(result[1], expected_y_bottom[1])
 
-    def test_non_last_zone_zero_d_points(self):
+    def test_non_last_zone_zero_d_points(self) -> None:
+        """Test non-last zone calculation when there are zero d_points."""
         # Arrange
         zone_idx = 0
         num_load_zones = 2
         num_defined_d_points = 0  # No D-points
-        y_coords_top = []
-        y_bridge_bottom = []
+        y_coords_top: list[float] = []
+        y_bridge_bottom: list[float] = []
         zone_params: LoadZoneDataRow = {}
-        expected_y_bottom = []
+        expected_y_bottom: list[float] = []
 
         # Act
         result = calculate_zone_bottom_y_coords(zone_idx, num_load_zones, num_defined_d_points, y_coords_top, y_bridge_bottom, zone_params)
         # Assert
-        self.assertEqual(result, expected_y_bottom)
+        assert result == expected_y_bottom
 
-    def test_non_last_zone_more_d_points_than_widths_in_params(self):
+    def test_non_last_zone_more_d_points_than_widths_in_params(self) -> None:
+        """Test non-last zone when there are more d_points than width parameters."""
         # Arrange
         zone_idx = 0
         num_load_zones = 2
@@ -129,9 +145,9 @@ class TestCalculateZoneBottomYCoords(unittest.TestCase):
         # Act
         result = calculate_zone_bottom_y_coords(zone_idx, num_load_zones, num_defined_d_points, y_coords_top, y_bridge_bottom, zone_params)
         # Assert
-        self.assertEqual(len(result), num_defined_d_points)
+        assert len(result) == num_defined_d_points
         for i in range(num_defined_d_points):
-            self.assertAlmostEqual(result[i], expected_y_bottom[i])
+            assert math.isclose(result[i], expected_y_bottom[i])
 
 
 if __name__ == "__main__":

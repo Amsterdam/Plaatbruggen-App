@@ -14,12 +14,8 @@ def get_steel_qualities() -> list[str]:
 
     """
     csv_path = REINFORCEMENT_PATH
-    steel_qualities = []
 
     with open(csv_path) as f:
         csv_reader = csv.DictReader(f, delimiter=";")
-        for row in csv_reader:
-            # The first column header is "Betonstaalkwaliteit"
-            steel_qualities.append(row["Betonstaalkwaliteit"].strip('"'))
+        return [row["Betonstaalkwaliteit"].strip('"') for row in csv_reader]
 
-    return steel_qualities

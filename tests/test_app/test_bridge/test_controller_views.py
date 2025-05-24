@@ -4,6 +4,8 @@ import json
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
 from app.bridge.controller import BridgeController
 from tests.test_data.seed_loader import load_bridge_complex_params, load_bridge_default_params
 from tests.test_utils import view_test_wrapper
@@ -12,13 +14,13 @@ from tests.test_utils import view_test_wrapper
 class TestBridgeControllerViews(unittest.TestCase):
     """Test cases for BridgeController VIKTOR views."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.controller = BridgeController()
         self.default_params = load_bridge_default_params()
         self.complex_params = load_bridge_complex_params()
 
-    def test_view_methods_exist(self):
+    def test_view_methods_exist(self) -> None:
         """Test that all view methods exist and are callable."""
         view_methods = [
             "get_3d_view",
@@ -34,25 +36,25 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         for method_name in view_methods:
             with self.subTest(method=method_name):
-                self.assertTrue(hasattr(self.controller, method_name))
-                self.assertTrue(callable(getattr(self.controller, method_name)))
+                assert hasattr(self.controller, method_name)
+                assert callable(getattr(self.controller, method_name))
 
-    def test_controller_has_parametrization(self):
+    def test_controller_has_parametrization(self) -> None:
         """Test that the controller has the correct parametrization."""
         from app.bridge.parametrization import BridgeParametrization
 
-        self.assertEqual(self.controller.parametrization, BridgeParametrization)
+        assert self.controller.parametrization == BridgeParametrization
 
-    def test_controller_label(self):
+    def test_controller_label(self) -> None:
         """Test that the controller has the correct label."""
-        self.assertEqual(self.controller.label, "Brug")
+        assert self.controller.label == "Brug"
 
     # ============================================================================================================
     # PHASE 2: Full View Execution Tests - Bypassing VIKTOR Decorators
     # ============================================================================================================
 
     @view_test_wrapper("get_bridge_summary_view")
-    def test_get_bridge_summary_view_execution(self):
+    def test_get_bridge_summary_view_execution(self) -> None:
         """Test actual execution of get_bridge_summary_view by calling the underlying method."""
         # Access the original method by getting the function from the class
         # The VIKTOR decorator wraps the method, so we need to access __wrapped__ or the original
@@ -64,24 +66,24 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert - verify return type and structure
         from viktor.views import DataResult
 
-        self.assertIsInstance(result, DataResult)
-        self.assertIsNotNone(result.data)
+        assert isinstance(result, DataResult)
+        assert result.data is not None
 
         # Verify specific data items are present
         # DataGroup extends dict, so DataItems are stored as values
         data_items = list(result.data.values())
-        self.assertTrue(len(data_items) > 0)
+        assert len(data_items) > 0
 
         # Check for expected labels (DataItem uses _label attribute)
-        labels = [item._label for item in data_items]
+        labels = [item._label for item in data_items]  # noqa: SLF001
         expected_labels = ["Bridge ID (OBJECTNUMM)", "Bridge Name", "Location Description"]
         for expected_label in expected_labels:
-            self.assertIn(expected_label, labels)
+            assert expected_label in labels
 
     @patch("app.bridge.controller.create_3d_model")
     @patch("trimesh.exchange.gltf.export_glb")
     @view_test_wrapper("get_3d_view")
-    def test_get_3d_view_execution(self, mock_export_glb, mock_create_3d):
+    def test_get_3d_view_execution(self, mock_export_glb: MagicMock, mock_create_3d: MagicMock) -> None:
         """Test actual execution of get_3d_view with mocked dependencies."""
         # Arrange
         mock_scene = MagicMock()
@@ -97,7 +99,7 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import GeometryResult
 
-        self.assertIsInstance(result, GeometryResult)
+        assert isinstance(result, GeometryResult)
         mock_create_3d.assert_called_once_with(self.default_params, section_planes=True)
         mock_export_glb.assert_called_once_with(mock_scene)
 
@@ -105,7 +107,7 @@ class TestBridgeControllerViews(unittest.TestCase):
     @patch("app.bridge.controller.create_2d_top_view")
     @patch("app.bridge.controller.validate_load_zone_widths")
     @view_test_wrapper("get_top_view")
-    def test_get_top_view_execution(self, mock_validate_widths, mock_create_2d, mock_build_figure):
+    def test_get_top_view_execution(self, mock_validate_widths: MagicMock, mock_create_2d: MagicMock, mock_build_figure: MagicMock) -> None:
         """Test actual execution of get_top_view with mocked dependencies."""
         # Arrange
         mock_top_view_data = {"bridge_lines": [], "structural_polygons": []}
@@ -125,18 +127,18 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import PlotlyResult
 
-        self.assertIsInstance(result, PlotlyResult)
+        assert isinstance(result, PlotlyResult)
         mock_create_2d.assert_called_once_with(self.default_params)
         mock_build_figure.assert_called_once()
 
         # Verify JSON result is valid - PlotlyResult stores figure in .figure attribute
         json_result = json.loads(result.figure)
-        self.assertIn("data", json_result)
-        self.assertIn("layout", json_result)
+        assert "data" in json_result
+        assert "layout" in json_result
 
     @patch("app.bridge.controller.create_horizontal_section_view")
     @view_test_wrapper("get_2d_horizontal_section")
-    def test_get_2d_horizontal_section_execution(self, mock_create_horizontal):
+    def test_get_2d_horizontal_section_execution(self, mock_create_horizontal: MagicMock) -> None:
         """Test actual execution of get_2d_horizontal_section."""
         # Arrange
         mock_fig = Mock()
@@ -152,16 +154,16 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import PlotlyResult
 
-        self.assertIsInstance(result, PlotlyResult)
+        assert isinstance(result, PlotlyResult)
         mock_create_horizontal.assert_called_once_with(self.default_params, self.default_params.input.dimensions.horizontal_section_loc)
 
         # Verify JSON result - PlotlyResult stores figure in .figure attribute
         json_result = json.loads(result.figure)
-        self.assertIn("layout", json_result)
+        assert "layout" in json_result
 
     @patch("app.bridge.controller.create_longitudinal_section")
     @view_test_wrapper("get_2d_longitudinal_section")
-    def test_get_2d_longitudinal_section_execution(self, mock_create_longitudinal):
+    def test_get_2d_longitudinal_section_execution(self, mock_create_longitudinal: MagicMock) -> None:
         """Test actual execution of get_2d_longitudinal_section."""
         # Arrange
         mock_fig = Mock()
@@ -177,12 +179,12 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import PlotlyResult
 
-        self.assertIsInstance(result, PlotlyResult)
+        assert isinstance(result, PlotlyResult)
         mock_create_longitudinal.assert_called_once_with(self.default_params, self.default_params.input.dimensions.longitudinal_section_loc)
 
     @patch("app.bridge.controller.create_cross_section_view")
     @view_test_wrapper("get_2d_cross_section")
-    def test_get_2d_cross_section_execution(self, mock_create_cross):
+    def test_get_2d_cross_section_execution(self, mock_create_cross: MagicMock) -> None:
         """Test actual execution of get_2d_cross_section."""
         # Arrange
         mock_fig = Mock()
@@ -198,12 +200,12 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import PlotlyResult
 
-        self.assertIsInstance(result, PlotlyResult)
+        assert isinstance(result, PlotlyResult)
         mock_create_cross.assert_called_once_with(self.default_params, self.default_params.input.dimensions.cross_section_loc)
 
     @patch("app.bridge.controller.build_load_zones_figure")
     @view_test_wrapper("get_load_zones_view")
-    def test_get_load_zones_view_execution_with_zones(self, mock_build_zones):
+    def test_get_load_zones_view_execution_with_zones(self, mock_build_zones: MagicMock) -> None:
         """Test actual execution of get_load_zones_view with load zones present."""
         # Arrange
         mock_fig = Mock()
@@ -219,15 +221,15 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import PlotlyResult
 
-        self.assertIsInstance(result, PlotlyResult)
+        assert isinstance(result, PlotlyResult)
 
         # Verify JSON result
         json_result = json.loads(result.figure)
-        self.assertIn("data", json_result)
-        self.assertIn("layout", json_result)
+        assert "data" in json_result
+        assert "layout" in json_result
 
     @view_test_wrapper("get_load_zones_view")
-    def test_get_load_zones_view_no_zones(self):
+    def test_get_load_zones_view_no_zones(self) -> None:
         """Test get_load_zones_view when no load zones are defined."""
         # Arrange - create params with empty load zones
         params_no_zones = self.default_params.copy()
@@ -242,15 +244,15 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import PlotlyResult
 
-        self.assertIsInstance(result, PlotlyResult)
+        assert isinstance(result, PlotlyResult)
 
         # Should return a figure with appropriate message
         json_result = json.loads(result.figure)
-        self.assertIn("layout", json_result)
+        assert "layout" in json_result
 
     @patch("app.bridge.controller.api_sdk.API")
     @view_test_wrapper("get_bridge_map_view")
-    def test_get_bridge_map_view_execution_invalid_entity(self, mock_api_class):
+    def test_get_bridge_map_view_execution_invalid_entity(self, _mock_api_class: MagicMock) -> None:  # noqa: PT019
         """Test get_bridge_map_view with invalid entity ID."""
         # Access the original method directly
         original_method = self.controller.__class__.get_bridge_map_view
@@ -261,16 +263,16 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import MapResult
 
-        self.assertIsInstance(result, MapResult)
-        self.assertTrue(len(result.features) > 0)
+        assert isinstance(result, MapResult)
+        assert len(result.features) > 0
 
         # Should contain error message
         error_point = result.features[0]
-        self.assertIn("Ongeldige entity ID", error_point._description)
+        assert "Ongeldige entity ID" in error_point._description  # noqa: SLF001
 
     @patch("app.bridge.controller.convert_word_to_pdf")
     @view_test_wrapper("get_output_report")
-    def test_get_output_report_execution(self, mock_convert_pdf):
+    def test_get_output_report_execution(self, mock_convert_pdf: MagicMock) -> None:
         """Test actual execution of get_output_report."""
         # Arrange
         mock_pdf_file = Mock()
@@ -285,7 +287,7 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import PDFResult
 
-        self.assertIsInstance(result, PDFResult)
+        assert isinstance(result, PDFResult)
         mock_convert_pdf.assert_called_once()
 
     # ============================================================================================================
@@ -294,7 +296,7 @@ class TestBridgeControllerViews(unittest.TestCase):
 
     @patch("app.bridge.controller.create_3d_model")
     @view_test_wrapper("get_3d_view")
-    def test_get_3d_view_error_handling(self, mock_create_3d):
+    def test_get_3d_view_error_handling(self, mock_create_3d: MagicMock) -> None:
         """Test error handling in get_3d_view when 3D model creation fails."""
         # Arrange
         mock_create_3d.side_effect = Exception("3D model creation failed")
@@ -303,11 +305,11 @@ class TestBridgeControllerViews(unittest.TestCase):
         original_method = self.controller.__class__.get_3d_view
 
         # Act & Assert
-        with self.assertRaises(Exception):
+        with pytest.raises(Exception):
             original_method(self.controller, self.default_params)
 
     @view_test_wrapper("get_load_zones_view")
-    def test_get_load_zones_view_invalid_bridge_segments(self):
+    def test_get_load_zones_view_invalid_bridge_segments(self) -> None:
         """Test get_load_zones_view when bridge segments are invalid."""
         # Arrange - create params with invalid bridge segments
         params_invalid = self.default_params.copy()
@@ -322,35 +324,35 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import PlotlyResult
 
-        self.assertIsInstance(result, PlotlyResult)
+        assert isinstance(result, PlotlyResult)
 
         # Should return error figure
         json_result = json.loads(result.figure)
-        self.assertIn("layout", json_result)
+        assert "layout" in json_result
 
     # ============================================================================================================
     # Data Validation Tests
     # ============================================================================================================
 
-    def test_seed_data_loaded_correctly(self):
+    def test_seed_data_loaded_correctly(self) -> None:
         """Test that seed data is loaded correctly for view testing."""
         # Test default params
-        self.assertIn("info", self.default_params)
-        self.assertIn("bridge_segments_array", self.default_params)
-        self.assertIn("load_zones_data_array", self.default_params)
+        assert "info" in self.default_params
+        assert "bridge_segments_array" in self.default_params
+        assert "load_zones_data_array" in self.default_params
 
         # Test complex params
-        self.assertIn("info", self.complex_params)
-        self.assertIn("bridge_segments_array", self.complex_params)
-        self.assertIn("load_zones_data_array", self.complex_params)
+        assert "info" in self.complex_params
+        assert "bridge_segments_array" in self.complex_params
+        assert "load_zones_data_array" in self.complex_params
 
         # Verify structure for view method access
-        self.assertTrue(hasattr(self.default_params.info, "bridge_objectnumm"))
-        self.assertTrue(hasattr(self.default_params.info, "bridge_name"))
-        self.assertTrue(hasattr(self.default_params.input.dimensions, "horizontal_section_loc"))
+        assert hasattr(self.default_params.info, "bridge_objectnumm")
+        assert hasattr(self.default_params.info, "bridge_name")
+        assert hasattr(self.default_params.input.dimensions, "horizontal_section_loc")
 
     @view_test_wrapper("get_bridge_summary_view")
-    def test_bridge_summary_view_with_complex_data(self):
+    def test_bridge_summary_view_with_complex_data(self) -> None:
         """Test bridge summary view with complex seed data."""
         # Access the original method directly
         original_method = self.controller.__class__.get_bridge_summary_view
@@ -361,14 +363,34 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Assert
         from viktor.views import DataResult
 
-        self.assertIsInstance(result, DataResult)
+        assert isinstance(result, DataResult)
 
         # Verify data items contain complex data values
         # DataGroup extends dict, so DataItems are stored as values
         data_items = list(result.data.values())
-        bridge_id_item = next((item for item in data_items if item._label == "Bridge ID (OBJECTNUMM)"), None)
-        self.assertIsNotNone(bridge_id_item)
-        self.assertEqual(bridge_id_item._value, "BRIDGE-COMPLEX-001")
+        bridge_id_item = next((item for item in data_items if item._label == "Bridge ID (OBJECTNUMM)"), None)  # noqa: SLF001
+        assert bridge_id_item is not None
+        assert bridge_id_item._value == "BRIDGE-COMPLEX-001"  # noqa: SLF001
+
+    @patch("app.bridge.controller.convert_word_to_pdf")
+    @view_test_wrapper("download_report")
+    def test_download_report_execution(self, mock_convert_pdf: MagicMock) -> None:
+        """Test actual execution of download_report."""
+        # Arrange
+        mock_pdf_file = Mock()
+        mock_convert_pdf.return_value = mock_pdf_file
+
+        # Access the original method directly
+        original_method = self.controller.__class__.download_report
+
+        # Act - call bypassing decorator
+        result = original_method(self.controller, self.default_params)
+
+        # Assert
+        from viktor.views import PDFResult
+
+        assert isinstance(result, PDFResult)
+        mock_convert_pdf.assert_called_once()
 
 
 if __name__ == "__main__":
