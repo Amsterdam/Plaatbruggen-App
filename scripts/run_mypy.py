@@ -51,10 +51,12 @@ def run_mypy() -> int:
                             "Run the following command for detailed type checking information:", is_success=False, is_warning=True
                         )
                     )  # noqa: T201
-                    print(f"    python scripts/run_mypy.py")  # noqa: T201
+                    print(f"  → {colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
                 else:
-                    print(colorized_status_message("Type checking failed - run the following command for details:", is_success=False, is_warning=True))  # noqa: T201
-                    print(f"    python scripts/run_mypy.py")  # noqa: T201
+                    print(
+                        colorized_status_message("Type checking failed - run the following command for detailed type checking information:", is_success=False, is_warning=True)
+                    )  # noqa: T201
+                    print(f"  → {colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
 
         else:
             # In detailed mode, show full output with improved formatting
