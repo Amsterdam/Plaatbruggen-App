@@ -31,7 +31,6 @@ def print_concise_summary(result: TextTestResult) -> None:
         print("=" * 60)  # noqa: T201
     else:
         safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
-        print(colorized_status_message("Run 'python run_enhanced_tests.py' for detailed error information", is_success=False, is_warning=True))  # noqa: T201
 
         # Show only first few failed test names concisely
         if hasattr(result, "_concise_failures") and result._concise_failures:  # noqa: SLF001
@@ -44,6 +43,7 @@ def print_concise_summary(result: TextTestResult) -> None:
             if len(result._concise_failures) > 3:  # noqa: SLF001
                 remaining = len(result._concise_failures) - 3  # noqa: SLF001
                 print(colorized_status_message(f"  ... and {remaining} more test failures", is_success=False, is_warning=True))  # noqa: T201
+        print(colorized_status_message("Run 'python run_enhanced_tests.py' for detailed error information", is_success=False, is_warning=True))  # noqa: T201
 
         # Don't show final "CHECKS FAILED" message here - let the hook system handle overall status
 
@@ -65,11 +65,11 @@ def print_detailed_summary(result: TextTestResult) -> None:
                 f"Test results: {passed} passed, {failures} failed, {errors} errors out of {total_tests} total", is_success=False
             )
         )
-        
+
         print("\n" + "=" * 60)  # noqa: T201
         print(colorized_status_message("DETAILED ERROR INFORMATION:", is_success=False))  # noqa: T201
         print("=" * 60)  # noqa: T201
-        
+
         # Show detailed failures
         if result.failures:
             print(colorized_status_message(f"\nFAILURES ({len(result.failures)}):", is_success=False))  # noqa: T201
@@ -77,7 +77,7 @@ def print_detailed_summary(result: TextTestResult) -> None:
                 test_name = f"{test.__class__.__name__}.{test._testMethodName}"  # noqa: SLF001
                 print(f"\n{i}. {colorized_status_message(test_name, is_success=False)}")  # noqa: T201
                 print(traceback)  # noqa: T201
-        
+
         # Show detailed errors
         if result.errors:
             print(colorized_status_message(f"\nERRORS ({len(result.errors)}):", is_success=False))  # noqa: T201
@@ -85,7 +85,7 @@ def print_detailed_summary(result: TextTestResult) -> None:
                 test_name = f"{test.__class__.__name__}.{test._testMethodName}"  # noqa: SLF001
                 print(f"\n{i}. {colorized_status_message(test_name, is_success=False)}")  # noqa: T201
                 print(traceback)  # noqa: T201
-        
+
         print("\n" + "=" * 60)  # noqa: T201
         print(colorized_status_message("TIP: Focus on fixing errors first, then failures", is_success=False, is_warning=True))  # noqa: T201
         print("=" * 60)  # noqa: T201

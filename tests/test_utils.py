@@ -103,10 +103,13 @@ class Colors:
     MAGENTA = "\033[95m"
     CYAN = "\033[96m"
     WHITE = "\033[97m"
+    GRAY = "\033[90m"  # Dark gray for muted text
+    LIGHT_GRAY = "\033[37m"  # Light gray alternative
 
     # Styles
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
+    DIM = "\033[2m"  # Dim/faint text
 
     # Reset
     RESET = "\033[0m"
@@ -129,6 +132,15 @@ def colored_text(text: str, color: str, bold: bool = False) -> str:
 
     style = Colors.BOLD if bold else ""
     return f"{style}{color}{text}{Colors.RESET}"
+
+
+def muted_text(text: str) -> str:
+    """Create muted (gray/dim) text for less important information."""
+    if not supports_color() and not os.environ.get("FORCE_COLOR"):
+        return text
+    
+    # Use dim gray for muted text
+    return f"{Colors.DIM}{Colors.GRAY}{text}{Colors.RESET}"
 
 
 def safe_emoji_text(emoji_text: str, plain_text: str) -> str:  # noqa: PLR0911

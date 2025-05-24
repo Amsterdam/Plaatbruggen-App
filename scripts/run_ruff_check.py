@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import colorized_status_message, safe_emoji_text, should_use_concise_mode  # noqa: E402
+from tests.test_utils import colorized_status_message, muted_text, safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
 def setup_environment() -> bool:
@@ -93,9 +93,28 @@ def run_ruff_check() -> int:
         if force_concise:
             handle_concise_output(result)
         else:
-            # In detailed mode, show full output
+            # In detailed mode, show full output with improved formatting
             if result.stdout:
-                print(result.stdout)  # noqa: T201
+                # Process each line to add colors for file paths
+                lines = result.stdout.split('\n')
+                for line in lines:
+                    if not line.strip():
+                        continue
+                    
+                    # Ruff format: file.py:line:col: CODE message
+                    if ":" in line and any(line.endswith(suffix) for suffix in [".py:", ".pyi:"]) is False:
+                        # Split on first few colons to separate file:line:col from error
+                        parts = line.split(":", 3)  # Split into at most 4 parts
+                        if len(parts) >= 4:
+                            file_part = parts[0]
+                            line_part = parts[1] 
+                            col_part = parts[2]
+                            message_part = parts[3]
+                            print(f"{muted_text(file_part)}:{muted_text(line_part)}:{muted_text(col_part)}:{message_part}")  # noqa: T201
+                            continue
+                    
+                    # Default case - print as is
+                    print(line)  # noqa: T201
             if result.stderr:
                 print(result.stderr, file=sys.stderr)  # noqa: T201
 

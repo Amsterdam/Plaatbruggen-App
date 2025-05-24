@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import colorized_status_message, safe_emoji_text, should_use_concise_mode  # noqa: E402
+from tests.test_utils import Colors, colored_text, colorized_status_message, muted_text, safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
 def run_mypy() -> int:
@@ -55,9 +55,34 @@ def run_mypy() -> int:
                     print(colorized_status_message("Type checking failed - run 'python scripts/run_mypy.py' for details", is_success=False))  # noqa: T201
 
         else:
-            # In detailed mode, show full output
+            # In detailed mode, show full output with improved formatting
             if result.stdout:
-                print(result.stdout)  # noqa: T201
+                # Process each line to add colors
+                lines = result.stdout.split('\n')
+                for line in lines:
+                    if not line.strip():
+                        continue
+                    
+                    # Color file paths and line numbers differently from error messages
+                    if ": error:" in line or ": note:" in line:
+                        # Split line into file:line and error message
+                        if ": error:" in line:
+                            parts = line.split(": error:", 1)
+                            if len(parts) == 2:
+                                file_part = parts[0]
+                                error_part = parts[1]
+                                print(f"{muted_text(file_part)}: {colored_text('error:', Colors.RED, bold=True)}{colored_text(error_part, Colors.RED)}")  # noqa: T201
+                                continue
+                        elif ": note:" in line:
+                            parts = line.split(": note:", 1)
+                            if len(parts) == 2:
+                                file_part = parts[0]
+                                note_part = parts[1]
+                                print(f"{muted_text(file_part)}: {colored_text('note:', Colors.BLUE, bold=True)}{colored_text(note_part, Colors.BLUE)}")  # noqa: T201
+                                continue
+                    
+                    # Default case - print as is (like summary lines)
+                    print(line)  # noqa: T201
             if result.stderr:
                 print(result.stderr, file=sys.stderr)  # noqa: T201
 
