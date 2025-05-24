@@ -5,7 +5,7 @@ import os
 import sys
 import unittest
 from pathlib import Path
-from typing import TextTestResult
+from unittest import TextTestResult
 
 # Add the project root to Python path
 project_root = Path(__file__).parent
@@ -19,24 +19,32 @@ def print_concise_summary(result: TextTestResult) -> None:
     total_tests = result.testsRun
     failures = len(result.failures)
     errors = len(result.errors)
-    total_tests - failures - errors
+    passed = total_tests - failures - errors
 
     # Always show a summary line for git hooks
     if failures == 0 and errors == 0:
         safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
+        print(f"Ran {total_tests} tests successfully")  # noqa: T201
 
         # Overall status message (appears at the end since tests run last)
+        print("\n" + "=" * 60)  # noqa: T201
+        safe_emoji_text("🎉 ALL CHECKS DONE! Safe to push! 🎉", "ALL CHECKS DONE! Safe to push!")
+        print("=" * 60)  # noqa: T201
     else:
         safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
+        print(f"Ran {total_tests} tests: {passed} passed, {failures} failed, {errors} errors")  # noqa: T201
 
         # Show failed test details concisely
         if hasattr(result, "_concise_failures") and result._concise_failures:  # noqa: SLF001
             for failure in result._concise_failures:  # noqa: SLF001
                 status = "ERROR" if failure["is_error"] else "FAIL"
-                f"  {status}: {failure['test_class']}.{failure['test_name']}"
-                f"    {failure['error_msg']}"
+                print(f"  {status}: {failure['test_class']}.{failure['test_name']}")  # noqa: T201
+                print(f"    {failure['error_msg']}")  # noqa: T201
 
         # Overall status message
+        print("\n" + "=" * 60)  # noqa: T201
+        safe_emoji_text("❌ CHECKS FAILED! Fix issues before pushing!", "CHECKS FAILED! Fix issues before pushing!")
+        print("=" * 60)  # noqa: T201
 
 
 def print_detailed_summary(result: TextTestResult) -> None:
@@ -44,12 +52,14 @@ def print_detailed_summary(result: TextTestResult) -> None:
     total_tests = result.testsRun
     failures = len(result.failures)
     errors = len(result.errors)
-    total_tests - failures - errors
+    passed = total_tests - failures - errors
 
     if failures == 0 and errors == 0:
-        pass
+        safe_emoji_text("🎉 ALL TESTS PASSED! 🎉", "ALL TESTS PASSED!")
+        print(f"Successfully ran {total_tests} tests")  # noqa: T201
     else:
-        pass
+        safe_emoji_text("❌ SOME TESTS FAILED", "SOME TESTS FAILED")
+        print(f"Test results: {passed} passed, {failures} failed, {errors} errors out of {total_tests} total")  # noqa: T201
 
 
 def main() -> None:
@@ -65,7 +75,8 @@ def main() -> None:
 
     # In concise mode, don't show startup message
     if not concise_mode:
-        pass
+        print("Running enhanced test suite...")  # noqa: T201
+        print("=" * 60)  # noqa: T201
 
     # Discover all tests
     loader = unittest.TestLoader()
