@@ -120,7 +120,7 @@ def run_ruff_check() -> int:
                             line_part = parts[1]
                             col_part = parts[2]
                             message_part = parts[3]
-                            print(f"{muted_text(file_part)}:{muted_text(line_part)}:{muted_text(col_part)}:{message_part}")  # noqa: T201
+                            print(f"{(file_part)}:{(line_part)}:{(col_part)}:{message_part}")  # noqa: T201
                             continue
 
                     # Default case - print as is
