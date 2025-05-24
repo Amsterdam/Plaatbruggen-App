@@ -14,7 +14,6 @@ from tests.test_utils import (  # noqa: E402
     Colors,
     colored_text,
     colorized_status_message,
-    muted_text,
     safe_arrow,
     safe_emoji_text,
     should_use_concise_mode,
