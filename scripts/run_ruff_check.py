@@ -10,7 +10,15 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import Colors, colored_text, colorized_status_message, muted_text, safe_arrow, safe_emoji_text, should_use_concise_mode  # noqa: E402
+from tests.test_utils import (  # noqa: E402
+    Colors,
+    colored_text,
+    colorized_status_message,
+    muted_text,
+    safe_arrow,
+    safe_emoji_text,
+    should_use_concise_mode,
+)
 
 
 def setup_environment() -> bool:
@@ -69,11 +77,11 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
             print(colorized_status_message("Run the following command for detailed code style information:", is_success=False, is_warning=True))  # noqa: T201
             print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
         else:
-            print(
+            print(  # noqa: T201
                 colorized_status_message(
                     "Code style check failed - run the following command for detailed code style information:", is_success=False, is_warning=True
                 )
-            )  # noqa: T201
+            )
             print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
 
 

@@ -11,7 +11,15 @@ from unittest import TextTestResult
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import Colors, EnhancedTestResult, colorized_status_message, safe_arrow, safe_emoji_text, should_use_concise_mode, colored_text  # noqa: E402
+from tests.test_utils import (  # noqa: E402
+    Colors,
+    EnhancedTestResult,
+    colored_text,
+    colorized_status_message,
+    safe_arrow,
+    safe_emoji_text,
+    should_use_concise_mode,
+)
 
 
 def print_concise_summary(result: TextTestResult) -> None:

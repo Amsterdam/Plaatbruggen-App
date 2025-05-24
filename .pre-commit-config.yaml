@@ -20,7 +20,7 @@ repos:
     hooks:
       - id: ruff-check
         name: Ruff code style check
-        entry: python scripts/run_ruff_check.py --config=.ruff.toml
+        entry: python scripts/run_ruff_check.py
         language: system
         stages: [pre-push]
         pass_filenames: false
