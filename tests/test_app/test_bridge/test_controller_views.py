@@ -373,15 +373,15 @@ class TestBridgeControllerViews(unittest.TestCase):
         assert bridge_id_item._value == "BRIDGE-COMPLEX-001"  # noqa: SLF001
 
     @patch("app.bridge.controller.convert_word_to_pdf")
-    @view_test_wrapper("download_report")
+    @view_test_wrapper("get_output_report")
     def test_download_report_execution(self, mock_convert_pdf: MagicMock) -> None:
-        """Test actual execution of download_report."""
+        """Test actual execution of get_output_report."""
         # Arrange
         mock_pdf_file = Mock()
         mock_convert_pdf.return_value = mock_pdf_file
 
         # Access the original method directly
-        original_method = self.controller.__class__.download_report
+        original_method = self.controller.__class__.get_output_report
 
         # Act - call bypassing decorator
         result = original_method(self.controller, self.default_params)

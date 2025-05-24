@@ -265,31 +265,21 @@ class TestLoadFactorsGetInterpolationData(unittest.TestCase):
         # Act
         spans_arr, periods_arr, values_arr = get_interpolation_data()
 
-        # For easier lookup, create a mapping from period/span value to index
+        # Create lookup mappings for easier index access
         period_to_idx = {period: i for i, period in enumerate(periods_arr)}
         span_to_idx = {span: i for i, span in enumerate(spans_arr)}
 
-        # Assert specific values based on PSI_FACTORS, using the derived indices
-        # Example 1: Top-left corner (Max period, Min span)
-        # Max period (first in periods_arr due to reverse sort) should be 100
-        # Min span (first in spans_arr due to sort) should be 20
+        # Verify corner and middle values match PSI_FACTORS table
         assert values_arr[period_to_idx[100.0], span_to_idx[20]] == PSI_FACTORS[100.0][20]
-
-        # Example 2: Bottom-right corner (Min period, Max span)
-        # Min period (last in periods_arr) should be 1/12
-        # Max span (last in spans_arr) should be 200
         assert values_arr[period_to_idx[1.0 / 12.0], span_to_idx[200]] == PSI_FACTORS[1.0 / 12.0][200]
 
-        # Example 3: A middle value
-        # Period 15, Span 50
-        if 15.0 in period_to_idx and 50 in span_to_idx:  # Ensure these keys exist for safety
+        # Verify middle values
+        if 15.0 in period_to_idx and 50 in span_to_idx:
             assert values_arr[period_to_idx[15.0], span_to_idx[50]] == PSI_FACTORS[15.0][50]
         else:
             self.fail("Key 15.0 or 50 not found in period/span index maps for spot check")
 
-        # Example 4: Another middle value
-        # Period 1.0, Span 100
-        if 1.0 in period_to_idx and 100 in span_to_idx:  # Ensure these keys exist
+        if 1.0 in period_to_idx and 100 in span_to_idx:
             assert values_arr[period_to_idx[1.0], span_to_idx[100]] == PSI_FACTORS[1.0][100]
         else:
             self.fail("Key 1.0 or 100 not found in period/span index maps for spot check")
@@ -309,46 +299,34 @@ class TestLoadFactorsGetPsiFactor(unittest.TestCase):
 
     def test_get_psi_factor_interpolated_span(self) -> None:
         """Test get_psi_factor with interpolated span values."""
-        # Span 75 is halfway between 50 and 100.
-        # For period 1, values are 0.94 (span 50) and 0.89 (span 100).
-        # Expected: 0.94 + (0.89 - 0.94) / (100 - 50) * (75 - 50) = 0.94 - 0.05 / 50 * 25 = 0.94 - 0.025 = 0.915
+        # Test span 75 (midpoint between 50 and 100) with period 1
         assert math.isclose(get_psi_factor(span=75, reference_period=1), 0.915, abs_tol=1e-3)
 
-        # For period 30, values are 0.99 (span 50) and 0.98 (span 100)
-        # Expected: 0.99 + (0.98 - 0.99) / (100 - 50) * (75 - 50) = 0.99 - 0.01 / 50 * 25 = 0.99 - 0.005 = 0.985
+        # Test span 75 with period 30  
         assert math.isclose(get_psi_factor(span=75, reference_period=30), 0.985, abs_tol=1e-3)
 
     def test_get_psi_factor_interpolated_period(self) -> None:
         """Test get_psi_factor with interpolated period values."""
-        # Period 7.5 is between 1 and 15. Periods are [100, 50, 30, 15, 1, 1/12]
-        # For span 20:
-        # Here, x refers to period. We need to be careful as the interpolator sorts periods descending.
-        # However, the function handles this. We can conceptualize it with periods sorted normally for manual calc.
-        # For period 1 (x1=1, y1=0.95) and period 15 (x2=15, y2=0.98). We want period 7.5 (x=7.5).
-        # Expected: 0.95 + (0.98-0.95)/(15-1) * (7.5-1) = 0.95 + 0.03/14 * 6.5 = 0.95 + 0.013928... = 0.963928...
+        # Test period 7.5 (between 1 and 15) with span 20
         assert math.isclose(get_psi_factor(span=20, reference_period=7.5), 0.963928, abs_tol=1e-5)
 
     def test_get_psi_factor_interpolated_span_and_period(self) -> None:
         """Test get_psi_factor with both span and period interpolation."""
-        # Span 75 (between 50 and 100), Period 7.5 (between 1 and 15)
-        # This is a bilinear interpolation. Harder to calculate by hand quickly.
-        # We'll trust the scipy interpolator if component interpolations work.
-        # Let's test a known case if possible or rely on robustness of library for this combined case.
-        # For now, we can check if it runs and returns a float in the expected range.
+        # Test bilinear interpolation with span 75 and period 7.5
         result = get_psi_factor(span=75, reference_period=7.5)
         assert isinstance(result, float)
-        assert 0.8 < result < 1.0  # General expected range for psi factors
+        assert 0.8 < result < 1.0  # Should be within expected psi factor range
 
     def test_get_psi_factor_clamped_span_low(self) -> None:
         """Test get_psi_factor with span clamped to minimum value."""
-        # Span 10 (clamps to 20), period 1. Should be same as span 20, period 1.
-        expected = PSI_FACTORS[1.0][20]  # 0.95
+        # Span 10 clamps to 20, should equal PSI_FACTORS[1.0][20]
+        expected = PSI_FACTORS[1.0][20]
         assert get_psi_factor(span=10, reference_period=1) == expected
 
     def test_get_psi_factor_clamped_span_high(self) -> None:
         """Test get_psi_factor with span clamped to maximum value."""
-        # Span 300 (clamps to 200), period 30. Should be same as span 200, period 30.
-        expected = PSI_FACTORS[30.0][200]  # 0.97
+        # Span 300 clamps to 200, should equal PSI_FACTORS[30.0][200]
+        expected = PSI_FACTORS[30.0][200]
         assert get_psi_factor(span=300, reference_period=30) == expected
 
     # Tests for exceptions propagated from validate_input

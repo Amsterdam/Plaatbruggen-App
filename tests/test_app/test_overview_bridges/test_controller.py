@@ -76,6 +76,10 @@ class TestOverviewBridgesController(unittest.TestCase):
         """Test loading shapefile and names successfully."""
         # Arrange
         mock_gdf = MagicMock()
+        mock_gdf.iterrows.return_value = [
+            (0, {"OBJECTNUMM": "BRIDGE-001", "OBJECTNAAM": "Test Bridge"}),
+            (1, {"OBJECTNUMM": "BRIDGE-002", "OBJECTNAAM": "Another Bridge"}),
+        ]
         mock_read_file.return_value = mock_gdf
         shapefile_path = "test_bridges.shp"
 

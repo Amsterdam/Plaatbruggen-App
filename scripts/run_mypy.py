@@ -42,9 +42,7 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess) -> None:
         if error_count > 0 or note_count > 0:
             print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False))  # noqa: T201
             print(  # noqa: T201
-                colorized_status_message(
-                    "Run the following command for detailed type checking information:", is_success=False, is_warning=True
-                )
+                colorized_status_message("Run the following command for detailed type checking information:", is_success=False, is_warning=True)
             )
             print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
         else:

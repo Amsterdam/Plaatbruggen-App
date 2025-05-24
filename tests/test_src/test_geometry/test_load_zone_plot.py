@@ -80,7 +80,7 @@ class TestLoadZonePlotHelpers(unittest.TestCase):
         geometry = ZonePlottingGeometry(x_coords=[0, 1], y_coords_top=[1, 1], y_coords_bottom=[0, 0])
         style = ZoneBoundaryLineStyle(line_color="green", sbs_line_thickness=1, sbs_offset=0.1, absolute_edge_thickness=3)
 
-        traces = create_zone_boundary_line_traces(0, geometry, style, is_first_zone=True, is_last_zone=False)
+        traces = create_zone_boundary_line_traces(0, 3, geometry, style)  # zone_idx=0, num_load_zones=3
 
         assert len(traces) == 2
         # Top line should be thick (absolute edge)
@@ -95,36 +95,36 @@ class TestLoadZonePlotHelpers(unittest.TestCase):
         geometry = ZonePlottingGeometry(x_coords=[0, 1], y_coords_top=[2, 2], y_coords_bottom=[1, 1])
         style = ZoneBoundaryLineStyle(line_color="blue", sbs_line_thickness=1, sbs_offset=0.1, absolute_edge_thickness=3)
 
-        traces = create_zone_boundary_line_traces(1, geometry, style, is_first_zone=False, is_last_zone=False)
+        traces = create_zone_boundary_line_traces(1, 3, geometry, style)  # zone_idx=1, num_load_zones=3
 
         assert len(traces) == 2
         # Both lines should use sbs thickness for middle zones
         assert traces[0].line.width == 1
-        assert list(traces[0].y) == [2, 2]  # y_coords_top (no offset for top in middle zones)
+        assert list(traces[0].y) == [1.9, 1.9]  # y_coords_top - sbs_offset: [2-0.1, 2-0.1]
         assert traces[1].line.width == 1
-        assert list(traces[1].y) == [1 + 0.1, 1 + 0.1]  # y + sbs_offset
+        assert list(traces[1].y) == [1.1, 1.1]  # y_coords_bottom + sbs_offset: [1+0.1, 1+0.1]
 
     def test_create_zone_boundary_line_traces_last_zone(self) -> None:
         """Test create_zone_boundary_line_traces for the last zone."""
         geometry = ZonePlottingGeometry(x_coords=[0, 1], y_coords_top=[3, 3], y_coords_bottom=[2, 2])
         style = ZoneBoundaryLineStyle(line_color="purple", sbs_line_thickness=1, sbs_offset=0.1, absolute_edge_thickness=3)
 
-        traces = create_zone_boundary_line_traces(2, geometry, style, is_first_zone=False, is_last_zone=True)
+        traces = create_zone_boundary_line_traces(2, 3, geometry, style)  # zone_idx=2, num_load_zones=3 (last zone)
 
         assert len(traces) == 2
-        # Top line should be thick (absolute edge) for last zone
-        assert traces[0].line.width == 3
-        assert list(traces[0].y) == [3, 3]  # y_coords_top
-        # Bottom line should NOT have offset for last zone
-        assert traces[1].line.width == 1
-        assert list(traces[1].y) == [2, 2]
+        # Top line should be thin with offset (not first zone, so uses sbs_line_thickness)
+        assert traces[0].line.width == 1
+        assert list(traces[0].y) == [2.9, 2.9]  # y_coords_top - sbs_offset: [3-0.1, 3-0.1]
+        # Bottom line should be thick (absolute edge) for last zone
+        assert traces[1].line.width == 3
+        assert list(traces[1].y) == [2, 2]  # y_coords_bottom (no offset for last zone)
 
     def test_create_zone_main_label_annotation(self) -> None:
         """Test create_zone_main_label_annotation with basic parameters."""
         geometry = ZonePlottingGeometry(x_coords=[0, 10, 20], y_coords_top=[5, 5, 5], y_coords_bottom=[4, 4, 4])
         annotation = create_zone_main_label_annotation(0, "TestZone", geometry, x_offset=1.0)
 
-        assert annotation.x == 5.0  # Mid-point + x_offset: (0+10)/2 + 1.0 = 6.0 - 1.0 = 5.0 (wait, let me recalculate)
+        assert annotation.x == 21.0  # Last x coordinate + x_offset: 20 + 1.0 = 21.0
         assert annotation.y == 4.5  # Mid-point between top and bottom: (5+4)/2 = 4.5
         assert annotation.text == "<b>bz1</b>: <i>TestZone</i>"
 
@@ -135,10 +135,10 @@ class TestLoadZonePlotHelpers(unittest.TestCase):
 
         annotations = create_zone_width_annotations(
             zone_param_data,
-            0,  # zone_idx
             geometry,
-            current_zone_calculated_width=1.8,
-            y_offset=0.2,
+            num_defined_d_points=4,  # Matches x_coords length
+            zone_idx=0,
+            num_load_zones=3,
         )
 
         # Should have annotations for d1_width (2.0), d2_width (2.5), and d3_width (3.0)
@@ -146,15 +146,15 @@ class TestLoadZonePlotHelpers(unittest.TestCase):
 
         # First annotation: d1_width
         ann_d1 = annotations[0]
-        assert ann_d1.x == 1.0  # Mid-point between x_coords[0] and x_coords[1]: (0+2)/2 = 1.0
-        assert ann_d1.y == 1.2  # y_coords_top[0] + y_offset: 1 + 0.2 = 1.2
+        assert ann_d1.x == 0  # x_coords[0]
+        assert ann_d1.y == 0.5  # (y_coords_top[0] + y_coords_bottom[0]) / 2: (1+0)/2 = 0.5
         assert ann_d1.text == "2.00m"
 
         # Second annotation: d2_width
         ann_d2 = annotations[1]
-        assert ann_d2.x == 3.25  # Mid-point between x_coords[1] and x_coords[2]: (2+4.5)/2 = 3.25
-        assert ann_d2.y == 1.2  # y_coords_top[1] + y_offset: 1 + 0.2 = 1.2
-        assert ann_d2.text == "3.00m"
+        assert ann_d2.x == 2  # x_coords[1]
+        assert ann_d2.y == 0.5  # (y_coords_top[1] + y_coords_bottom[1]) / 2: (1+0)/2 = 0.5
+        assert ann_d2.text == "2.50m"
 
     def test_create_zone_width_annotations_last_zone_uses_calculated_width(self) -> None:
         """Test that the last zone uses calculated width instead of parameter width."""
@@ -162,18 +162,30 @@ class TestLoadZonePlotHelpers(unittest.TestCase):
         zone_param_data = self._create_dummy_load_zone_data_row(d_widths=[2.0, 2.0])  # Params might suggest 2.0
         geometry = ZonePlottingGeometry(x_coords=[0, 2], y_coords_top=[1, 1], y_coords_bottom=[0.2, 0.2])
 
-        annotations = create_zone_width_annotations(zone_param_data, 0, geometry, current_zone_calculated_width=1.8, y_offset=0.0, is_last_zone=True)
+        annotations = create_zone_width_annotations(
+            zone_param_data,
+            geometry,
+            num_defined_d_points=2,
+            zone_idx=1,  # Last zone (zone_idx=1, num_load_zones=2)
+            num_load_zones=2,
+        )
 
-        # For last zone, should use calculated width (1.8), not param width (2.0)
+        # For last zone, should use calculated width (1-0.2=0.8), not param width (2.0)
         assert len(annotations) == 2
-        assert annotations[1].text == "1.80m"  # Calculated width
+        assert annotations[1].text == "0.80m"  # Calculated width at d2
 
     def test_create_zone_width_annotations_empty_if_widths_too_small(self) -> None:
         """Test that no annotations are created when zone widths are too small."""
         zone_param_data = self._create_dummy_load_zone_data_row(d_widths=[0.001, 0.002])
         geometry = ZonePlottingGeometry(x_coords=[0, 1], y_coords_top=[1, 1], y_coords_bottom=[0.999, 0.998])
 
-        annotations = create_zone_width_annotations(zone_param_data, 0, geometry, current_zone_calculated_width=0.001, y_offset=0.0)
+        annotations = create_zone_width_annotations(
+            zone_param_data,
+            geometry,
+            num_defined_d_points=2,
+            zone_idx=0,
+            num_load_zones=2,
+        )
 
         # Width differences are too small (< 0.01m), so no annotations should be created
         assert len(annotations) == 0
@@ -204,6 +216,8 @@ class TestBuildLoadZonesFigure(unittest.TestCase):
             "d3_width": d_widths[2] if len(d_widths) > 2 else 0.0,
             "d4_width": d_widths[3] if len(d_widths) > 3 else 0.0,
             "d5_width": d_widths[4] if len(d_widths) > 4 else 0.0,
+            # Add the missing y_coords_top_current_zone field that build_load_zones_figure expects
+            "y_coords_top_current_zone": [1.0] * len(d_widths),  # Mock top coordinates
         }
 
         # Add d6 to d15 as 0.0
@@ -308,9 +322,8 @@ class TestBuildLoadZonesFigure(unittest.TestCase):
         assert fig.layout.title.text == presentation["figure_title"]
         # ... other layout checks as needed
 
-    @patch("src.geometry.load_zone_plot.calculate_y_coords_bottom_of_current_zone")
-    @patch("src.geometry.load_zone_plot.calculate_y_coords_top_of_current_zone")
-    @patch("src.geometry.load_zone_plot.get_load_zone_appearance")
+    @patch("src.geometry.load_zone_plot.calculate_zone_bottom_y_coords")
+    @patch("src.geometry.load_zone_plot.get_zone_appearance_properties")
     @patch("src.geometry.load_zone_plot.create_zone_fill_trace")
     @patch("src.geometry.load_zone_plot.create_zone_boundary_line_traces")
     @patch("src.geometry.load_zone_plot.create_zone_main_label_annotation")

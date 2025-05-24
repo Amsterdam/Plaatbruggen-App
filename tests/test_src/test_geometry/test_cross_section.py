@@ -59,7 +59,7 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_segment_index_determination_single_segment(self) -> None:
         """Test correct segment index determination with single segment."""
         # Arrange
-        segment1 = _create_segment_data(l_val=20.0)
+        segment1 = _create_segment_data(length=20.0)
         params = Munch({"bridge_segments_array": [segment1], "input": Munch({"dimensions": Munch({"cross_section_loc": 10.0})})})
         all_z = [-0.5, 0.5]
 
@@ -76,8 +76,8 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_segment_index_determination_multiple_segments(self) -> None:
         """Test segment index determination with multiple segments."""
         # Arrange
-        segment1 = _create_segment_data(l_val=10.0, bz1=2, bz2=3, bz3=2, dz=0.5, dz_2=0.6)
-        segment2 = _create_segment_data(l_val=15.0, bz1=2.5, bz2=3.5, bz3=2.5, dz=0.55, dz_2=0.65)
+        segment1 = _create_segment_data(length=10.0, bz1=2, bz2=3, bz3=2, dz=0.5, dz_2=0.6)
+        segment2 = _create_segment_data(length=15.0, bz1=2.5, bz2=3.5, bz3=2.5, dz=0.55, dz_2=0.65)
         params = Munch(
             {
                 "bridge_segments_array": [segment1, segment2],
@@ -103,8 +103,8 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_segment_index_at_boundary(self) -> None:
         """Test segment index determination when location is at segment boundary."""
         # Arrange
-        segment1 = _create_segment_data(l_val=10.0)
-        segment2 = _create_segment_data(l_val=10.0)
+        segment1 = _create_segment_data(length=10.0)
+        segment2 = _create_segment_data(length=10.0)
         params = Munch(
             {
                 "bridge_segments_array": [segment1, segment2],
@@ -122,7 +122,7 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_segment_index_loc_beyond_last_segment(self) -> None:
         """Test segment index determination when location is beyond the last segment."""
         # Arrange
-        segment1 = _create_segment_data(l_val=10.0)
+        segment1 = _create_segment_data(length=10.0)
         params = Munch(
             {
                 "bridge_segments_array": [segment1],
@@ -139,7 +139,7 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_basic_annotation_properties_zone_labels(self) -> None:
         """Test basic annotation properties for zone labels in cross section."""
         # Arrange
-        seg_data = _create_segment_data(l_val=10, bz1=2, bz2=4, bz3=2, dz=0.5, dz_2=0.6)
+        seg_data = _create_segment_data(length=10, bz1=2, bz2=4, bz3=2, dz=0.5, dz_2=0.6)
         params = Munch({"bridge_segments_array": [seg_data], "input": Munch(dimensions=Munch(cross_section_loc=5.0))})
         all_z = [-1.0, 0.0]
         # Act
@@ -168,7 +168,7 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_basic_annotation_properties_width_labels(self) -> None:
         """Test basic annotation properties for width labels in cross section."""
         # Arrange
-        seg_data = _create_segment_data(l_val=10, bz1=2.2, bz2=3.3, bz3=4.4, dz=0.5, dz_2=0.6)
+        seg_data = _create_segment_data(length=10, bz1=2.2, bz2=3.3, bz3=4.4, dz=0.5, dz_2=0.6)
         params = Munch({"bridge_segments_array": [seg_data], "input": Munch(dimensions=Munch(cross_section_loc=5.0))})
         min_z_val = -2.0
         all_z = [min_z_val, 0.0, 1.0]
@@ -194,7 +194,7 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
     def test_basic_annotation_properties_height_labels(self) -> None:
         """Test basic annotation properties for height labels in cross section."""
         # Arrange
-        seg_data = _create_segment_data(l_val=10, bz1=2, bz2=4, bz3=2, dz=0.5, dz_2=0.6)
+        seg_data = _create_segment_data(length=10, bz1=2, bz2=4, bz3=2, dz=0.5, dz_2=0.6)
         params = Munch({"bridge_segments_array": [seg_data], "input": Munch(dimensions=Munch(cross_section_loc=5.0))})
         all_z = [-1.0, 0.0]
         # Act
