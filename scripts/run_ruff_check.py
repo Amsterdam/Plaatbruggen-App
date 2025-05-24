@@ -71,24 +71,6 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
                     "Run 'python scripts/run_ruff_check.py' for detailed code style information", is_success=False, is_warning=True
                 )
             )
-            
-            # Show a few sample errors with enhanced formatting in concise mode
-            print()  # noqa: T201
-            error_lines = [line for line in lines if line.strip() and ":" in line and not line.startswith("Found") and not line.startswith("No fixes")]
-            sample_errors = error_lines[:3]  # First 3 errors
-            for error_line in sample_errors:
-                # Ruff format: file.py:line:col: CODE message
-                parts = error_line.split(":", 3)  # Split into at most 4 parts
-                if len(parts) >= 4:
-                    file_part = parts[0]
-                    line_part = parts[1] 
-                    col_part = parts[2]
-                    message_part = parts[3]
-                    print(f"  {muted_text(file_part)}:{muted_text(line_part)}:{muted_text(col_part)}:{message_part}")  # noqa: T201
-            
-            if len(sample_errors) > 0 and error_count > len(sample_errors):
-                remaining = error_count - len(sample_errors)
-                print(f"  {muted_text(f'... and {remaining} more issues')}")  # noqa: T201
         else:
             print(colorized_status_message("Code style check failed - run 'python scripts/run_ruff_check.py' for details", is_success=False))  # noqa: T201
 

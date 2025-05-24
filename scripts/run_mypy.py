@@ -51,21 +51,6 @@ def run_mypy() -> int:
                             "Run 'python scripts/run_mypy.py' for detailed type checking information", is_success=False, is_warning=True
                         )
                     )
-                    
-                    # Show a few sample errors with enhanced formatting in concise mode
-                    print()  # noqa: T201
-                    sample_errors = [line for line in error_lines[:3]]  # First 3 errors
-                    for error_line in sample_errors:
-                        if ": error:" in error_line:
-                            parts = error_line.split(": error:", 1)
-                            if len(parts) == 2:
-                                file_part = parts[0]
-                                error_part = parts[1]
-                                print(f"  {muted_text(file_part)}: {colored_text('error:', Colors.RED, bold=True)}{colored_text(error_part, Colors.RED)}")  # noqa: T201
-                    
-                    if len(error_lines) > 3:
-                        remaining = len(error_lines) - 3
-                        print(f"  {muted_text(f'... and {remaining} more errors')}")  # noqa: T201
                 else:
                     print(colorized_status_message("Type checking failed - run 'python scripts/run_mypy.py' for details", is_success=False))  # noqa: T201
 
