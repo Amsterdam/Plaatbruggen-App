@@ -11,7 +11,7 @@ from unittest import TextTestResult
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import Colors, EnhancedTestResult, colorized_status_message, safe_emoji_text, should_use_concise_mode, colored_text  # noqa: E402
+from tests.test_utils import Colors, EnhancedTestResult, colorized_status_message, safe_arrow, safe_emoji_text, should_use_concise_mode, colored_text  # noqa: E402
 
 
 def print_concise_summary(result: TextTestResult) -> None:
@@ -32,7 +32,7 @@ def print_concise_summary(result: TextTestResult) -> None:
     else:
         safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
         print(colorized_status_message("Run the following command for detailed test error information:", is_success=False, is_warning=True))  # noqa: T201
-        print(f"  → {colored_text('python run_enhanced_tests.py', Colors.CYAN, bold=True)}")  # noqa: T201
+        print(f"  {safe_arrow()}{colored_text('python run_enhanced_tests.py', Colors.CYAN, bold=True)}")  # noqa: T201
 
         # Don't show final "CHECKS FAILED" message here - let the hook system handle overall status
 

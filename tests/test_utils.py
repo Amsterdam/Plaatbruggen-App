@@ -380,6 +380,11 @@ def safe_symbol(unicode_symbol: str, ascii_fallback: str) -> str:
         return ascii_fallback
 
 
+def safe_arrow() -> str:
+    """Return Unicode arrow if supported, otherwise ASCII fallback."""
+    return safe_symbol("→ ", "-> ")
+
+
 def colorized_status_message(message: str, is_success: bool, is_warning: bool = False) -> str:
     """Create a colorized status message based on the status type."""
     # Add visual symbols for better distinction with safe encoding

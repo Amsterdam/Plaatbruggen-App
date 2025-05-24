@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import Colors, colored_text, colorized_status_message, muted_text, safe_emoji_text, should_use_concise_mode  # noqa: E402
+from tests.test_utils import Colors, colored_text, colorized_status_message, muted_text, safe_arrow, safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
 def run_mypy() -> int:
@@ -51,12 +51,16 @@ def run_mypy() -> int:
                             "Run the following command for detailed type checking information:", is_success=False, is_warning=True
                         )
                     )  # noqa: T201
-                    print(f"  → {colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
                 else:
                     print(
-                        colorized_status_message("Type checking failed - run the following command for detailed type checking information:", is_success=False, is_warning=True)
+                        colorized_status_message(
+                            "Type checking failed - run the following command for detailed type checking information:",
+                            is_success=False,
+                            is_warning=True,
+                        )
                     )  # noqa: T201
-                    print(f"  → {colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
 
         else:
             # In detailed mode, show full output with improved formatting
