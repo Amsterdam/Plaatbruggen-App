@@ -19,7 +19,6 @@ def print_concise_summary(result: TextTestResult) -> None:
     total_tests = result.testsRun
     failures = len(result.failures)
     errors = len(result.errors)
-    passed = total_tests - failures - errors
 
     # Always show a summary line for git hooks
     if failures == 0 and errors == 0:
@@ -32,19 +31,21 @@ def print_concise_summary(result: TextTestResult) -> None:
         print("=" * 60)  # noqa: T201
     else:
         safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
-        print(f"Ran {total_tests} tests: {passed} passed, {failures} failed, {errors} errors")  # noqa: T201
+        print("Run 'python run_enhanced_tests.py' for detailed error information")  # noqa: T201
 
-        # Show failed test details concisely
+        # Show only first few failed test names concisely
         if hasattr(result, "_concise_failures") and result._concise_failures:  # noqa: SLF001
-            for failure in result._concise_failures:  # noqa: SLF001
+            failed_tests = result._concise_failures[:3]  # noqa: SLF001
+            for failure in failed_tests:
                 status = "ERROR" if failure["is_error"] else "FAIL"
                 print(f"  {status}: {failure['test_class']}.{failure['test_name']}")  # noqa: T201
                 print(f"    {failure['error_msg']}")  # noqa: T201
 
-        # Overall status message
-        print("\n" + "=" * 60)  # noqa: T201
-        safe_emoji_text("❌ CHECKS FAILED! Fix issues before pushing!", "CHECKS FAILED! Fix issues before pushing!")
-        print("=" * 60)  # noqa: T201
+            if len(result._concise_failures) > 3:  # noqa: SLF001
+                remaining = len(result._concise_failures) - 3  # noqa: SLF001
+                print(f"  ... and {remaining} more test failures")  # noqa: T201
+
+        # Don't show final "CHECKS FAILED" message here - let the hook system handle overall status
 
 
 def print_detailed_summary(result: TextTestResult) -> None:
@@ -64,14 +65,12 @@ def print_detailed_summary(result: TextTestResult) -> None:
 
 def main() -> None:
     """Run all tests with enhanced reporting."""
-    # Force concise mode for pre-commit by detecting if we're running in a subprocess
-    # This is a fallback in case our environment detection doesn't work
-    is_subprocess = os.environ.get("_") != sys.executable
-    concise_mode = is_subprocess or should_use_concise_mode()
-
     # Enable colors for Git environments (like Git Bash) even if detection is conservative
     if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "TERM"]):
         os.environ["FORCE_COLOR"] = "1"
+
+    # Use the improved environment detection from test_utils
+    concise_mode = should_use_concise_mode()
 
     # In concise mode, don't show startup message
     if not concise_mode:

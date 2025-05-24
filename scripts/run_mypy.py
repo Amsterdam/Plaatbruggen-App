@@ -13,12 +13,10 @@ sys.path.insert(0, str(project_root))
 from tests.test_utils import safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
-def run_mypy() -> int:  # noqa: PLR0912, C901
+def run_mypy() -> int:
     """Run mypy and provide concise summary."""
-    # Force concise mode for pre-commit by detecting if we're running in a subprocess
-    # This is a fallback in case our environment detection doesn't work
-    is_subprocess = os.environ.get("_") != sys.executable
-    force_concise = is_subprocess or should_use_concise_mode()
+    # Use the improved environment detection from test_utils
+    force_concise = should_use_concise_mode()
 
     # Enable colors for Git environments (like Git Bash) even if detection is conservative
     if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "TERM"]):
@@ -46,18 +44,11 @@ def run_mypy() -> int:  # noqa: PLR0912, C901
                 note_lines = [line for line in lines if ": note:" in line]
                 note_count = len(note_lines)
 
-                if error_count > 0:
-                    print(f"Found {error_count} type checking errors")  # noqa: T201
-                if note_count > 0:
-                    print(f"Found {note_count} type checking notes")  # noqa: T201
-
-                # Show first few errors for context
-                if error_lines:
-                    print("First few errors:")  # noqa: T201
-                    for error in error_lines[:3]:
-                        print(f"  {error}")  # noqa: T201
-                    if len(error_lines) > 3:
-                        print(f"  ... and {len(error_lines) - 3} more errors")  # noqa: T201
+                if error_count > 0 or note_count > 0:
+                    print(f"Found {error_count} errors, {note_count} notes")  # noqa: T201
+                    print("Run 'python scripts/run_mypy.py' for detailed type checking information")  # noqa: T201
+                else:
+                    print("Type checking failed - run 'python scripts/run_mypy.py' for details")  # noqa: T201
 
         else:
             # In detailed mode, show full output

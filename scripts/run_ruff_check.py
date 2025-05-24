@@ -15,10 +15,8 @@ from tests.test_utils import safe_emoji_text, should_use_concise_mode  # noqa: E
 
 def setup_environment() -> bool:
     """Set up environment and determine if concise mode should be used."""
-    # Force concise mode for pre-commit by detecting if we're running in a subprocess
-    # This is a fallback in case our environment detection doesn't work
-    is_subprocess = os.environ.get("_") != sys.executable
-    force_concise = is_subprocess or should_use_concise_mode()
+    # Use the improved environment detection from test_utils
+    force_concise = should_use_concise_mode()
 
     # Enable colors for Git environments (like Git Bash) even if detection is conservative
     if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "TERM"]):
@@ -68,19 +66,9 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
 
         if error_count > 0:
             print(f"Found {error_count} code style issues")  # noqa: T201
-
-            # Show first few error lines for context
-            error_lines = [
-                line for line in lines if line.strip() and (":" in line) and not line.startswith("Found") and not line.startswith("No fixes")
-            ]
-            if error_lines:
-                print("First few issues:")  # noqa: T201
-                for error in error_lines[:3]:
-                    print(f"  {error}")  # noqa: T201
-                if len(error_lines) > 3:
-                    print(f"  ... and {len(error_lines) - 3} more issues")  # noqa: T201
+            print("Run 'python scripts/run_ruff_check.py' for detailed code style information")  # noqa: T201
         else:
-            print("Code style check failed but no specific errors found")  # noqa: T201
+            print("Code style check failed - run 'python scripts/run_ruff_check.py' for details")  # noqa: T201
 
 
 def run_ruff_check() -> int:

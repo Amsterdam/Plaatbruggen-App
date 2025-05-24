@@ -11,20 +11,36 @@ from typing import Any, TextIO
 
 def is_git_hook_environment() -> bool:
     """Detect if we're running in a git hook or CI environment where emojis might not work."""
-    # Check for common git hook environment variables
+    # Check for actual git hook environment variables (not just VS Code Git tools)
     git_hook_indicators = ["GIT_DIR", "GIT_INDEX_FILE", "GIT_AUTHOR_NAME", "CI", "GITHUB_ACTIONS", "GITLAB_CI"]
 
     # Also check if we're in a pre-commit hook (common environment)
     if any(os.environ.get(indicator) for indicator in git_hook_indicators):
         return True
 
-    # Check if running under pre-commit (multiple possible indicators)
+    # Check if running under pre-commit (multiple possible indicators) - but be specific
     pre_commit_indicators = ["PRE_COMMIT", "PRE_COMMIT_HOME", "_PRE_COMMIT_HOOK_ID", "PRE_COMMIT_COLOR"]
     if any(os.environ.get(indicator) for indicator in pre_commit_indicators):
         return True
 
-    # Check if we're being called from a hook script (common pattern)
-    return bool(any("hook" in str(arg).lower() for arg in sys.argv))
+    # Check for pre-commit specific environment patterns - but exclude VS Code patterns
+    for env_var in os.environ:
+        if "PRE_COMMIT" in env_var and "VSCODE" not in env_var:
+            return True
+
+    # Check if parent process looks like a git operation
+    try:
+        import psutil
+
+        current = psutil.Process()
+        for parent in current.parents():
+            if any(keyword in parent.name().lower() for keyword in ["git", "pre-commit", "hook"]):
+                return True
+    except (ImportError, Exception):
+        pass
+
+    # Check if we're being called from a hook script (common pattern) - but not VS Code
+    return bool(any("hook" in str(arg).lower() for arg in sys.argv if "vscode" not in str(arg).lower()))
 
 
 def should_use_concise_mode() -> bool:
@@ -42,9 +58,17 @@ def supports_color() -> bool:
     if os.environ.get("NO_COLOR", "").lower() in ("1", "true", "yes"):
         return False
 
+    # Check for Git Bash/MINGW environments which support colors
+    if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "TERM"]):
+        return True
+
     # Check for common CI environments that support color
     ci_environments = ("GITHUB_ACTIONS", "GITLAB_CI", "TRAVIS", "CIRCLECI")
     if any(os.environ.get(env) for env in ci_environments):
+        return True
+
+    # Git hooks often run in terminals that support color
+    if is_git_hook_environment():
         return True
 
     # Check if we're in a TTY and return result directly
@@ -90,15 +114,30 @@ def colored_text(text: str, color: str, bold: bool = False) -> str:
     return f"{style}{color}{text}{Colors.RESET}"
 
 
-def safe_emoji_text(emoji_text: str, plain_text: str) -> str:
+def safe_emoji_text(emoji_text: str, plain_text: str) -> str:  # noqa: PLR0911
     """Return emoji text if supported by terminal, otherwise plain text."""
     try:
         # Test if emoji can be encoded to the default encoding
         emoji_text.encode(sys.stdout.encoding or "utf-8")
+        # Use colored emoji text if colors are supported
+        if supports_color():
+            if "✅" in emoji_text:
+                return colored_text(emoji_text, Colors.GREEN, bold=True)
+            if "❌" in emoji_text:
+                return colored_text(emoji_text, Colors.RED, bold=True)
+            if "🎉" in emoji_text:
+                return colored_text(emoji_text, Colors.CYAN, bold=True)
+            return colored_text(emoji_text, Colors.YELLOW, bold=True)
+        return emoji_text  # noqa: TRY300
     except (UnicodeEncodeError, AttributeError, LookupError):
+        # Fall back to colored plain text
+        if supports_color():
+            if "PASSED" in plain_text:
+                return colored_text(plain_text, Colors.GREEN, bold=True)
+            if "FAILED" in plain_text:
+                return colored_text(plain_text, Colors.RED, bold=True)
+            return colored_text(plain_text, Colors.YELLOW, bold=True)
         return plain_text
-    else:
-        return emoji_text
 
 
 def detailed_failure_message(test_name: str, view_name: str, function_name: str, error_details: str) -> str:
