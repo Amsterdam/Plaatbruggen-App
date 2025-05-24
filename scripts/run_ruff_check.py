@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import safe_emoji_text, should_use_concise_mode  # noqa: E402
+from tests.test_utils import colorized_status_message, safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
 def setup_environment() -> bool:
@@ -53,7 +53,7 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
     """Handle output in concise mode for git hooks."""
     if result.returncode == 0:
         safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!")
-        print("No code style issues found")  # noqa: T201
+        print(colorized_status_message("No code style issues found", is_success=True))  # noqa: T201
     else:
         safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
 
@@ -65,10 +65,14 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
         error_count = extract_error_count(lines)
 
         if error_count > 0:
-            print(f"Found {error_count} code style issues")  # noqa: T201
-            print("Run 'python scripts/run_ruff_check.py' for detailed code style information")  # noqa: T201
+            print(colorized_status_message(f"Found {error_count} code style issues", is_success=False))  # noqa: T201
+            print(
+                colorized_status_message(
+                    "Run 'python scripts/run_ruff_check.py' for detailed code style information", is_success=False, is_warning=True
+                )
+            )  # noqa: T201
         else:
-            print("Code style check failed - run 'python scripts/run_ruff_check.py' for details")  # noqa: T201
+            print(colorized_status_message("Code style check failed - run 'python scripts/run_ruff_check.py' for details", is_success=False))  # noqa: T201
 
 
 def run_ruff_check() -> int:

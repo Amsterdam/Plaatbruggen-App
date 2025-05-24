@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import safe_emoji_text, should_use_concise_mode  # noqa: E402
+from tests.test_utils import colorized_status_message, safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
 def run_mypy() -> int:
@@ -34,7 +34,7 @@ def run_mypy() -> int:
 
             if result.returncode == 0:
                 safe_emoji_text("✅ MYPY CHECK PASSED!", "MYPY CHECK PASSED!")
-                print("No type checking issues found")  # noqa: T201
+                print(colorized_status_message("No type checking issues found", is_success=True))  # noqa: T201
             else:
                 safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
 
@@ -45,10 +45,14 @@ def run_mypy() -> int:
                 note_count = len(note_lines)
 
                 if error_count > 0 or note_count > 0:
-                    print(f"Found {error_count} errors, {note_count} notes")  # noqa: T201
-                    print("Run 'python scripts/run_mypy.py' for detailed type checking information")  # noqa: T201
+                    print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False))  # noqa: T201
+                    print(
+                        colorized_status_message(
+                            "Run 'python scripts/run_mypy.py' for detailed type checking information", is_success=False, is_warning=True
+                        )
+                    )  # noqa: T201
                 else:
-                    print("Type checking failed - run 'python scripts/run_mypy.py' for details")  # noqa: T201
+                    print(colorized_status_message("Type checking failed - run 'python scripts/run_mypy.py' for details", is_success=False))  # noqa: T201
 
         else:
             # In detailed mode, show full output
@@ -59,7 +63,7 @@ def run_mypy() -> int:
 
     except Exception as e:
         safe_emoji_text("❌ MYPY EXECUTION FAILED", "MYPY EXECUTION FAILED")
-        print(f"Error running mypy: {e}")  # noqa: T201
+        print(colorized_status_message(f"Error running mypy: {e}", is_success=False))  # noqa: T201
         return 1
     else:
         return result.returncode

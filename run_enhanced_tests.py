@@ -11,7 +11,7 @@ from unittest import TextTestResult
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import EnhancedTestResult, safe_emoji_text, should_use_concise_mode  # noqa: E402
+from tests.test_utils import EnhancedTestResult, colorized_status_message, safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
 def print_concise_summary(result: TextTestResult) -> None:
@@ -23,7 +23,7 @@ def print_concise_summary(result: TextTestResult) -> None:
     # Always show a summary line for git hooks
     if failures == 0 and errors == 0:
         safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
-        print(f"Ran {total_tests} tests successfully")  # noqa: T201
+        print(colorized_status_message(f"Ran {total_tests} tests successfully", is_success=True))  # noqa: T201
 
         # Overall status message (appears at the end since tests run last)
         print("\n" + "=" * 60)  # noqa: T201
@@ -31,19 +31,19 @@ def print_concise_summary(result: TextTestResult) -> None:
         print("=" * 60)  # noqa: T201
     else:
         safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
-        print("Run 'python run_enhanced_tests.py' for detailed error information")  # noqa: T201
+        print(colorized_status_message("Run 'python run_enhanced_tests.py' for detailed error information", is_success=False, is_warning=True))  # noqa: T201
 
         # Show only first few failed test names concisely
         if hasattr(result, "_concise_failures") and result._concise_failures:  # noqa: SLF001
             failed_tests = result._concise_failures[:3]  # noqa: SLF001
             for failure in failed_tests:
                 status = "ERROR" if failure["is_error"] else "FAIL"
-                print(f"  {status}: {failure['test_class']}.{failure['test_name']}")  # noqa: T201
-                print(f"    {failure['error_msg']}")  # noqa: T201
+                print(colorized_status_message(f"  {status}: {failure['test_class']}.{failure['test_name']}", is_success=False))  # noqa: T201
+                print(colorized_status_message(f"    {failure['error_msg']}", is_success=False, is_warning=True))  # noqa: T201
 
             if len(result._concise_failures) > 3:  # noqa: SLF001
                 remaining = len(result._concise_failures) - 3  # noqa: SLF001
-                print(f"  ... and {remaining} more test failures")  # noqa: T201
+                print(colorized_status_message(f"  ... and {remaining} more test failures", is_success=False, is_warning=True))  # noqa: T201
 
         # Don't show final "CHECKS FAILED" message here - let the hook system handle overall status
 
@@ -57,10 +57,14 @@ def print_detailed_summary(result: TextTestResult) -> None:
 
     if failures == 0 and errors == 0:
         safe_emoji_text("🎉 ALL TESTS PASSED! 🎉", "ALL TESTS PASSED!")
-        print(f"Successfully ran {total_tests} tests")  # noqa: T201
+        print(colorized_status_message(f"Successfully ran {total_tests} tests", is_success=True))  # noqa: T201
     else:
         safe_emoji_text("❌ SOME TESTS FAILED", "SOME TESTS FAILED")
-        print(f"Test results: {passed} passed, {failures} failed, {errors} errors out of {total_tests} total")  # noqa: T201
+        print(
+            colorized_status_message(
+                f"Test results: {passed} passed, {failures} failed, {errors} errors out of {total_tests} total", is_success=False
+            )
+        )  # noqa: T201
 
 
 def main() -> None:

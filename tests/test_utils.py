@@ -71,6 +71,23 @@ def supports_color() -> bool:
     if is_git_hook_environment():
         return True
 
+    # PowerShell and Windows Terminal support colors
+    if os.name == "nt" and hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
+        # Try to enable VT processing on Windows
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+            mode = wintypes.DWORD()
+            kernel32.GetConsoleMode(handle, ctypes.byref(mode))
+            # Enable ENABLE_VIRTUAL_TERMINAL_PROCESSING (0x0004)
+            kernel32.SetConsoleMode(handle, mode.value | 0x0004)
+            return True
+        except Exception:
+            pass
+
     # Check if we're in a TTY and return result directly
     return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
 
@@ -339,3 +356,22 @@ def run_enhanced_tests(test_suite: unittest.TestSuite) -> unittest.TestResult:
         pass
 
     return result
+
+
+def colorized_status_message(message: str, is_success: bool, is_warning: bool = False) -> str:
+    """Create a colorized status message based on the status type."""
+    # Add visual symbols for better distinction
+    if is_success:
+        prefix = "✓ "
+        if supports_color():
+            return colored_text(f"{prefix}{message}", Colors.GREEN, bold=True)
+        return f"{prefix}{message}"
+    if is_warning:
+        prefix = "⚠ "
+        if supports_color():
+            return colored_text(f"{prefix}{message}", Colors.YELLOW, bold=True)
+        return f"{prefix}{message}"
+    prefix = "✗ "
+    if supports_color():
+        return colored_text(f"{prefix}{message}", Colors.RED, bold=True)
+    return f"{prefix}{message}"
