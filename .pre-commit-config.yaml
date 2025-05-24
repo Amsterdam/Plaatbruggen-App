@@ -25,6 +25,7 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         verbose: true
+        always_run: true
 
       - id: ruff-format
         name: Ruff code formatter
@@ -32,6 +33,7 @@ repos:
         language: system
         stages: [pre-push]
         pass_filenames: false
+        always_run: true
 
       - id: mypy
         name: MyPy type checking
@@ -40,6 +42,8 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         verbose: true
+        always_run: true
+        pass_env: [FORCE_COLOR, PRE_COMMIT_COLOR]
 
       - id: run-unit-tests
         name: Unit tests
@@ -48,3 +52,4 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         verbose: true
+        always_run: true
