@@ -65,6 +65,30 @@ def print_detailed_summary(result: TextTestResult) -> None:
                 f"Test results: {passed} passed, {failures} failed, {errors} errors out of {total_tests} total", is_success=False
             )
         )
+        
+        print("\n" + "=" * 60)  # noqa: T201
+        print(colorized_status_message("DETAILED ERROR INFORMATION:", is_success=False))  # noqa: T201
+        print("=" * 60)  # noqa: T201
+        
+        # Show detailed failures
+        if result.failures:
+            print(colorized_status_message(f"\nFAILURES ({len(result.failures)}):", is_success=False))  # noqa: T201
+            for i, (test, traceback) in enumerate(result.failures, 1):
+                test_name = f"{test.__class__.__name__}.{test._testMethodName}"  # noqa: SLF001
+                print(f"\n{i}. {colorized_status_message(test_name, is_success=False)}")  # noqa: T201
+                print(traceback)  # noqa: T201
+        
+        # Show detailed errors
+        if result.errors:
+            print(colorized_status_message(f"\nERRORS ({len(result.errors)}):", is_success=False))  # noqa: T201
+            for i, (test, traceback) in enumerate(result.errors, 1):
+                test_name = f"{test.__class__.__name__}.{test._testMethodName}"  # noqa: SLF001
+                print(f"\n{i}. {colorized_status_message(test_name, is_success=False)}")  # noqa: T201
+                print(traceback)  # noqa: T201
+        
+        print("\n" + "=" * 60)  # noqa: T201
+        print(colorized_status_message("TIP: Focus on fixing errors first, then failures", is_success=False, is_warning=True))  # noqa: T201
+        print("=" * 60)  # noqa: T201
 
 
 def main() -> None:
