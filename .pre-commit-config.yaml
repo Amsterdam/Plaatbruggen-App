@@ -20,20 +20,18 @@ repos:
     hooks:
       - id: ruff-check
         name: Ruff code style check
-        entry: python scripts/run_ruff_check.py
+        entry: python scripts/run_ruff_check.py --config=.ruff.toml
         language: system
         stages: [pre-push]
         pass_filenames: false
         verbose: true
-        always_run: true
 
       - id: ruff-format
         name: Ruff code formatter
-        entry: python -m ruff format .
+        entry: python -m ruff format --config=.ruff.toml
         language: system
         stages: [pre-push]
         pass_filenames: false
-        always_run: true
 
       - id: mypy
         name: MyPy type checking
@@ -42,7 +40,6 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         verbose: true
-        always_run: true
 
       - id: run-unit-tests
         name: Unit tests
@@ -51,4 +48,3 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         verbose: true
-        always_run: true

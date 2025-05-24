@@ -46,10 +46,15 @@ def run_mypy() -> int:
 
                 if error_count > 0 or note_count > 0:
                     print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False))  # noqa: T201
-                    print(colorized_status_message("Run the following command for detailed type checking information:", is_success=False, is_warning=True))  # noqa: T201
+                    print(
+                        colorized_status_message(
+                            "Run the following command for detailed type checking information:", is_success=False, is_warning=True
+                        )
+                    )  # noqa: T201
                     print(f"    python scripts/run_mypy.py")  # noqa: T201
                 else:
-                    print(colorized_status_message("Type checking failed - run 'python scripts/run_mypy.py' for details", is_success=False))  # noqa: T201
+                    print(colorized_status_message("Type checking failed - run the following command for details:", is_success=False, is_warning=True))  # noqa: T201
+                    print(f"    python scripts/run_mypy.py")  # noqa: T201
 
         else:
             # In detailed mode, show full output with improved formatting
