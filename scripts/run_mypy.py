@@ -75,7 +75,7 @@ def handle_mypy_detailed_output(result: subprocess.CompletedProcess) -> None:
                         file_part = parts[0]
                         error_part = parts[1]
                         print(  # noqa: T201
-                            f"{muted_text(file_part)}: {colored_text('error:', Colors.RED, bold=True)}{colored_text(error_part, Colors.RED)}"
+                            f"{(file_part)}: {colored_text('error:', Colors.RED, bold=True)}{colored_text(error_part, Colors.RED)}"
                         )
                         continue
                 elif ": note:" in line:
@@ -84,7 +84,7 @@ def handle_mypy_detailed_output(result: subprocess.CompletedProcess) -> None:
                         file_part = parts[0]
                         note_part = parts[1]
                         print(  # noqa: T201
-                            f"{muted_text(file_part)}: {colored_text('note:', Colors.BLUE, bold=True)}{colored_text(note_part, Colors.BLUE)}"
+                            f"{(file_part)}: {colored_text('note:', Colors.BLUE, bold=True)}{colored_text(note_part, Colors.BLUE)}"
                         )
                         continue
 
