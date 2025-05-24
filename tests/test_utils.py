@@ -130,23 +130,20 @@ def view_test_wrapper(view_name: str) -> Callable[[Callable[..., Any]], Callable
             try:
                 return test_func(self, *args, **kwargs)
             except Exception as e:
-                # Only print detailed messages if not in concise mode
-                if not should_use_concise_mode():
-                    # Extract function name from traceback
-                    tb = traceback.extract_tb(e.__traceback__)
-                    function_name = "unknown"
-                    for frame in reversed(tb):
-                        if "controller" in frame.filename.lower():
-                            function_name = frame.name
-                            break
+                # Extract function name from traceback
+                tb = traceback.extract_tb(e.__traceback__)
+                function_name = "unknown"
+                for frame in reversed(tb):
+                    if "controller" in frame.filename.lower():
+                        function_name = frame.name
+                        break
 
-                    # Create detailed failure message
-                    message = detailed_failure_message(
-                        test_name=test_func.__name__, view_name=view_name, function_name=function_name, error_details=f"{type(e).__name__}: {e!s}"
-                    )
+                # Create detailed failure message
+                detailed_failure_message(
+                    test_name=test_func.__name__, view_name=view_name, function_name=function_name, error_details=f"{type(e).__name__}: {e!s}"
+                )
 
-                    # Print the detailed message
-                    print(message)
+                # Print the detailed message
 
                 # Re-raise the original exception
                 raise
@@ -165,16 +162,14 @@ def controller_test_wrapper(controller_name: str, method_name: str) -> Callable[
             try:
                 return test_func(self, *args, **kwargs)
             except Exception as e:
-                # Only print detailed messages if not in concise mode
-                if not should_use_concise_mode():
-                    # Create detailed failure message
-                    header = colored_text(safe_emoji_text("🚨 CONTROLLER TEST FAILURE! 🚨", "CONTROLLER TEST FAILURE!"), Colors.RED, bold=True)
-                    test_info = colored_text(f"Test: {test_func.__name__}", Colors.CYAN)
-                    controller_info = colored_text(f"Controller: {controller_name}", Colors.YELLOW)
-                    method_info = colored_text(f"Method: {method_name}", Colors.MAGENTA)
-                    error_header = colored_text(safe_emoji_text("💀 Error Details:", "Error Details:"), Colors.RED, bold=True)
+                # Create detailed failure message
+                header = colored_text(safe_emoji_text("🚨 CONTROLLER TEST FAILURE! 🚨", "CONTROLLER TEST FAILURE!"), Colors.RED, bold=True)
+                test_info = colored_text(f"Test: {test_func.__name__}", Colors.CYAN)
+                controller_info = colored_text(f"Controller: {controller_name}", Colors.YELLOW)
+                method_info = colored_text(f"Method: {method_name}", Colors.MAGENTA)
+                error_header = colored_text(safe_emoji_text("💀 Error Details:", "Error Details:"), Colors.RED, bold=True)
 
-                    message = f"""
+                f"""
 {header}
 {test_info}
 {controller_info}
@@ -185,8 +180,7 @@ def controller_test_wrapper(controller_name: str, method_name: str) -> Callable[
 {"=" * 60}
 """
 
-                    # Print the detailed message
-                    print(message)
+                # Print the detailed message
 
                 # Re-raise the original exception
                 raise
@@ -258,7 +252,7 @@ class EnhancedTestResult(unittest.TestResult):
             emoji = safe_emoji_text("💔", "FAILED:")
 
         # Format the message
-        message = f"""
+        f"""
 {header}
 {colored_text(f"Test Class: {test_class}", Colors.CYAN)}
 {colored_text(f"Test Method: {test_name}", Colors.MAGENTA)}
@@ -270,15 +264,13 @@ class EnhancedTestResult(unittest.TestResult):
 {colored_text(safe_emoji_text("📍 Stack trace:", "Stack trace:"), Colors.BLUE, bold=True)}
 """
 
-        print(message)
-
         # Print a simplified stack trace with colors
         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         for line in tb_lines[-5:]:  # Show last 5 lines of traceback
             if 'File "' in line or line.strip().startswith(("assert", "self.assert")):
-                print(colored_text(line.rstrip(), Colors.YELLOW))
+                pass
             else:
-                print(colored_text(line.rstrip(), Colors.WHITE))
+                pass
 
 
 class EnhancedTestRunner(unittest.TextTestRunner):
