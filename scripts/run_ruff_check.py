@@ -66,11 +66,11 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
 
         if error_count > 0:
             print(colorized_status_message(f"Found {error_count} code style issues", is_success=False))  # noqa: T201
-            print(
+            print(  # noqa: T201
                 colorized_status_message(
                     "Run 'python scripts/run_ruff_check.py' for detailed code style information", is_success=False, is_warning=True
                 )
-            )  # noqa: T201
+            )
         else:
             print(colorized_status_message("Code style check failed - run 'python scripts/run_ruff_check.py' for details", is_success=False))  # noqa: T201
 

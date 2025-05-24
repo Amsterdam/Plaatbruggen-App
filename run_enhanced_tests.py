@@ -60,11 +60,11 @@ def print_detailed_summary(result: TextTestResult) -> None:
         print(colorized_status_message(f"Successfully ran {total_tests} tests", is_success=True))  # noqa: T201
     else:
         safe_emoji_text("❌ SOME TESTS FAILED", "SOME TESTS FAILED")
-        print(
+        print(  # noqa: T201
             colorized_status_message(
                 f"Test results: {passed} passed, {failures} failed, {errors} errors out of {total_tests} total", is_success=False
             )
-        )  # noqa: T201
+        )
 
 
 def main() -> None:

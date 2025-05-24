@@ -48,7 +48,7 @@ def should_use_concise_mode() -> bool:
     return is_git_hook_environment() or os.environ.get("TEST_CONCISE_MODE") == "1"
 
 
-def supports_color() -> bool:
+def supports_color() -> bool:  # noqa: PLR0911
     """Check if the current terminal supports ANSI colors."""
     # Force color support if explicitly requested
     if os.environ.get("FORCE_COLOR", "").lower() in ("1", "true", "yes"):
@@ -84,7 +84,7 @@ def supports_color() -> bool:
             kernel32.GetConsoleMode(handle, ctypes.byref(mode))
             # Enable ENABLE_VIRTUAL_TERMINAL_PROCESSING (0x0004)
             kernel32.SetConsoleMode(handle, mode.value | 0x0004)
-            return True
+            return True  # noqa: TRY300
         except Exception:
             pass
 
@@ -358,20 +358,30 @@ def run_enhanced_tests(test_suite: unittest.TestSuite) -> unittest.TestResult:
     return result
 
 
+def safe_symbol(unicode_symbol: str, ascii_fallback: str) -> str:
+    """Return Unicode symbol if supported, otherwise ASCII fallback."""
+    try:
+        # Test if the symbol can be encoded to the console encoding
+        unicode_symbol.encode(sys.stdout.encoding or "utf-8")
+        return unicode_symbol  # noqa: TRY300
+    except (UnicodeEncodeError, AttributeError, LookupError):
+        return ascii_fallback
+
+
 def colorized_status_message(message: str, is_success: bool, is_warning: bool = False) -> str:
     """Create a colorized status message based on the status type."""
-    # Add visual symbols for better distinction
+    # Add visual symbols for better distinction with safe encoding
     if is_success:
-        prefix = "✓ "
+        prefix = safe_symbol("✓ ", "[OK] ")
         if supports_color():
             return colored_text(f"{prefix}{message}", Colors.GREEN, bold=True)
         return f"{prefix}{message}"
     if is_warning:
-        prefix = "⚠ "
+        prefix = safe_symbol("⚠ ", "[INFO] ")
         if supports_color():
             return colored_text(f"{prefix}{message}", Colors.YELLOW, bold=True)
         return f"{prefix}{message}"
-    prefix = "✗ "
+    prefix = safe_symbol("✗ ", "[ERROR] ")
     if supports_color():
         return colored_text(f"{prefix}{message}", Colors.RED, bold=True)
     return f"{prefix}{message}"
