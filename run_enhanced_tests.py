@@ -31,18 +31,6 @@ def print_concise_summary(result: TextTestResult) -> None:
         print("=" * 60)  # noqa: T201
     else:
         safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
-
-        # Show only first few failed test names concisely
-        if hasattr(result, "_concise_failures") and result._concise_failures:  # noqa: SLF001
-            failed_tests = result._concise_failures[:3]  # noqa: SLF001
-            for failure in failed_tests:
-                status = "ERROR" if failure["is_error"] else "FAIL"
-                print(colorized_status_message(f"  {status}: {failure['test_class']}.{failure['test_name']}", is_success=False))  # noqa: T201
-                print(colorized_status_message(f"    {failure['error_msg']}", is_success=False, is_warning=True))  # noqa: T201
-
-            if len(result._concise_failures) > 3:  # noqa: SLF001
-                remaining = len(result._concise_failures) - 3  # noqa: SLF001
-                print(colorized_status_message(f"  ... and {remaining} more test failures", is_success=False, is_warning=True))  # noqa: T201
         print(colorized_status_message("Run 'python run_enhanced_tests.py' for detailed error information", is_success=False, is_warning=True))  # noqa: T201
 
         # Don't show final "CHECKS FAILED" message here - let the hook system handle overall status
