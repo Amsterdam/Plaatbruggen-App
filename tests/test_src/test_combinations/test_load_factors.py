@@ -152,7 +152,7 @@ class TestLoadFactorsValidateInput(unittest.TestCase):
         ref_period = 15.0
         # Act & Assert
         with pytest.raises(TypeError, match="Span and reference period must be numeric values"):
-            validate_input(span, ref_period)
+            validate_input(span, ref_period)  # type: ignore[arg-type]
 
     def test_validate_input_invalid_ref_period_type(self) -> None:
         """Test validate_input_range raises TypeError for invalid ref_period type."""
@@ -161,7 +161,7 @@ class TestLoadFactorsValidateInput(unittest.TestCase):
         ref_period = "not_a_number"
         # Act & Assert
         with pytest.raises(TypeError, match="Span and reference period must be numeric values"):
-            validate_input(span, ref_period)
+            validate_input(span, ref_period)  # type: ignore[arg-type]
 
     def test_validate_input_non_positive_span(self) -> None:
         """Test validate_input_range raises ValueError for non-positive span."""
@@ -302,7 +302,7 @@ class TestLoadFactorsGetPsiFactor(unittest.TestCase):
         # Test span 75 (midpoint between 50 and 100) with period 1
         assert math.isclose(get_psi_factor(span=75, reference_period=1), 0.915, abs_tol=1e-3)
 
-        # Test span 75 with period 30  
+        # Test span 75 with period 30
         assert math.isclose(get_psi_factor(span=75, reference_period=30), 0.985, abs_tol=1e-3)
 
     def test_get_psi_factor_interpolated_period(self) -> None:
@@ -333,12 +333,12 @@ class TestLoadFactorsGetPsiFactor(unittest.TestCase):
     def test_get_psi_factor_invalid_span_type(self) -> None:
         """Test get_psi_factor raises TypeError for invalid span type."""
         with pytest.raises(TypeError, match="Span and reference period must be numeric values"):
-            get_psi_factor("invalid", 15)
+            get_psi_factor("invalid", 15)  # type: ignore[arg-type]
 
     def test_get_psi_factor_invalid_ref_period_type(self) -> None:
         """Test get_psi_factor raises TypeError for invalid ref_period type."""
         with pytest.raises(TypeError, match="Span and reference period must be numeric values"):
-            get_psi_factor(50, "invalid")
+            get_psi_factor(50, "invalid")  # type: ignore[arg-type]
 
     def test_get_psi_factor_non_positive_span(self) -> None:
         """Test get_psi_factor raises ValueError for non-positive span."""
