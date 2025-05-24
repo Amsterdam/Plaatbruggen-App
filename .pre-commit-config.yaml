@@ -29,7 +29,7 @@ repos:
 
       - id: ruff-format
         name: Ruff code formatter
-        entry: python -m ruff format --config=.ruff.toml
+        entry: python -m ruff format .
         language: system
         stages: [pre-push]
         pass_filenames: false
@@ -43,7 +43,6 @@ repos:
         pass_filenames: false
         verbose: true
         always_run: true
-        pass_env: [FORCE_COLOR, PRE_COMMIT_COLOR]
 
       - id: run-unit-tests
         name: Unit tests

@@ -31,7 +31,8 @@ def print_concise_summary(result: TextTestResult) -> None:
         print("=" * 60)  # noqa: T201
     else:
         safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
-        print(colorized_status_message("Run 'python run_enhanced_tests.py' for detailed error information", is_success=False, is_warning=True))  # noqa: T201
+        print(colorized_status_message("Run the following command for detailed error information:", is_success=False, is_warning=True))  # noqa: T201
+        print(f"    python run_enhanced_tests.py")  # noqa: T201
 
         # Don't show final "CHECKS FAILED" message here - let the hook system handle overall status
 
