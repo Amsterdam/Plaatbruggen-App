@@ -35,20 +35,23 @@ def run_mypy() -> int:
             lines = output.strip().split("\n") if output else []
 
             if result.returncode == 0:
-                safe_emoji_text("✅ MYPY CHECK PASSED!", "MYPY CHECK PASSED!")
+                print(safe_emoji_text("✅ MYPY CHECK PASSED!", "MYPY CHECK PASSED!"))
             else:
-                safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
+                print(safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED"))
 
                 # Count errors from output
-                [line for line in lines if ": error:" in line or ": note:" in line]
-                len([line for line in lines if ": error:" in line])
+                all_issues = [line for line in lines if ": error:" in line or ": note:" in line]
+                error_count = len([line for line in lines if ": error:" in line])
+                
+                if error_count > 0:
+                    print(f"Found {error_count} type errors")
 
         else:
             # In detailed mode, show full output
             if result.stdout:
-                pass
+                print(result.stdout)
             if result.stderr:
-                pass
+                print(result.stderr)
 
     except Exception:
         return 1

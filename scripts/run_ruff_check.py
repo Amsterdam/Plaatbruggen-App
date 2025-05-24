@@ -54,9 +54,9 @@ def extract_error_count(lines: list[str]) -> int:
 def handle_concise_output(result: subprocess.CompletedProcess) -> None:
     """Handle output in concise mode for git hooks."""
     if result.returncode == 0:
-        safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!")
+        print(safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!"))
     else:
-        safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
+        print(safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED"))
         # Additional error reporting could be added here if needed
 
 
