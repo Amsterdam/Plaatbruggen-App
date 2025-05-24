@@ -38,7 +38,7 @@ def print_concise_summary(result: TextTestResult) -> None:
         print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
         print(  # noqa: T201
             colorized_status_message(
-                "Look at the logs above for any errors. Fix all errors to proceed with pushing.", is_success=False, is_warning=True
+                "Check the logs above. If there are no errors, your changes will be pushed.", is_success=False, is_warning=True
             )
         )
         print("=" * 60)  # noqa: T201
