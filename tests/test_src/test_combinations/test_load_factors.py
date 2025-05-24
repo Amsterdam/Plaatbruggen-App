@@ -4,6 +4,7 @@ Test module for load factor calculations and validations.
 This module contains tests for clamping values within ranges and validating
 input parameters for load factor calculations.
 """
+
 import math
 import unittest
 

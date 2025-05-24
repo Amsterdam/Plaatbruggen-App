@@ -4,6 +4,7 @@ Test module for 3D model creation functionality.
 This module contains tests for creating 3D models, axes, cross-sections,
 and related geometry operations using trimesh.
 """
+
 import math
 import unittest
 from typing import Any
@@ -256,7 +257,7 @@ class TestModelCreator(unittest.TestCase):
         bz3: float = 1.0,
         dz: float = 0.5,
         dz_2: float = 0.6,
-        **kwargs: Any  # noqa: ANN401
+        **kwargs: Any,  # noqa: ANN401
     ) -> Munch:
         """Helper to create a single bridge segment Munch object for params."""
         segment = Munch(
@@ -508,7 +509,7 @@ class TestModelCreator(unittest.TestCase):
         mock_create_rebars: MagicMock,
         mock_create_section_planes: MagicMock,
         mock_create_axes: MagicMock,
-        mock_create_box: MagicMock
+        mock_create_box: MagicMock,
     ) -> None:
         """Test create_3d_model with axes and section planes enabled."""
         # Setup mocks
@@ -529,10 +530,12 @@ class TestModelCreator(unittest.TestCase):
         mock_create_axes.return_value = mock_axes_scene_instance
         mock_create_section_planes.return_value = mock_planes_scene_instance
 
-        params = Munch({
-            "bridge_segments_array": [self._create_mock_bridge_segment_param(l=10, bz1=1, bz2=2, bz3=1)],
-            "model_settings": Munch({"bridge_layout": Munch({"num_longitudinal_segments": 1}), "materials": Munch({"main_material": "C30/37"})}),
-        })
+        params = Munch(
+            {
+                "bridge_segments_array": [self._create_mock_bridge_segment_param(l=10, bz1=1, bz2=2, bz3=1)],
+                "model_settings": Munch({"bridge_layout": Munch({"num_longitudinal_segments": 1}), "materials": Munch({"main_material": "C30/37"})}),
+            }
+        )
 
         # Act
         create_3d_model(params, axes=True, section_planes=True)

@@ -3,6 +3,7 @@ Test module for cross-section geometry functionality.
 
 This module contains tests for creating cross-section views and related geometry operations.
 """
+
 import math
 import unittest
 from typing import Any
@@ -240,11 +241,7 @@ class TestCreateCrossSectionAnnotations(unittest.TestCase):
 class TestCreateCrossSectionView(unittest.TestCase):
     """Test suite for the `create_cross_section_view` function."""
 
-    def _create_default_params(
-        self,
-        bridge_segments_array: list[Any] | None = None,
-        cross_section_loc: float = 0.0
-    ) -> Munch:
+    def _create_default_params(self, bridge_segments_array: list[Any] | None = None, cross_section_loc: float = 0.0) -> Munch:
         """Helper to create a basic params Munch object."""
         if bridge_segments_array is None:
             bridge_segments_array = [

@@ -4,6 +4,7 @@ Test module for top view plot functionality.
 This module contains tests for the build_top_view_figure function which creates
 Plotly figures for top view visualization of bridge models.
 """
+
 import unittest
 from typing import Any
 from unittest.mock import MagicMock, patch

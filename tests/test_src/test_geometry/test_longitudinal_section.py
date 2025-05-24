@@ -3,6 +3,7 @@ Test module for longitudinal section geometry functionality.
 
 This module contains tests for creating longitudinal section views and related geometry operations.
 """
+
 import math
 import unittest
 from unittest.mock import MagicMock, patch
@@ -41,18 +42,11 @@ class TestLongitudinalSection(unittest.TestCase):
         )
 
     def _create_default_params(self, num_segments: int = 1, section_loc_y: float = 0.0) -> Munch:
-        segments = [
-            self._create_mock_segment_data(length=10 + i, dz=0.5 + i * 0.1, dz_2=0.6 + i * 0.1)
-            for i in range(num_segments)
-        ]
+        segments = [self._create_mock_segment_data(length=10 + i, dz=0.5 + i * 0.1, dz_2=0.6 + i * 0.1) for i in range(num_segments)]
         return Munch(
             {
                 "bridge_segments_array": segments,
-                "input": Munch({
-                    "dimensions": Munch({
-                        "longitudinal_section_loc": Munch({"y": section_loc_y})
-                    })
-                }),
+                "input": Munch({"dimensions": Munch({"longitudinal_section_loc": Munch({"y": section_loc_y})})}),
             }
         )
 
@@ -60,10 +54,7 @@ class TestLongitudinalSection(unittest.TestCase):
     @patch("src.geometry.longitudinal_section.trimesh")  # Patch the whole trimesh module used in longitudinal_section
     @patch("src.geometry.longitudinal_section.create_cross_section")
     def test_create_longitudinal_section_basic_flow(
-        self,
-        mock_create_cross_section: MagicMock,
-        mock_trimesh_module: MagicMock,
-        mock_create_3d_model: MagicMock
+        self, mock_create_cross_section: MagicMock, mock_trimesh_module: MagicMock, mock_create_3d_model: MagicMock
     ) -> None:
         """Test the basic flow, mock calls, and some output aspects."""
         params = self._create_default_params(num_segments=2, section_loc_y=1.0)
@@ -157,10 +148,7 @@ class TestLongitudinalSection(unittest.TestCase):
     @patch("src.geometry.longitudinal_section.trimesh")
     @patch("src.geometry.longitudinal_section.create_cross_section")
     def test_create_longitudinal_section_annotations_detailed(
-        self,
-        mock_create_cross_section: MagicMock,
-        mock_trimesh_module: MagicMock,
-        mock_create_3d_model: MagicMock
+        self, mock_create_cross_section: MagicMock, mock_trimesh_module: MagicMock, mock_create_3d_model: MagicMock
     ) -> None:
         """Test annotation creation in detail."""
         # --- Setup Params ---
@@ -227,9 +215,7 @@ class TestLongitudinalSection(unittest.TestCase):
 
         # Calculate min_z_plot and max_z_plot based on the entities the SUT will process
         sut_processed_z_coords = [
-            mock_combined_2d_mesh.vertices[ent_idx][2]
-            for entity in mock_combined_2d_mesh.entities
-            for ent_idx in entity.points
+            mock_combined_2d_mesh.vertices[ent_idx][2] for entity in mock_combined_2d_mesh.entities for ent_idx in entity.points
         ]
 
         max_z_plot = max(sut_processed_z_coords) if sut_processed_z_coords else 0.0  # Should be 0.0

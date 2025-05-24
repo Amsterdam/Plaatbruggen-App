@@ -69,7 +69,7 @@ class TestOverviewBridgesControllerViews(unittest.TestCase):
         mock_load_shapefile: MagicMock,
         mock_validate_shapefile: MagicMock,
         mock_filtered_path: MagicMock,
-        mock_default_path: MagicMock
+        mock_default_path: MagicMock,
     ) -> None:
         """Test actual execution of get_map_view with bridges data."""
         # Arrange
@@ -117,11 +117,7 @@ class TestOverviewBridgesControllerViews(unittest.TestCase):
     @patch("os.path.exists")
     @view_test_wrapper("get_map_view")
     def test_get_map_view_execution_no_bridges(
-        self,
-        mock_exists: MagicMock,
-        mock_validate_shapefile: MagicMock,
-        mock_filtered_path: MagicMock,
-        mock_default_path: MagicMock
+        self, mock_exists: MagicMock, mock_validate_shapefile: MagicMock, mock_filtered_path: MagicMock, mock_default_path: MagicMock
     ) -> None:
         """Test get_map_view when no bridges are found."""
         # Arrange

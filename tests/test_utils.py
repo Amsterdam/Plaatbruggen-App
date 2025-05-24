@@ -139,11 +139,12 @@ def view_test_wrapper(view_name: str) -> Callable[[Callable[..., Any]], Callable
                         break
 
                 # Create detailed failure message
-                detailed_failure_message(
+                message = detailed_failure_message(
                     test_name=test_func.__name__, view_name=view_name, function_name=function_name, error_details=f"{type(e).__name__}: {e!s}"
                 )
 
                 # Print the detailed message
+                print(message)
 
                 # Re-raise the original exception
                 raise
@@ -169,7 +170,7 @@ def controller_test_wrapper(controller_name: str, method_name: str) -> Callable[
                 method_info = colored_text(f"Method: {method_name}", Colors.MAGENTA)
                 error_header = colored_text(safe_emoji_text("💀 Error Details:", "Error Details:"), Colors.RED, bold=True)
 
-                f"""
+                message = f"""
 {header}
 {test_info}
 {controller_info}
@@ -181,6 +182,7 @@ def controller_test_wrapper(controller_name: str, method_name: str) -> Callable[
 """
 
                 # Print the detailed message
+                print(message)
 
                 # Re-raise the original exception
                 raise
@@ -252,7 +254,7 @@ class EnhancedTestResult(unittest.TestResult):
             emoji = safe_emoji_text("💔", "FAILED:")
 
         # Format the message
-        f"""
+        message = f"""
 {header}
 {colored_text(f"Test Class: {test_class}", Colors.CYAN)}
 {colored_text(f"Test Method: {test_name}", Colors.MAGENTA)}
@@ -264,14 +266,15 @@ class EnhancedTestResult(unittest.TestResult):
 {colored_text(safe_emoji_text("📍 Stack trace:", "Stack trace:"), Colors.BLUE, bold=True)}
 """
 
+        print(message)
+
         # Print a simplified stack trace with colors
         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         for line in tb_lines[-5:]:  # Show last 5 lines of traceback
             if 'File "' in line or line.strip().startswith(("assert", "self.assert")):
-                pass
+                print(colored_text(line.rstrip(), Colors.YELLOW))
             else:
-                pass
-
+                print(colored_text(line.rstrip(), Colors.WHITE))
 
 
 class EnhancedTestRunner(unittest.TextTestRunner):

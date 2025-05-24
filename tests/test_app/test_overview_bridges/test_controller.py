@@ -203,7 +203,7 @@ class TestOverviewBridgesController(unittest.TestCase):
         mock_get_existing: MagicMock,
         mock_load_shapefile: MagicMock,
         mock_load_filtered: MagicMock,
-        mock_get_paths: MagicMock
+        mock_get_paths: MagicMock,
     ) -> None:
         """Test successful bridge regeneration action."""
         # Arrange

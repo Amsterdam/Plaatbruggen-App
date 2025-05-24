@@ -4,6 +4,7 @@ Test module for common plotting utilities.
 This module contains tests for creating plotly annotations, structural polygon traces,
 and bridge outline traces used across the application.
 """
+
 import unittest
 
 import plotly.graph_objects as go

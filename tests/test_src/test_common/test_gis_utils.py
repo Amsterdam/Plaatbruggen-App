@@ -99,6 +99,7 @@ def _create_mock_geometry(value: Any) -> MagicMock:  # noqa: ANN401
 
 def _setup_mock_row_behavior(mock_row: MagicMock, data_dict: dict[str, Any]) -> None:
     """Set up mock row behavior for dictionary-like access."""
+
     def getitem_side_effect(key: str) -> Any:  # noqa: ANN401
         if key == "geometry":
             raise KeyError("geometry should be excluded")
@@ -479,12 +480,7 @@ class TestGisUtilsLoadBridgeShapefile(unittest.TestCase):
         return column_series, bool_series
 
     def _assert_multiple_filter_calls(
-        self,
-        mock_gpd_read_file: MagicMock,
-        dummy_path: str,
-        mock_gdf_initial: MagicMock,
-        result_gdf: MagicMock,
-        expected_final_gdf: MagicMock
+        self, mock_gpd_read_file: MagicMock, dummy_path: str, mock_gdf_initial: MagicMock, result_gdf: MagicMock, expected_final_gdf: MagicMock
     ) -> None:
         """Assert that multiple filter calls were made correctly."""
         mock_gpd_read_file.assert_called_once_with(dummy_path)
@@ -492,7 +488,7 @@ class TestGisUtilsLoadBridgeShapefile(unittest.TestCase):
         # Check that both columns were accessed
         call_args_list = mock_gdf_initial.__getitem__.call_args_list
         accessed_keys = [call_args[0] for call_args, _ in call_args_list]
-        assert "COL1" in accessed_keys or any(isinstance(key, MagicMock) for key, in call_args_list)
+        assert "COL1" in accessed_keys or any(isinstance(key, MagicMock) for (key,) in call_args_list)
 
         assert result_gdf is expected_final_gdf
 

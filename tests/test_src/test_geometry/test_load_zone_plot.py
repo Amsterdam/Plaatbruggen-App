@@ -4,6 +4,7 @@ Test module for load zone plotting functionality.
 This module contains tests for creating plotly visualizations of load zones
 including 3D geometry views and related plotting operations.
 """
+
 import unittest
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -130,9 +131,7 @@ class TestLoadZonePlotHelpers(unittest.TestCase):
     def test_create_zone_width_annotations_basic(self) -> None:
         """Test create_zone_width_annotations with basic parameters."""
         zone_param_data = self._create_dummy_load_zone_data_row(d_widths=[2.0, 2.5, 3.0])
-        geometry = ZonePlottingGeometry(
-            x_coords=[0, 2, 4.5, 7.5], y_coords_top=[1, 1, 1, 1], y_coords_bottom=[0, 0, 0, 0]
-        )
+        geometry = ZonePlottingGeometry(x_coords=[0, 2, 4.5, 7.5], y_coords_top=[1, 1, 1, 1], y_coords_bottom=[0, 0, 0, 0])
 
         annotations = create_zone_width_annotations(
             zone_param_data,
@@ -163,9 +162,7 @@ class TestLoadZonePlotHelpers(unittest.TestCase):
         zone_param_data = self._create_dummy_load_zone_data_row(d_widths=[2.0, 2.0])  # Params might suggest 2.0
         geometry = ZonePlottingGeometry(x_coords=[0, 2], y_coords_top=[1, 1], y_coords_bottom=[0.2, 0.2])
 
-        annotations = create_zone_width_annotations(
-            zone_param_data, 0, geometry, current_zone_calculated_width=1.8, y_offset=0.0, is_last_zone=True
-        )
+        annotations = create_zone_width_annotations(zone_param_data, 0, geometry, current_zone_calculated_width=1.8, y_offset=0.0, is_last_zone=True)
 
         # For last zone, should use calculated width (1.8), not param width (2.0)
         assert len(annotations) == 2
@@ -269,7 +266,7 @@ class TestBuildLoadZonesFigure(unittest.TestCase):
             num_defined_d_points: int,
             _y_coords_top: list[float],
             _y_bridge_bottom: list[list[float]],
-            _zone_params: Any  # noqa: ANN401
+            _zone_params: Any,  # noqa: ANN401
         ) -> list[float]:
             return [0.0] * num_defined_d_points  # Return list[float], not tuple
 

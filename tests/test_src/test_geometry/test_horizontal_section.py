@@ -3,6 +3,7 @@ Test module for horizontal section geometry functionality.
 
 This module contains tests for creating horizontal section views and related geometry operations.
 """
+
 import math
 import unittest
 from unittest.mock import MagicMock, patch
@@ -32,16 +33,11 @@ class TestHorizontalSection(unittest.TestCase):
     ) -> Munch:
         return Munch({"l": length, "bz1": bz1, "bz2": bz2, "bz3": bz3, "dz": dz, "dz_2": dz_2})
 
-    def _create_default_params_for_annotations(
-        self,
-        num_segments: int = 1,
-        horizontal_section_loc: float = -1.0
-    ) -> Munch:
+    def _create_default_params_for_annotations(self, num_segments: int = 1, horizontal_section_loc: float = -1.0) -> Munch:
         # horizontal_section_loc < 0 means all zones (1,2,3) are considered for annotations
         # horizontal_section_loc >= 0 means only_zone2 = True
         segments = [
-            self._create_mock_segment_param(l=10.0 + i * 5, bz1=1.0 + i * 0.1, bz2=2.0 + i * 0.1, bz3=1.0 + i * 0.1)
-            for i in range(num_segments)
+            self._create_mock_segment_param(l=10.0 + i * 5, bz1=1.0 + i * 0.1, bz2=2.0 + i * 0.1, bz3=1.0 + i * 0.1) for i in range(num_segments)
         ]
 
         return Munch({"bridge_segments_array": segments, "input": Munch({"dimensions": Munch({"horizontal_section_loc": horizontal_section_loc})})})
@@ -197,7 +193,7 @@ class TestHorizontalSection(unittest.TestCase):
         mock_create_horizontal_annotations: MagicMock,
         mock_model_creator_create_cross_section: MagicMock,
         mock_trimesh_module: MagicMock,
-        mock_create_3d_model: MagicMock
+        mock_create_3d_model: MagicMock,
     ) -> None:
         """Test basic flow of create_horizontal_section_view with mocks."""
         params = Munch(

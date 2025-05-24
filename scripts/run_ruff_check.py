@@ -45,10 +45,7 @@ def extract_error_count(lines: list[str]) -> int:
 
     # Fallback: count actual error lines
     if error_count == 0:
-        error_lines = [
-            line for line in lines
-            if line.strip() and (":" in line) and not line.startswith("Found") and not line.startswith("No fixes")
-        ]
+        error_lines = [line for line in lines if line.strip() and (":" in line) and not line.startswith("Found") and not line.startswith("No fixes")]
         error_count = len(error_lines)
 
     return error_count

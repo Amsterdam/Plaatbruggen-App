@@ -18,4 +18,3 @@ def get_steel_qualities() -> list[str]:
     with open(csv_path) as f:
         csv_reader = csv.DictReader(f, delimiter=";")
         return [row["Betonstaalkwaliteit"].strip('"') for row in csv_reader]
-
