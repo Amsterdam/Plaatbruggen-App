@@ -38,7 +38,7 @@ def _setup_mock_crs(crs_string: str | None) -> MagicMock | None:
         return None
 
     mock_crs_obj = MagicMock(name="MockCRS")
-    mock_crs_obj.__str__.return_value = crs_string
+    mock_crs_obj.__str__.return_value = crs_string  # type: ignore[attr-defined]
     mock_crs_obj.to_string.return_value = crs_string
 
     def mock_crs_eq(other_obj: object) -> bool:
@@ -47,8 +47,8 @@ def _setup_mock_crs(crs_string: str | None) -> MagicMock | None:
     def mock_crs_ne(other_obj: object) -> bool:
         return str(mock_crs_obj) != str(other_obj)
 
-    mock_crs_obj.__eq__ = MagicMock(side_effect=mock_crs_eq)
-    mock_crs_obj.__ne__ = MagicMock(side_effect=mock_crs_ne)
+    mock_crs_obj.__eq__ = MagicMock(side_effect=mock_crs_eq)  # type: ignore[method-assign]  # type: ignore[method-assign]
+    mock_crs_obj.__ne__ = MagicMock(side_effect=mock_crs_ne)  # type: ignore[method-assign]
     return mock_crs_obj
 
 
@@ -420,7 +420,7 @@ class TestGisUtilsLoadBridgeShapefile(unittest.TestCase):
             raise KeyError(f"Unexpected key for initial_mock_gdf: {key}")
 
         initial_mock_gdf.__getitem__ = MagicMock(side_effect=getitem_side_effect_for_initial)
-        mock_column_series.__eq__ = MagicMock(return_value=mock_boolean_series)
+        mock_column_series.__eq__ = MagicMock(return_value=mock_boolean_series)  # type: ignore[method-assign]
 
         # Act
         result_gdf = load_bridge_shapefile(dummy_path, filter_condition=filter_cond)
@@ -467,7 +467,7 @@ class TestGisUtilsLoadBridgeShapefile(unittest.TestCase):
         """Set up a single filter chain between two mock GDFs."""
         column_series = MagicMock(name=f"{column_name}Series")
         bool_series = MagicMock(name=f"{column_name}BoolSeries")
-        column_series.__eq__ = MagicMock(return_value=bool_series)
+        column_series.__eq__ = MagicMock(return_value=bool_series)  # type: ignore[method-assign]
 
         def getitem_side_effect(key: Any) -> MagicMock:  # noqa: ANN401
             if key == column_name:

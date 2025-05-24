@@ -6,6 +6,7 @@ and bridge outline traces used across the application.
 """
 
 import unittest
+from typing import Any
 
 import plotly.graph_objects as go
 
@@ -16,9 +17,9 @@ class TestPlotUtilsCreateTextAnnotations(unittest.TestCase):
     """Test cases for create_text_annotations function."""
 
     def test_empty_label_data(self) -> None:
-        """Test create_text_annotations with empty label data."""
+        """Test create_text_annotations with empty input data."""
         # Arrange
-        label_data = []
+        label_data: list[dict[str, Any]] = []
         # Act
         annotations = create_text_annotations_from_data(label_data)
         # Assert
@@ -126,12 +127,11 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
     def test_empty_polygons_data(self) -> None:
         """Test create_structural_polygons_traces with empty input data."""
         # Arrange
-        zone_polygons_data = []
+        zone_polygons_data: list[dict[str, Any]] = []
         # Act
         traces = create_structural_polygons_traces(zone_polygons_data)
         # Assert
         assert len(traces) == 0
-        assert isinstance(traces, list)
 
     def test_polygon_no_vertices_key(self) -> None:
         """Test create_structural_polygons_traces with polygon missing vertices key."""
@@ -145,7 +145,7 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
     def test_polygon_empty_vertices_list(self) -> None:
         """Test create_structural_polygons_traces with empty vertices list."""
         # Arrange
-        zone_polygons_data = [{"vertices": []}]
+        zone_polygons_data: list[dict[str, Any]] = [{"vertices": []}]
         # Act
         traces = create_structural_polygons_traces(zone_polygons_data)
         # Assert
@@ -210,7 +210,7 @@ class TestPlotUtilsCreateStructuralPolygonsTraces(unittest.TestCase):
     def test_multiple_polygons_mixed_validity_and_color(self) -> None:
         """Test create_structural_polygons_traces with multiple polygons of mixed validity and colors."""
         # Arrange
-        zone_polygons_data = [
+        zone_polygons_data: list[dict[str, Any]] = [
             {"vertices": [[0, 0], [1, 0], [0, 1]]},  # Valid, default color
             {"vertices": [[10, 10], [11, 10]]},  # Invalid (2 points)
             {"vertices": [[5, 5], [6, 5], [6, 6], [5, 6]], "color": "red"},  # Valid, red color
@@ -240,7 +240,7 @@ class TestPlotUtilsCreateBridgeOutlineTraces(unittest.TestCase):
     def test_empty_lines_data(self) -> None:
         """Test create_bridge_outline_traces with empty lines data."""
         # Arrange
-        bridge_lines_data = []
+        bridge_lines_data: list[dict[str, Any]] = []
         # Act
         traces = create_bridge_outline_traces(bridge_lines_data)
         # Assert
@@ -319,7 +319,7 @@ class TestPlotUtilsCreateBridgeOutlineTraces(unittest.TestCase):
     def test_multiple_lines_mixed_validity(self) -> None:
         """Test create_bridge_outline_traces with multiple lines of mixed validity."""
         # Arrange
-        bridge_lines_data = [
+        bridge_lines_data: list[dict[str, Any]] = [
             {"start": [0, 0], "end": [1, 1]},  # Valid, default
             {"start": [2, 2]},  # Invalid, missing end
             {"start": [3, 3], "end": [4, 4], "color": "red", "width": 2},  # Valid, specified

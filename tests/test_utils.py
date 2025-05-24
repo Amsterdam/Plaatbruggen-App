@@ -269,12 +269,12 @@ class EnhancedTestResult(unittest.TestResult):
         self.show_all = verbosity is not None and verbosity > 1
         self.dots = verbosity == 1
 
-    def addError(self, test: unittest.TestCase, err: tuple[type[BaseException], BaseException, Any]) -> None:  # noqa: N802
+    def addError(self, test: unittest.TestCase, err: tuple[type[BaseException], BaseException, Any]) -> None:  # type: ignore[override]  # noqa: N802
         """Add an error result and print detailed error information."""
         super().addError(test, err)
         self._print_detailed_error(test, err, "ERROR")
 
-    def addFailure(self, test: unittest.TestCase, err: tuple[type[BaseException], BaseException, Any]) -> None:  # noqa: N802
+    def addFailure(self, test: unittest.TestCase, err: tuple[type[BaseException], BaseException, Any]) -> None:  # type: ignore[override]  # noqa: N802
         """Add a failure result and print detailed failure information."""
         super().addFailure(test, err)
         self._print_detailed_error(test, err, "FAILURE")

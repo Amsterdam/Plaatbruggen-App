@@ -163,8 +163,8 @@ class TestOverviewBridgesController(unittest.TestCase):
 
         parent_entity_id = 123
         filtered_bridge_data = [{"OBJECTNUMM": "BRIDGE-001"}, {"OBJECTNUMM": "BRIDGE-002"}]
-        objectnumm_to_name = {"BRIDGE-001": "Test Bridge", "BRIDGE-002": None}
-        existing_objectnumms = {"BRIDGE-001"}  # BRIDGE-001 already exists
+        objectnumm_to_name: dict[str, str | None] = {"BRIDGE-001": "Test Bridge", "BRIDGE-002": None}
+        existing_objectnumms: set[str] = {"BRIDGE-001"}  # BRIDGE-001 already exists
 
         # Act
         self.controller._create_missing_children(parent_entity_id, filtered_bridge_data, objectnumm_to_name, existing_objectnumms)  # noqa: SLF001
@@ -187,8 +187,8 @@ class TestOverviewBridgesController(unittest.TestCase):
             {"OBJECTNUMM": None},  # Invalid - no OBJECTNUMM
             {},  # Invalid - missing OBJECTNUMM
         ]
-        objectnumm_to_name = {}
-        existing_objectnumms = set()
+        objectnumm_to_name: dict[str, str | None] = {}
+        existing_objectnumms: set[str] = set()
 
         # Act & Assert - We expect this to eventually raise a UserError due to API issues
         # but we're testing that the method handles invalid data gracefully
@@ -219,10 +219,10 @@ class TestOverviewBridgesController(unittest.TestCase):
         mock_get_existing.return_value = set()
 
         # Act
-        result = self.controller.regenerate_bridges_action(entity_id)
+        self.controller.regenerate_bridges_action(entity_id)
 
         # Assert
-        assert result is None  # Method returns None implicitly
+        # Method returns None implicitly
         mock_create_children.assert_called_once()
 
     def test_params_structure_validation(self) -> None:

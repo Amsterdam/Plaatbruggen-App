@@ -198,7 +198,7 @@ class TestLoadZonePlotHelpers(unittest.TestCase):
         # Fill remaining up to 15 with 0.0 if not provided
         for i in range(len(d_widths) + 1, 16):
             row_dict[f"d{i}_width"] = 0.0
-        return row_dict  # type: ignore[misc]
+        return row_dict  # type: ignore[return-value]
 
 
 class TestBuildLoadZonesFigure(unittest.TestCase):
@@ -226,7 +226,7 @@ class TestBuildLoadZonesFigure(unittest.TestCase):
 
         # This step is more for type checking during test writing;
         # the function itself will receive a list of such dictionaries (or Munch objects)
-        return row_dict  # type: ignore[misc]
+        return row_dict  # type: ignore[return-value]
 
     def _get_default_bridge_base_geometry(self, num_d_points: int = 5) -> BridgeBaseGeometry:
         # y_coords_bridge_bottom_edge should be list[list[float]], e.g., [[y_min, y_max], ...]

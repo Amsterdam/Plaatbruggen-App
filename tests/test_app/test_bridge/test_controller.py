@@ -39,7 +39,7 @@ class TestBridgeController(unittest.TestCase):
     def test_create_bridge_segment_dimensions_from_params_valid_segment(self) -> None:
         """Test creating bridge segment dimensions from a valid individual segment."""
         # Act
-        result = self.controller._create_bridge_segment_dimensions_from_params(self.sample_segment_row)  # noqa: SLF001
+        result = self.controller._create_bridge_segment_dimensions_from_params(self.sample_segment_row)  # type: ignore[arg-type]  # noqa: SLF001
 
         # Assert
         assert isinstance(result, BridgeSegmentDimensions)
@@ -57,7 +57,7 @@ class TestBridgeController(unittest.TestCase):
 
         # Act & Assert
         with pytest.raises(UserError) as context:
-            self.controller._create_bridge_segment_dimensions_from_params(incomplete_segment)  # noqa: SLF001
+            self.controller._create_bridge_segment_dimensions_from_params(incomplete_segment)  # type: ignore[arg-type]  # noqa: SLF001
 
         assert "brugsegmenten missen benodigde data" in str(context.value)
 
@@ -120,7 +120,7 @@ class TestBridgeController(unittest.TestCase):
     def test_get_bridge_entity_data_invalid_entity_id(self) -> None:
         """Test fetching bridge entity data with invalid entity ID."""
         # Act
-        objectnumm, name, error_result = self.controller._get_bridge_entity_data(None)  # noqa: SLF001
+        objectnumm, name, error_result = self.controller._get_bridge_entity_data(None)  # type: ignore[arg-type]  # noqa: SLF001
 
         # Assert
         assert objectnumm is None
@@ -136,7 +136,7 @@ class TestBridgeController(unittest.TestCase):
         entity_id = None
 
         # Act
-        objectnumm, name, error_result = self.controller._get_bridge_entity_data(entity_id)  # noqa: SLF001
+        objectnumm, name, error_result = self.controller._get_bridge_entity_data(entity_id)  # type: ignore[arg-type]  # noqa: SLF001
 
         # Assert - with invalid ID, should return None values and error
         assert objectnumm is None

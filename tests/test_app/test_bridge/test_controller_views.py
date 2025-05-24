@@ -2,6 +2,7 @@
 
 import json
 import unittest
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -110,7 +111,7 @@ class TestBridgeControllerViews(unittest.TestCase):
     def test_get_top_view_execution(self, mock_validate_widths: MagicMock, mock_create_2d: MagicMock, mock_build_figure: MagicMock) -> None:
         """Test actual execution of get_top_view with mocked dependencies."""
         # Arrange
-        mock_top_view_data = {"bridge_lines": [], "structural_polygons": []}
+        mock_top_view_data: dict[str, list[Any]] = {"bridge_lines": [], "structural_polygons": []}
         mock_create_2d.return_value = mock_top_view_data
         mock_validate_widths.return_value = []
 

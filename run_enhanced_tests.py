@@ -108,7 +108,7 @@ def main() -> None:
 
     # Create enhanced test runner with minimal output in concise mode
     verbosity = 0  # Always use minimal verbosity for both modes
-    runner = unittest.TextTestRunner(resultclass=EnhancedTestResult, verbosity=verbosity, stream=sys.stdout)
+    runner = unittest.TextTestRunner(resultclass=EnhancedTestResult, verbosity=verbosity, stream=sys.stdout)  # type: ignore[arg-type]
 
     # Run tests
     result = runner.run(test_suite)
