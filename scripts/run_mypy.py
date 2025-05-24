@@ -42,7 +42,7 @@ def run_mypy() -> int:
                 # Count errors from output
                 all_issues = [line for line in lines if ": error:" in line or ": note:" in line]
                 error_count = len([line for line in lines if ": error:" in line])
-                
+
                 if error_count > 0:
                     print(f"Found {error_count} type errors")
 

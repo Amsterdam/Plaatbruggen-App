@@ -130,21 +130,23 @@ def view_test_wrapper(view_name: str) -> Callable[[Callable[..., Any]], Callable
             try:
                 return test_func(self, *args, **kwargs)
             except Exception as e:
-                # Extract function name from traceback
-                tb = traceback.extract_tb(e.__traceback__)
-                function_name = "unknown"
-                for frame in reversed(tb):
-                    if "controller" in frame.filename.lower():
-                        function_name = frame.name
-                        break
+                # Only print detailed messages if not in concise mode
+                if not should_use_concise_mode():
+                    # Extract function name from traceback
+                    tb = traceback.extract_tb(e.__traceback__)
+                    function_name = "unknown"
+                    for frame in reversed(tb):
+                        if "controller" in frame.filename.lower():
+                            function_name = frame.name
+                            break
 
-                # Create detailed failure message
-                message = detailed_failure_message(
-                    test_name=test_func.__name__, view_name=view_name, function_name=function_name, error_details=f"{type(e).__name__}: {e!s}"
-                )
+                    # Create detailed failure message
+                    message = detailed_failure_message(
+                        test_name=test_func.__name__, view_name=view_name, function_name=function_name, error_details=f"{type(e).__name__}: {e!s}"
+                    )
 
-                # Print the detailed message
-                print(message)
+                    # Print the detailed message
+                    print(message)
 
                 # Re-raise the original exception
                 raise
@@ -163,14 +165,16 @@ def controller_test_wrapper(controller_name: str, method_name: str) -> Callable[
             try:
                 return test_func(self, *args, **kwargs)
             except Exception as e:
-                # Create detailed failure message
-                header = colored_text(safe_emoji_text("🚨 CONTROLLER TEST FAILURE! 🚨", "CONTROLLER TEST FAILURE!"), Colors.RED, bold=True)
-                test_info = colored_text(f"Test: {test_func.__name__}", Colors.CYAN)
-                controller_info = colored_text(f"Controller: {controller_name}", Colors.YELLOW)
-                method_info = colored_text(f"Method: {method_name}", Colors.MAGENTA)
-                error_header = colored_text(safe_emoji_text("💀 Error Details:", "Error Details:"), Colors.RED, bold=True)
+                # Only print detailed messages if not in concise mode
+                if not should_use_concise_mode():
+                    # Create detailed failure message
+                    header = colored_text(safe_emoji_text("🚨 CONTROLLER TEST FAILURE! 🚨", "CONTROLLER TEST FAILURE!"), Colors.RED, bold=True)
+                    test_info = colored_text(f"Test: {test_func.__name__}", Colors.CYAN)
+                    controller_info = colored_text(f"Controller: {controller_name}", Colors.YELLOW)
+                    method_info = colored_text(f"Method: {method_name}", Colors.MAGENTA)
+                    error_header = colored_text(safe_emoji_text("💀 Error Details:", "Error Details:"), Colors.RED, bold=True)
 
-                message = f"""
+                    message = f"""
 {header}
 {test_info}
 {controller_info}
@@ -181,8 +185,8 @@ def controller_test_wrapper(controller_name: str, method_name: str) -> Callable[
 {"=" * 60}
 """
 
-                # Print the detailed message
-                print(message)
+                    # Print the detailed message
+                    print(message)
 
                 # Re-raise the original exception
                 raise
