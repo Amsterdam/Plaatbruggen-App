@@ -33,9 +33,10 @@ def print_concise_summary(result: TextTestResult) -> None:
         safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
         print(colorized_status_message(f"Ran {total_tests} tests successfully", is_success=True))  # noqa: T201
 
-        # Overall status message (appears at the end since tests run last)
+        # Overall status message - more generic since other checks might have failed
         print("\n" + "=" * 60)  # noqa: T201
-        safe_emoji_text("🎉 ALL CHECKS DONE! Safe to push! 🎉", "ALL CHECKS DONE! Safe to push!")
+        print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
+        print(colorized_status_message("Look at the logs above for any errors. Fix all errors to proceed with pushing.", is_success=False, is_warning=True))  # noqa: T201
         print("=" * 60)  # noqa: T201
     else:
         safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
