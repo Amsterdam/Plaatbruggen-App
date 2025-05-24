@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from tests.test_utils import colorized_status_message, muted_text, safe_emoji_text, should_use_concise_mode  # noqa: E402
+from tests.test_utils import Colors, colored_text, colorized_status_message, muted_text, safe_emoji_text, should_use_concise_mode  # noqa: E402
 
 
 def setup_environment() -> bool:
@@ -71,6 +71,24 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
                     "Run 'python scripts/run_ruff_check.py' for detailed code style information", is_success=False, is_warning=True
                 )
             )
+            
+            # Show a few sample errors with enhanced formatting in concise mode
+            print()  # noqa: T201
+            error_lines = [line for line in lines if line.strip() and ":" in line and not line.startswith("Found") and not line.startswith("No fixes")]
+            sample_errors = error_lines[:3]  # First 3 errors
+            for error_line in sample_errors:
+                # Ruff format: file.py:line:col: CODE message
+                parts = error_line.split(":", 3)  # Split into at most 4 parts
+                if len(parts) >= 4:
+                    file_part = parts[0]
+                    line_part = parts[1] 
+                    col_part = parts[2]
+                    message_part = parts[3]
+                    print(f"  {muted_text(file_part)}:{muted_text(line_part)}:{muted_text(col_part)}:{message_part}")  # noqa: T201
+            
+            if len(sample_errors) > 0 and error_count > len(sample_errors):
+                remaining = error_count - len(sample_errors)
+                print(f"  {muted_text(f'... and {remaining} more issues')}")  # noqa: T201
         else:
             print(colorized_status_message("Code style check failed - run 'python scripts/run_ruff_check.py' for details", is_success=False))  # noqa: T201
 
@@ -96,23 +114,23 @@ def run_ruff_check() -> int:
             # In detailed mode, show full output with improved formatting
             if result.stdout:
                 # Process each line to add colors for file paths
-                lines = result.stdout.split('\n')
+                lines = result.stdout.split("\n")
                 for line in lines:
                     if not line.strip():
                         continue
-                    
+
                     # Ruff format: file.py:line:col: CODE message
                     if ":" in line and any(line.endswith(suffix) for suffix in [".py:", ".pyi:"]) is False:
                         # Split on first few colons to separate file:line:col from error
                         parts = line.split(":", 3)  # Split into at most 4 parts
                         if len(parts) >= 4:
                             file_part = parts[0]
-                            line_part = parts[1] 
+                            line_part = parts[1]
                             col_part = parts[2]
                             message_part = parts[3]
                             print(f"{muted_text(file_part)}:{muted_text(line_part)}:{muted_text(col_part)}:{message_part}")  # noqa: T201
                             continue
-                    
+
                     # Default case - print as is
                     print(line)  # noqa: T201
             if result.stderr:

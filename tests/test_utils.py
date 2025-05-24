@@ -138,7 +138,7 @@ def muted_text(text: str) -> str:
     """Create muted (gray/dim) text for less important information."""
     if not supports_color() and not os.environ.get("FORCE_COLOR"):
         return text
-    
+
     # Use dim gray for muted text
     return f"{Colors.DIM}{Colors.GRAY}{text}{Colors.RESET}"
 

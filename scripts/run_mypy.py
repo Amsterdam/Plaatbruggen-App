@@ -51,6 +51,21 @@ def run_mypy() -> int:
                             "Run 'python scripts/run_mypy.py' for detailed type checking information", is_success=False, is_warning=True
                         )
                     )
+                    
+                    # Show a few sample errors with enhanced formatting in concise mode
+                    print()  # noqa: T201
+                    sample_errors = [line for line in error_lines[:3]]  # First 3 errors
+                    for error_line in sample_errors:
+                        if ": error:" in error_line:
+                            parts = error_line.split(": error:", 1)
+                            if len(parts) == 2:
+                                file_part = parts[0]
+                                error_part = parts[1]
+                                print(f"  {muted_text(file_part)}: {colored_text('error:', Colors.RED, bold=True)}{colored_text(error_part, Colors.RED)}")  # noqa: T201
+                    
+                    if len(error_lines) > 3:
+                        remaining = len(error_lines) - 3
+                        print(f"  {muted_text(f'... and {remaining} more errors')}")  # noqa: T201
                 else:
                     print(colorized_status_message("Type checking failed - run 'python scripts/run_mypy.py' for details", is_success=False))  # noqa: T201
 
@@ -58,11 +73,11 @@ def run_mypy() -> int:
             # In detailed mode, show full output with improved formatting
             if result.stdout:
                 # Process each line to add colors
-                lines = result.stdout.split('\n')
+                lines = result.stdout.split("\n")
                 for line in lines:
                     if not line.strip():
                         continue
-                    
+
                     # Color file paths and line numbers differently from error messages
                     if ": error:" in line or ": note:" in line:
                         # Split line into file:line and error message
@@ -71,16 +86,20 @@ def run_mypy() -> int:
                             if len(parts) == 2:
                                 file_part = parts[0]
                                 error_part = parts[1]
-                                print(f"{muted_text(file_part)}: {colored_text('error:', Colors.RED, bold=True)}{colored_text(error_part, Colors.RED)}")  # noqa: T201
+                                print(
+                                    f"{muted_text(file_part)}: {colored_text('error:', Colors.RED, bold=True)}{colored_text(error_part, Colors.RED)}"
+                                )  # noqa: T201
                                 continue
                         elif ": note:" in line:
                             parts = line.split(": note:", 1)
                             if len(parts) == 2:
                                 file_part = parts[0]
                                 note_part = parts[1]
-                                print(f"{muted_text(file_part)}: {colored_text('note:', Colors.BLUE, bold=True)}{colored_text(note_part, Colors.BLUE)}")  # noqa: T201
+                                print(
+                                    f"{muted_text(file_part)}: {colored_text('note:', Colors.BLUE, bold=True)}{colored_text(note_part, Colors.BLUE)}"
+                                )  # noqa: T201
                                 continue
-                    
+
                     # Default case - print as is (like summary lines)
                     print(line)  # noqa: T201
             if result.stderr:
