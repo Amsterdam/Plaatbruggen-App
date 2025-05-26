@@ -23,7 +23,10 @@ Semantic versioning is used to denote different versions of this project.
 - Split the concrete cover input into separate fields for top and bottom cover values, allowing for different cover specifications for the top and bottom of the plate.
 
 #### Developer-Facing
-- 
+- Enhanced development workflow with improved pre-commit hooks:
+  - Auto-commit functionality for code formatting changes
+  - Improved error reporting and user guidance
+  - Consistent tooling across all quality checks (ruff, mypy, tests)
 
 ### Fixed
 #### User-Facing
