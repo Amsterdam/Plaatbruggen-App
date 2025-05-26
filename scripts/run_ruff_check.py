@@ -91,7 +91,7 @@ def run_ruff_check() -> int:
     """Run ruff check and provide concise summary."""
     force_concise = setup_environment()
 
-        # Always use --fix mode to automatically fix issues when possible
+    # Always use --fix mode to automatically fix issues when possible
     fix_mode = True
     cmd = [sys.executable, "-m", "ruff", "check", "--config=.ruff.toml", "--fix"]
 
