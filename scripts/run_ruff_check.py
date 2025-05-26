@@ -56,11 +56,14 @@ def extract_error_count(lines: list[str]) -> int:
     return error_count
 
 
-def handle_concise_output(result: subprocess.CompletedProcess) -> None:
+def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = False) -> None:
     """Handle output in concise mode for git hooks."""
     if result.returncode == 0:
         safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!")
-        print(colorized_status_message("No code style issues found", is_success=True))  # noqa: T201
+        if fix_mode and result.stdout and "fixed" in result.stdout.lower():
+            print(colorized_status_message("Code style issues found and automatically fixed", is_success=True))  # noqa: T201
+        else:
+            print(colorized_status_message("No code style issues found", is_success=True))  # noqa: T201
     else:
         safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
 
@@ -87,10 +90,17 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
 def run_ruff_check() -> int:
     """Run ruff check and provide concise summary."""
     force_concise = setup_environment()
+    
+    # Check if --fix flag should be used (for git hooks or when explicitly requested)
+    fix_mode = "--fix" in sys.argv or os.environ.get("RUFF_FIX", "").lower() in ("1", "true", "yes")
+    
+    cmd = [sys.executable, "-m", "ruff", "check", "--config=.ruff.toml"]
+    if fix_mode:
+        cmd.append("--fix")
 
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "ruff", "check", "--config=.ruff.toml"],
+            cmd,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -100,7 +110,7 @@ def run_ruff_check() -> int:
         )
 
         if force_concise:
-            handle_concise_output(result)
+            handle_concise_output(result, fix_mode)
         else:
             # In detailed mode, show full output with improved formatting
             if result.stdout:
