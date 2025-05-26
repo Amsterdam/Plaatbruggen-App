@@ -116,9 +116,9 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
     def calculate_effective_widths(zone_params: dict, zone_dims: dict) -> dict:
         """Calculate effective widths for rebar placement."""
         return {
-            "long_bottom": float(zone_dims["bz"]) - 2 * dekking - zone_params["diam_long_bottom"],
-            "long_top": float(zone_dims["bz"]) - 2 * dekking - zone_params["diam_long_top"],
-            "shear": zone_dims["length"] - 2 * dekking - zone_params["diam_shear"],
+            "long_bottom": float(zone_dims["bz"]) - 2 * dekking_onder - zone_params["diam_long_bottom"],
+            "long_top": float(zone_dims["bz"]) - 2 * dekking_boven - zone_params["diam_long_top"],
+            "shear": zone_dims["length"] - 2 * min(dekking_onder, dekking_boven) - zone_params["diam_shear"],
         }
 
     def calculate_z_positions(is_middle_zone: bool, zone_params: dict) -> dict:
@@ -126,26 +126,26 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
         pos = {}
         if langswapening_buiten:
             # Bottom configuration - longitudinal outside, shear inside
-            pos["long_bottom"] = z_position_bottom + dekking + 0.5 * zone_params["diam_long_bottom"]
+            pos["long_bottom"] = z_position_bottom + dekking_onder + 0.5 * zone_params["diam_long_bottom"]
             pos["shear_bottom"] = pos["long_bottom"] + 0.5 * (zone_params["diam_long_bottom"] + zone_params["diam_shear"])
 
             # Top configuration - longitudinal outside, shear inside
             if is_middle_zone:
-                pos["long_top"] = z_position_top - (dekking + 0.5 * zone_params["diam_long_top"])
+                pos["long_top"] = z_position_top - (dekking_boven + 0.5 * zone_params["diam_long_top"])
             else:
-                pos["long_top"] = -(dekking + 0.5 * zone_params["diam_long_top"])
-            pos["shear_top"] = pos["long_top"] + (zone_params["diam_long_top"] + 0.5 * zone_params["diam_shear"])
+                pos["long_top"] = -(dekking_boven + 0.5 * zone_params["diam_long_top"])
+            pos["shear_top"] = pos["long_top"] - 0.5 * (zone_params["diam_long_top"] + zone_params["diam_shear"])
         else:
             # Bottom configuration - shear outside, longitudinal inside
-            pos["shear_bottom"] = z_position_bottom + dekking + 0.5 * zone_params["diam_shear"]
-            pos["long_bottom"] = pos["shear_bottom"] + zone_params["diam_shear"] + 0.5 * zone_params["diam_long_bottom"]
+            pos["shear_bottom"] = z_position_bottom + dekking_onder + 0.5 * zone_params["diam_shear"]
+            pos["long_bottom"] = pos["shear_bottom"] + 0.5 * (zone_params["diam_shear"] + zone_params["diam_long_bottom"])
 
             # Top configuration - shear outside, longitudinal inside
             if is_middle_zone:
-                pos["shear_top"] = z_position_top - (dekking + 0.5 * zone_params["diam_shear"])
+                pos["shear_top"] = z_position_top - (dekking_boven + 0.5 * zone_params["diam_shear"])
             else:
-                pos["shear_top"] = -(dekking + 0.5 * zone_params["diam_shear"])
-            pos["long_top"] = pos["shear_top"] - (zone_params["diam_shear"] + 0.5 * zone_params["diam_long_top"])
+                pos["shear_top"] = -(dekking_boven + 0.5 * zone_params["diam_shear"])
+            pos["long_top"] = pos["shear_top"] - 0.5 * (zone_params["diam_shear"] + zone_params["diam_long_top"])
         return pos
 
     def calculate_y_offset(position: int, segment_idx: int) -> float:
@@ -188,7 +188,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
             return []
 
         actual_hoh = width_eff / n_rebars
-        start_offset = dekking + 0.5 * zone_params["diam_shear"]
+        start_offset = min(dekking_boven, dekking_onder) + 0.5 * zone_params["diam_shear"]
         mid_x = width_eff / 2 + start_offset
         positions = []
 
@@ -279,7 +279,8 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
     bridge_segments_array = params.bridge_segments_array
     reinforcement_zones_array = params.reinforcement_zones_array
     langswapening_buiten = params.input.geometrie_wapening.langswapening_buiten
-    dekking = params.input.geometrie_wapening.dekking / 1000
+    dekking_onder = params.input.geometrie_wapening.dekking_onder / 1000
+    dekking_boven = params.input.geometrie_wapening.dekking_boven / 1000
     z_position_bottom = -params.bridge_segments_array[0].dz
     z_position_top = params.bridge_segments_array[0].dz_2 - params.bridge_segments_array[0].dz
     rebar_scene = trimesh.Scene()
@@ -330,7 +331,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
             shear_positions, y_offset, zone_dims["bz"], zone_params, z_positions, x_offset, zone_dims["height_start"], zone_dims["height_end"]
         )
 
-    return rebar_scene
+    return rebar_scene  # type: ignore[return-value]  # Scene is functionally compatible with Trimesh in this context
 
 
 # Function to create the X, Y, and Z axes

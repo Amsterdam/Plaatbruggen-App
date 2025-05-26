@@ -4,8 +4,24 @@ from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
-
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
+from viktor.core import File, ViktorController
+from viktor.errors import UserError  # Add UserError
+from viktor.views import (
+    DataGroup,  # Add DataGroup
+    DataItem,  # Add DataItem
+    DataResult,  # Add DataResult
+    DataView,  # Add DataView
+    GeometryResult,
+    GeometryView,
+    MapPoint,  # Add MapPoint
+    MapResult,  # Add MapResult
+    MapView,  # Add MapView
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
+)
 
 # ParamsForLoadZones protocol and validate_load_zone_widths are in app.bridge.utils
 from app.bridge.utils import validate_load_zone_widths
@@ -13,9 +29,6 @@ from app.common.map_utils import (
     load_and_filter_bridge_shapefile,  # Import the new function
     process_bridge_geometries,
     validate_shapefile_exists,
-)
-from app.constants import (  # Replace relative imports with absolute imports
-    OUTPUT_REPORT_PATH,
 )
 from src.common.plot_utils import (
     create_bridge_outline_traces,
@@ -40,24 +53,7 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
-from viktor.core import File, ViktorController
-from viktor.errors import UserError  # Add UserError
-from viktor.utils import convert_word_to_pdf
-from viktor.views import (
-    DataGroup,  # Add DataGroup
-    DataItem,  # Add DataItem
-    DataResult,  # Add DataResult
-    DataView,  # Add DataView
-    GeometryResult,
-    GeometryView,
-    MapPoint,  # Add MapPoint
-    MapResult,  # Add MapResult
-    MapView,  # Add MapView
-    PDFResult,
-    PDFView,
-    PlotlyResult,  # Import PlotlyResult
-    PlotlyView,  # Import PlotlyView
-)
+from src.report.report_functions import create_export_report  # Import the report creation function
 
 # Import parametrization from the separate file
 from .parametrization import (
@@ -416,8 +412,6 @@ class BridgeController(ViktorController):
 
         """
         # using File object
-        file1 = File.from_path(OUTPUT_REPORT_PATH)
-        with file1.open_binary() as f1:
-            pdf = convert_word_to_pdf(f1)
+        pdf = create_export_report(params)
 
         return PDFResult(file=pdf)
