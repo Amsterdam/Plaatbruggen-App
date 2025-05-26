@@ -130,6 +130,24 @@ def _create_validation_warning_annotations(validation_messages: list[str]) -> li
     return annotations
 
 
+def _create_north_arrow_annotation() -> list[go.layout.Annotation]:
+    """Creates a horizontal span arrow annotation above the plot title."""
+    return [
+        go.layout.Annotation(
+            text="⥊",  # Unicode right-pointing double-headed arrow
+            x=0.9,  # Center of the plot
+            y=1.05,  # Just above the title
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font={"size": 75, "color": "black"},
+            align="center",
+            xanchor="center",
+            yanchor="middle",
+        )
+    ]
+
+
 def build_top_view_figure(top_view_geometric_data: dict[str, Any], validation_messages: list[str] | None = None) -> go.Figure:
     """
     Builds the Plotly Figure for the 2D Top View of the bridge deck.
@@ -153,6 +171,8 @@ def build_top_view_figure(top_view_geometric_data: dict[str, Any], validation_me
 
     all_annotations.extend(_create_zone_label_annotations(top_view_geometric_data.get("zone_annotations", [])))
     all_annotations.extend(_create_dimension_text_annotations(top_view_geometric_data.get("dimension_texts", [])))
+    # Add span arrows
+    all_annotations.extend(_create_north_arrow_annotation())
 
     cs_labels_data = top_view_geometric_data.get("cross_section_labels", [])
     if cs_labels_data:
@@ -178,7 +198,7 @@ def build_top_view_figure(top_view_geometric_data: dict[str, Any], validation_me
         hovermode="closest",
         yaxis={"scaleanchor": "x", "scaleratio": 1},
         annotations=all_annotations,
-        margin={"l": 0, "r": 50, "t": 50, "b": 115},
+        margin={"l": 20, "r": 20, "t": 100, "b": 20},
         plot_bgcolor="white",
     )
     return fig

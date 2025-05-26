@@ -3,7 +3,6 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -21,6 +20,8 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
+
+from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 
 from .geometry_functions import get_steel_qualities
 
@@ -157,9 +158,45 @@ def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     return option_list
 
 
+# --- Helper function to get min and max values of the model ---
+def _get_model_xmax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    max_value = sum(segment.l for segment in params.bridge_segments_array)
+    return max_value - 0.01
+
+
+def _get_model_ymin(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    max_b_z2 = max(segment.bz2 for segment in params.bridge_segments_array)
+    max_b_z3 = max(segment.bz3 for segment in params.bridge_segments_array)
+    return -max_b_z2 / 2 - max_b_z3
+
+
+def _get_model_ymax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    max_b_z1 = max(segment.bz1 for segment in params.bridge_segments_array)
+    max_b_z2 = max(segment.bz2 for segment in params.bridge_segments_array)
+    max_value = max_b_z2 / 2 + max_b_z1
+    return max_value - 0.01
+
+
+def _get_model_zmin(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    dz = max(segment.dz for segment in params.bridge_segments_array)
+    return -dz
+
+
+def _get_model_zmax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
+    dz_max = max(segment.dz_2 - segment.dz for segment in params.bridge_segments_array)
+    max_value = dz_max
+    return max_value - 0.01
+
+
+# ----------------------------------
+# --- Main Parametrization Class ---
+# ----------------------------------
 class BridgeParametrization(Parametrization):
     """Parametrization for the individual Bridge entity."""
 
+    # ----------------------------------
+    # --- Info Page ---
+    # ----------------------------------
     info = Page("Info", views=["get_bridge_map_view", "get_bridge_summary_view"])
 
     # Bridge identification section
@@ -211,6 +248,10 @@ Use the tabs below to view geometric properties, load configurations, and analys
     )
     info.assessment_notes = TextAreaField("Assessment Notes", default="", description="Notes about the assessment process or findings")
 
+    # ----------------------------------
+    # --- Invoer Page ---
+    # ----------------------------------
+
     input = Page(
         "Invoer",
         views=[
@@ -223,10 +264,6 @@ Use the tabs below to view geometric properties, load configurations, and analys
         ],
     )
 
-    ###############################################
-    ## Invoer Page
-    ##############################################
-
     # --- Tabs within Invoer Page ---
     input.dimensions = Tab("Dimensies")
     input.geometrie_wapening = Tab("Wapening")
@@ -238,7 +275,7 @@ Use the tabs below to view geometric properties, load configurations, and analys
     input.belastingcombinaties.uls_comb_factor = MultiSelectField("Belastingscombinaties", options=["ULS", "SLS", "FAT"])
 
     # ----------------------------------------
-    ## Dimensions tab
+    # --- Invoer Page -> Dimensions tab ---
     # ----------------------------------------
 
     input.dimensions.segment_explanation = Text(
@@ -290,16 +327,25 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
     input.dimensions.toggle_sections = BooleanField("Toon locaties van de doorsneden in het 3D model", default=False, flex=100)
     input.dimensions.lb2 = LineBreak()
     input.dimensions.horizontal_section_loc = NumberField(
-        "Horizontale doorsnede z =", default=-1.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Horizontale doorsnede z =",
+        default=-1.0,
+        suffix="m",
+        visible=Lookup("input.dimensions.toggle_sections"),
+        min=_get_model_zmin,
+        max=_get_model_zmax,
     )
     input.dimensions.lb3 = LineBreak()
     input.dimensions.longitudinal_section_loc = NumberField(
-        "Langsdoorsnede y =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Langsdoorsnede y =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections"), min=_get_model_ymin, max=_get_model_ymax
     )
     input.dimensions.lb4 = LineBreak()
     input.dimensions.cross_section_loc = NumberField(
-        "Dwarsdoorsnede x =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections")
+        "Dwarsdoorsnede x =", default=0.0, suffix="m", visible=Lookup("input.dimensions.toggle_sections"), min=0, max=_get_model_xmax
     )
+
+    # ----------------------------------------
+    # --- Invoer Page -> rebar tab ---
+    # ----------------------------------------
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
     input.geometrie_wapening.explanation = Text(
@@ -318,22 +364,33 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.staalsoort = OptionField(
         "Staalsoort",
         options=get_steel_qualities(),
-        default="B500B",  # Changed to more modern default
+        default="B500B",
         description="De kwaliteit van het betonstaal dat wordt toegepast in de brug.",
     )
 
-    input.geometrie_wapening.dekking = NumberField(
-        "Betondekking",
-        default=55.0,
-        suffix="mm",
-        description="De betondekking is de afstand tussen de buitenkant van het beton en de buitenste wapeningslaag.",
-    )
     input.geometrie_wapening.langswapening_buiten = BooleanField(
         "Langswapening aan buitenzijde?",
         default=True,
         description=(
             "Indien aangevinkt ligt de langswapening aan de buitenzijde van het beton. Indien uitgevinkt ligt de dwarswapening aan de buitenzijde."
         ),
+    )
+
+    input.geometrie_wapening.lb1 = LineBreak()
+
+    input.geometrie_wapening.dekking_boven = NumberField(
+        "Betondekking boven",
+        default=55.0,
+        suffix="mm",
+        flex=30,
+        description="De betondekking aan de bovenzijde van de plaat.",
+    )
+    input.geometrie_wapening.dekking_onder = NumberField(
+        "Betondekking onder",
+        default=55.0,
+        suffix="mm",
+        flex=30,
+        description="De betondekking aan de onderzijde van de plaat.",
     )
 
     input.geometrie_wapening.zones = DynamicArray(
@@ -380,7 +437,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         "Zone nummer", options=define_options_numbering, description="Dit is het zone nummer dat correspondeert met de zone in de brug."
     )
 
-    input.geometrie_wapening.zones.lb1 = LineBreak()
+    input.geometrie_wapening.zones.lb2 = LineBreak()
 
     # Main reinforcement - Longitudinal top
     input.geometrie_wapening.zones.hoofdwapening_langs_boven_diameter = NumberField(
@@ -389,7 +446,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.zones.hoofdwapening_langs_boven_hart_op_hart = NumberField(
         "H.o.h. afstand hoofdwapening langsrichting boven", default=150.0, suffix="mm", flex=53
     )
-    input.geometrie_wapening.zones.lb2 = LineBreak()
+    input.geometrie_wapening.zones.lb3 = LineBreak()
 
     # Main reinforcement - Longitudinal bottom
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_diameter = NumberField(
@@ -398,7 +455,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_hart_op_hart = NumberField(
         "H.o.h. afstand hoofdwapening langsrichting onder", default=150.0, suffix="mm", flex=53
     )
-    input.geometrie_wapening.zones.lb3 = LineBreak()
+    input.geometrie_wapening.zones.lb4 = LineBreak()
 
     # Main reinforcement - Transverse
 
@@ -411,7 +468,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     )
 
     # Visual separator for bijlegwapening
-    input.geometrie_wapening.zones.separator1 = LineBreak()
+    input.geometrie_wapening.zones.lb5 = LineBreak()
 
     # Additional reinforcement toggle
     input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)
@@ -422,7 +479,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         operand=Lookup("$row.heeft_bijlegwapening"),
     )
 
-    input.geometrie_wapening.zones.lb4 = LineBreak()
+    input.geometrie_wapening.zones.lb6 = LineBreak()
 
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(
         "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
@@ -431,7 +488,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         "H.o.h. afstand bijlegwapening langsrichting boven", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
-    input.geometrie_wapening.zones.lb5 = LineBreak()
+    input.geometrie_wapening.zones.lb7 = LineBreak()
 
     # Additional reinforcement - Longitudinal bottom
     input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
@@ -441,7 +498,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         "H.o.h. afstand bijlegwapening langsrichting onder", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
-    input.geometrie_wapening.zones.lb6 = LineBreak()
+    input.geometrie_wapening.zones.lb8 = LineBreak()
 
     # Additional reinforcement - Transverse
     input.geometrie_wapening.zones.bijlegwapening_dwars_diameter = NumberField(
@@ -450,6 +507,10 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.zones.bijlegwapening_dwars_hart_op_hart = NumberField(
         "H.o.h. afstand bijlegwapening dwarsrichting", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
     )
+
+    # ----------------------------------------
+    # --- Invoer Page -> loadzones tab ---
+    # ----------------------------------------
 
     # --- Load Zones (in belastingzones tab) ---
     input.belastingzones.info_text = Text(
@@ -484,7 +545,24 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         )
         setattr(input.belastingzones.load_zones_array, f"d{_idx_field}_width", _field)
 
-    # --- Added Pages ---
+    # ----------------------------------------
+    # --- Invoer Page -> loadcases tab ---
+    # ----------------------------------------
+
+    # ----------------------------------
+    # --- SCIA Page ---
+    # ----------------------------------
+
     scia = Page("SCIA")
+
+    # ----------------------------------
+    # --- Calculations Page ---
+    # ----------------------------------
+
     berekening = Page("Berekening")
+
+    # ----------------------------------
+    # --- Report Page ---
+    # ----------------------------------
+
     rapport = Page("Rapport", views=["get_output_report"])
