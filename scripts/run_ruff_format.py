@@ -65,7 +65,7 @@ def auto_commit_formatting_changes(reformatted_count: int) -> bool:
             check=True,
             capture_output=True,
         )
-        
+
         # Commit with a clear message
         commit_msg = f"Auto-format code with ruff ({reformatted_count} file{'s' if reformatted_count != 1 else ''} reformatted)"
         subprocess.run(
@@ -74,7 +74,7 @@ def auto_commit_formatting_changes(reformatted_count: int) -> bool:
             check=True,
             capture_output=True,
         )
-        
+
         return True
     except subprocess.CalledProcessError:
         return False
@@ -97,7 +97,7 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
         print(colorized_status_message("Please commit the changes and push again:", is_success=False, is_warning=True))  # noqa: T201
         print()  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN, bold=True)}")  # noqa: T201
+        print(f"  {safe_arrow()}{colored_text('git commit -m "Apply code formatting"', Colors.CYAN, bold=True)}")  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
     elif result.returncode == 0:
         safe_emoji_text("✅ RUFF FORMAT PASSED!", "RUFF FORMAT PASSED!")
@@ -147,23 +147,22 @@ def run_ruff_format() -> int:
                     print(colored_text("✅ Formatting changes committed automatically", Colors.GREEN, bold=True))  # noqa: T201
                     print(colored_text("Continuing with push...", Colors.GREEN))  # noqa: T201
                 return 0  # Success - continue with push
+            # Auto-commit failed - fall back to manual instructions
+            if force_concise:
+                safe_emoji_text("❌ AUTO-COMMIT FAILED", "AUTO-COMMIT FAILED")
+                print(colorized_status_message("Please commit formatting changes manually:", is_success=False, is_warning=True))  # noqa: T201
+                print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
+                print(f"  {safe_arrow()}{colored_text('git commit -m "Apply code formatting"', Colors.CYAN, bold=True)}")  # noqa: T201
+                print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
             else:
-                # Auto-commit failed - fall back to manual instructions
-                if force_concise:
-                    safe_emoji_text("❌ AUTO-COMMIT FAILED", "AUTO-COMMIT FAILED")
-                    print(colorized_status_message("Please commit formatting changes manually:", is_success=False, is_warning=True))  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN, bold=True)}")  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
-                else:
-                    print(colored_text("❌ Failed to auto-commit formatting changes", Colors.RED, bold=True))  # noqa: T201
-                    print(colored_text("Please commit the changes manually:", Colors.YELLOW))  # noqa: T201
-                    print(f"  {colored_text('git add .', Colors.CYAN)}")  # noqa: T201
-                    print(f"  {colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN)}")  # noqa: T201
-                    print(f"  {colored_text('git push', Colors.CYAN)}")  # noqa: T201
-                return 1  # Failure - stop push
+                print(colored_text("❌ Failed to auto-commit formatting changes", Colors.RED, bold=True))  # noqa: T201
+                print(colored_text("Please commit the changes manually:", Colors.YELLOW))  # noqa: T201
+                print(f"  {colored_text('git add .', Colors.CYAN)}")  # noqa: T201
+                print(f"  {colored_text('git commit -m "Apply code formatting"', Colors.CYAN)}")  # noqa: T201
+                print(f"  {colored_text('git push', Colors.CYAN)}")  # noqa: T201
+            return 1  # Failure - stop push
 
-        elif force_concise:
+        if force_concise:
             handle_concise_output(result)
         else:
             # In detailed mode, show full output
@@ -178,6 +177,12 @@ def run_ruff_format() -> int:
         return 1
     else:
         return result.returncode
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
