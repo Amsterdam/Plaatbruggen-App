@@ -2,12 +2,29 @@
 
 Dit document legt uit hoe ons automatische testsysteem werkt, hoe je ermee werkt, en hoe je problemen oplost.
 
-## 🎯 Wat Deze Tests Doen
+## 🎯 Wat Deze Kwaliteitscontroles Doen
 
-Ons project heeft **~200 automatische tests** die controleren:
-1. **Kernberekeningen werken**: Brugberekeningen, belastingen, en toetsen
-2. **VIKTOR interface functioneert**: Views, controllers, en parametrization
-3. **Geen regressies**: Vangt kapotte functionaliteit op voordat het productie bereikt
+Ons project heeft **4 automatische kwaliteitscontroles** bij elke push:
+
+### 🔧 Code Formatting (Ruff Format)
+- **Automatisch herformatteren** van code volgens project standaarden
+- **Auto-commit** van formatting wijzigingen
+- Push gaat door zonder handmatige actie nodig
+
+### ✅ Code Style (Ruff Check)  
+- Controleert code style issues (imports, unused variables, etc.)
+- **Automatisch repareren** waar mogelijk
+- Stopt push alleen bij onoplosbare issues
+
+### 🔍 Type Checking (MyPy)
+- Controleert type hints en type safety
+- Helpt bugs vroeg te vangen
+- Stopt push bij type errors
+
+### 🧪 Unit Tests (~200 tests)
+- **Kernberekeningen werken**: Brugberekeningen, belastingen, en toetsen
+- **VIKTOR interface functioneert**: Views, controllers, en parametrization  
+- **Geen regressies**: Vangt kapotte functionaliteit op voordat het productie bereikt
 
 ## 🔄 Push Workflow
 
@@ -17,11 +34,20 @@ git push origin feature-branch
 ```
 **Resultaat:**
 ```
-✅ Code style check passed!
-✅ Type checking passed! 
+🔧 AUTO-FORMATTING CODE
+Reformatted 3 file(s)
+✅ Formatting changes committed automatically
+✅ CONTINUING WITH PUSH
+
+✅ RUFF CHECK PASSED!
+No code style issues found
+
+✅ MYPY CHECK PASSED!
+No type checking issues found
+
 ✅ Tests completed successfully! 188/188 tests passed.
 ```
-→ Push slaagt, je kunt een Pull Request maken.
+→ Push slaagt automatisch, zelfs als code formatting nodig was!
 
 ### ❌ Faal Scenario
 ```bash
@@ -29,6 +55,11 @@ git push origin feature-branch
 ```
 **Resultaat:**
 ```
+❌ RUFF CHECK FAILED
+Found 5 code style issues
+Run the following command for detailed information:
+  -> python scripts/run_ruff_check.py
+
 ❌ Tests failed! 3 failures out of 188 tests.
 
 🔥 CONTROLLER TEST FAILURE! 🔥
@@ -103,8 +134,18 @@ tests/
     └── test_common/
 ```
 
-## 🚀 Tests Draaien
+## 🚀 Tests en Kwaliteitscontroles Draaien
 
+### Alle Kwaliteitscontroles (zoals bij push)
+```bash
+# Alle checks zoals pre-commit hooks
+python scripts/run_ruff_check.py    # Code style + auto-fix
+python scripts/run_ruff_format.py   # Code formatting + auto-commit
+python scripts/run_mypy.py          # Type checking
+python run_enhanced_tests.py        # Unit tests
+```
+
+### Alleen Tests
 ```bash
 # Alle tests
 python run_enhanced_tests.py
@@ -148,8 +189,24 @@ input.geometry.height = NumberField("Hoogte", default=5.0)
 }
 ```
 
-## 🐛 Falende Tests Debuggen
+## 🐛 Problemen Debuggen
 
+### Code Style Issues
+```bash
+# Zie gedetailleerde ruff issues
+python scripts/run_ruff_check.py
+
+# Automatisch repareren waar mogelijk
+# (gebeurt automatisch bij push, maar je kunt het ook handmatig doen)
+```
+
+### Type Checking Issues  
+```bash
+# Zie gedetailleerde mypy issues
+python scripts/run_mypy.py
+```
+
+### Falende Tests
 1. **Lees de foutmelding:**
 ```
 Test: test_calculate_bridge_loads
@@ -202,6 +259,7 @@ AI kan helpen met:
 - Test edge cases: lege input, None waarden, extreme getallen
 - Update tests bij functionaliteit wijzigingen
 - Update seed files bij parameter wijzigingen
+- Laat de enhanced pre-commit hooks hun werk doen (auto-formatting, auto-fixing)
 - Vraag AI om hulp wanneer je vastzit
 
 **NIET DOEN:**
@@ -210,11 +268,15 @@ AI kan helpen met:
 - Complexe logica in tests gebruiken
 - Echte files/databases gebruiken in tests
 - Seed files vergeten bij parametrization wijzigingen
+- Pre-commit hooks uitschakelen om "sneller" te pushen
 
 ## 🆘 Hulp Nodig?
 
+- **Code style issues?** → `python scripts/run_ruff_check.py` voor details
+- **Type checking errors?** → `python scripts/run_mypy.py` voor details  
 - **Test faalt, weet niet waarom?** → Draai lokaal, check fout, of vraag AI
 - **Nieuwe functie, welke test?** → Kijk naar vergelijkbare tests in zelfde module
 - **VIKTOR test problemen?** → Check `tests/test_app/test_bridge/test_controller_views.py`
 - **Core logic test problemen?** → Check `tests/test_src/` voorbeelden
 - **Seed file updates?** → Check alle JSON files in `tests/test_data/`
+- **Auto-commit werkt niet?** → Check git status en commit handmatig
