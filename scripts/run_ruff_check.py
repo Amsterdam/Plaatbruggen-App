@@ -90,13 +90,10 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
 def run_ruff_check() -> int:
     """Run ruff check and provide concise summary."""
     force_concise = setup_environment()
-    
-    # Check if --fix flag should be used (for git hooks or when explicitly requested)
-    fix_mode = "--fix" in sys.argv or os.environ.get("RUFF_FIX", "").lower() in ("1", "true", "yes")
-    
-    cmd = [sys.executable, "-m", "ruff", "check", "--config=.ruff.toml"]
-    if fix_mode:
-        cmd.append("--fix")
+
+        # Always use --fix mode to automatically fix issues when possible
+    fix_mode = True
+    cmd = [sys.executable, "-m", "ruff", "check", "--config=.ruff.toml", "--fix"]
 
     try:
         result = subprocess.run(
