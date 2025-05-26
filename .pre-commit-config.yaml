@@ -28,10 +28,11 @@ repos:
 
       - id: ruff-format
         name: Ruff code formatter
-        entry: python -m ruff format --config=.ruff.toml
+        entry: python scripts/run_ruff_format.py
         language: system
         stages: [pre-push]
         pass_filenames: false
+        verbose: true
 
       - id: mypy
         name: MyPy type checking
