@@ -179,11 +179,5 @@ def run_ruff_format() -> int:
         return result.returncode
 
 
-
-
-
-
-
-
 if __name__ == "__main__":
     sys.exit(run_ruff_format())
