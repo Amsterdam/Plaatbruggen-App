@@ -55,6 +55,31 @@ def extract_format_stats(lines: list[str]) -> tuple[int, int]:
     return reformatted, unchanged
 
 
+def auto_commit_formatting_changes(reformatted_count: int) -> bool:
+    """Automatically commit formatting changes and return success status."""
+    try:
+        # Stage all changes (ruff format only modifies existing files)
+        subprocess.run(
+            ["git", "add", "-u"],  # -u only stages modified files, not new ones
+            cwd=project_root,
+            check=True,
+            capture_output=True,
+        )
+        
+        # Commit with a clear message
+        commit_msg = f"Auto-format code with ruff ({reformatted_count} file{'s' if reformatted_count != 1 else ''} reformatted)"
+        subprocess.run(
+            ["git", "commit", "-m", commit_msg],
+            cwd=project_root,
+            check=True,
+            capture_output=True,
+        )
+        
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
 def handle_concise_output(result: subprocess.CompletedProcess) -> None:
     """Handle output in concise mode for git hooks."""
     output = (result.stdout or "") + (result.stderr or "")
@@ -62,24 +87,24 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
 
     reformatted, unchanged = extract_format_stats(lines)
 
-    if result.returncode == 0:
+    # Check if files were actually reformatted (regardless of exit code)
+    if reformatted > 0:
+        # Files were reformatted
+        safe_emoji_text("🔧 FILES REFORMATTED", "FILES REFORMATTED")
+        print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=False, is_warning=True))  # noqa: T201
+        print()  # noqa: T201
+        print(colorized_status_message("Files have been automatically reformatted!", is_success=False, is_warning=True))  # noqa: T201
+        print(colorized_status_message("Please commit the changes and push again:", is_success=False, is_warning=True))  # noqa: T201
+        print()  # noqa: T201
+        print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
+        print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN, bold=True)}")  # noqa: T201
+        print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
+    elif result.returncode == 0:
         safe_emoji_text("✅ RUFF FORMAT PASSED!", "RUFF FORMAT PASSED!")
         print(colorized_status_message("Code formatting is consistent", is_success=True))  # noqa: T201
     else:
-        # Files were reformatted
-        safe_emoji_text("🔧 FILES REFORMATTED", "FILES REFORMATTED")
-
-        if reformatted > 0:
-            print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=False, is_warning=True))  # noqa: T201
-            print()  # noqa: T201
-            print(colorized_status_message("Files have been automatically reformatted!", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("Please commit the changes and push again:", is_success=False, is_warning=True))  # noqa: T201
-            print()  # noqa: T201
-            print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-            print(f"  {safe_arrow()}{colored_text('git commit -m "Apply code formatting"', Colors.CYAN, bold=True)}")  # noqa: T201
-            print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
-        else:
-            print(colorized_status_message("Code formatting failed - check the output above", is_success=False))  # noqa: T201
+        safe_emoji_text("❌ RUFF FORMAT FAILED", "RUFF FORMAT FAILED")
+        print(colorized_status_message("Code formatting failed - check the output above", is_success=False))  # noqa: T201
 
 
 def run_ruff_format() -> int:
@@ -97,7 +122,48 @@ def run_ruff_format() -> int:
             check=False,
         )
 
-        if force_concise:
+        # Check if files were reformatted
+        output = (result.stdout or "") + (result.stderr or "")
+        lines = output.strip().split("\n") if output else []
+        reformatted, _ = extract_format_stats(lines)
+
+        if reformatted > 0 and result.returncode == 0:
+            # Files were successfully reformatted - auto-commit them
+            if force_concise:
+                safe_emoji_text("🔧 AUTO-FORMATTING CODE", "AUTO-FORMATTING CODE")
+                print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=True, is_warning=True))  # noqa: T201
+            else:
+                if result.stdout:
+                    print(result.stdout)  # noqa: T201
+                print()  # noqa: T201
+                print(colored_text("🔧 Auto-formatting code...", Colors.YELLOW, bold=True))  # noqa: T201
+
+            # Attempt to auto-commit the changes
+            if auto_commit_formatting_changes(reformatted):
+                if force_concise:
+                    print(colorized_status_message("Formatting changes committed automatically", is_success=True))  # noqa: T201
+                    safe_emoji_text("✅ CONTINUING WITH PUSH", "CONTINUING WITH PUSH")
+                else:
+                    print(colored_text("✅ Formatting changes committed automatically", Colors.GREEN, bold=True))  # noqa: T201
+                    print(colored_text("Continuing with push...", Colors.GREEN))  # noqa: T201
+                return 0  # Success - continue with push
+            else:
+                # Auto-commit failed - fall back to manual instructions
+                if force_concise:
+                    safe_emoji_text("❌ AUTO-COMMIT FAILED", "AUTO-COMMIT FAILED")
+                    print(colorized_status_message("Please commit formatting changes manually:", is_success=False, is_warning=True))  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN, bold=True)}")  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
+                else:
+                    print(colored_text("❌ Failed to auto-commit formatting changes", Colors.RED, bold=True))  # noqa: T201
+                    print(colored_text("Please commit the changes manually:", Colors.YELLOW))  # noqa: T201
+                    print(f"  {colored_text('git add .', Colors.CYAN)}")  # noqa: T201
+                    print(f"  {colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN)}")  # noqa: T201
+                    print(f"  {colored_text('git push', Colors.CYAN)}")  # noqa: T201
+                return 1  # Failure - stop push
+
+        elif force_concise:
             handle_concise_output(result)
         else:
             # In detailed mode, show full output
@@ -106,27 +172,12 @@ def run_ruff_format() -> int:
             if result.stderr:
                 print(result.stderr, file=sys.stderr)  # noqa: T201
 
-            # Add helpful message if files were reformatted
-            if result.returncode != 0:
-                print()  # noqa: T201
-                print(colored_text("📝 Files have been reformatted!", Colors.YELLOW, bold=True))  # noqa: T201
-                print(colored_text("Please commit the changes and try again:", Colors.YELLOW))  # noqa: T201
-                print(f"  {colored_text('git add .', Colors.CYAN)}")  # noqa: T201
-                print(f"  {colored_text('git commit -m "Apply code formatting"', Colors.CYAN)}")  # noqa: T201
-                print(f"  {colored_text('git push', Colors.CYAN)}")  # noqa: T201
-
     except Exception as e:
         safe_emoji_text("❌ RUFF FORMAT EXECUTION FAILED", "RUFF FORMAT EXECUTION FAILED")
         print(f"Error running ruff format: {e}")  # noqa: T201
         return 1
     else:
         return result.returncode
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
