@@ -363,9 +363,11 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
                 "hoofdwapening_langs_boven_diameter": 12.0,
                 "hoofdwapening_langs_boven_hart_op_hart": 150.0,
                 "hoofdwapening_langs_onder_diameter": 12.0,
-                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
-                "hoofdwapening_dwars_diameter": 12.0,
-                "hoofdwapening_dwars_hart_op_hart": 150.0,
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,                
+                "hoofdwapening_dwars_boven_diameter": 12.0,
+                "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
+                "hoofdwapening_dwars_onder_diameter": 12.0,
+                "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
                 "heeft_bijlegwapening": False,
             },
             {
@@ -374,8 +376,10 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
                 "hoofdwapening_langs_boven_hart_op_hart": 150.0,
                 "hoofdwapening_langs_onder_diameter": 12.0,
                 "hoofdwapening_langs_onder_hart_op_hart": 150.0,
-                "hoofdwapening_dwars_diameter": 12.0,
-                "hoofdwapening_dwars_hart_op_hart": 150.0,
+                "hoofdwapening_dwars_boven_diameter": 12.0,
+                "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
+                "hoofdwapening_dwars_onder_diameter": 12.0,
+                "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
                 "heeft_bijlegwapening": False,
             },
             {
@@ -383,9 +387,11 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
                 "hoofdwapening_langs_boven_diameter": 12.0,
                 "hoofdwapening_langs_boven_hart_op_hart": 150.0,
                 "hoofdwapening_langs_onder_diameter": 12.0,
-                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
-                "hoofdwapening_dwars_diameter": 12.0,
-                "hoofdwapening_dwars_hart_op_hart": 150.0,
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,                
+                "hoofdwapening_dwars_boven_diameter": 12.0,
+                "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
+                "hoofdwapening_dwars_onder_diameter": 12.0,
+                "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
                 "heeft_bijlegwapening": False,
             },
         ],
@@ -414,16 +420,25 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_hart_op_hart = NumberField(
         "H.o.h. afstand hoofdwapening langsrichting onder", default=150.0, suffix="mm", flex=53
     )
-    input.geometrie_wapening.zones.lb4 = LineBreak()
-
-    # Main reinforcement - Transverse
-
-    input.geometrie_wapening.zones.hoofdwapening_dwars_diameter = NumberField(
-        "Diameter hoofdwapening dwarsrichting", default=12.0, suffix="mm", flex=47
+    input.geometrie_wapening.zones.lb4 = LineBreak()    
+    # Main reinforcement - Transverse Top
+    input.geometrie_wapening.zones.hoofdwapening_dwars_boven_diameter = NumberField(
+        "Diameter hoofdwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47
     )
 
-    input.geometrie_wapening.zones.hoofdwapening_dwars_hart_op_hart = NumberField(
-        "H.o.h. afstand hoofdwapening dwarsrichting", default=150.0, suffix="mm", flex=53
+    input.geometrie_wapening.zones.hoofdwapening_dwars_boven_hart_op_hart = NumberField(
+        "H.o.h. afstand hoofdwapening dwarsrichting boven", default=150.0, suffix="mm", flex=53
+    )
+
+    input.geometrie_wapening.zones.lb4 = LineBreak()
+
+    # Main reinforcement - Transverse Bottom
+    input.geometrie_wapening.zones.hoofdwapening_dwars_onder_diameter = NumberField(
+        "Diameter hoofdwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47
+    )
+
+    input.geometrie_wapening.zones.hoofdwapening_dwars_onder_hart_op_hart = NumberField(
+        "H.o.h. afstand hoofdwapening dwarsrichting onder", default=150.0, suffix="mm", flex=53
     )
 
     # Visual separator for bijlegwapening
@@ -459,12 +474,20 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
 
     input.geometrie_wapening.zones.lb8 = LineBreak()
 
-    # Additional reinforcement - Transverse
-    input.geometrie_wapening.zones.bijlegwapening_dwars_diameter = NumberField(
-        "Diameter bijlegwapening dwarsrichting", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
+    # Additional reinforcement - Transverse top
+    input.geometrie_wapening.zones.bijlegwapening_dwars_boven_diameter = NumberField(
+        "Diameter bijlegwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
     )
-    input.geometrie_wapening.zones.bijlegwapening_dwars_hart_op_hart = NumberField(
-        "H.o.h. afstand bijlegwapening dwarsrichting", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
+    input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = NumberField(
+        "H.o.h. afstand bijlegwapening dwarsrichting boven", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.lb9 = LineBreak()
+    # Additional reinforcement - Transverse bottom
+    input.geometrie_wapening.zones.bijlegwapening_dwars_onder_diameter = NumberField(
+        "Diameter bijlegwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
+    )
+    input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = NumberField(
+        "H.o.h. afstand bijlegwapening dwarsrichting onder", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
     # --- Load Zones (in belastingzones tab) ---
