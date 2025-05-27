@@ -5,11 +5,10 @@ All notable changes to this project will be documented in this file.
 Semantic versioning is used to denote different versions of this project.
 
 ## [`v0.0.6`] - 2025-xx-xx
-
 ### Added
-- Horizontal spawn arrow to the topview
 ### Changed
 - Split the concrete cover input into separate fields for top and bottom cover values, allowing for different cover specifications for the top and bottom of the plate.
+- Split the shear reinforcement input fields into separate fields for top and bottom.
 ### Fixed
 
 ## [`v0.0.5`] - 2025-05-22
