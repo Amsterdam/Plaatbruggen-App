@@ -13,8 +13,10 @@ from viktor.parametrization import (
     MultiSelectField,
     NumberField,
     OptionField,
+    OutputField,
     Page,
     Parametrization,
+    RowLookup,
     Tab,
     Text,
     TextAreaField,
@@ -404,7 +406,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
                 "hoofdwapening_dwars_onder_diameter": 12.0,
                 "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
                 "heeft_bijlegwapening": False,
-            }
+            },
         ],
     )
 
@@ -443,7 +445,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
         "H.o.h. afstand hoofdwapening dwarsrichting boven", default=150.0, suffix="mm", flex=53
     )
 
-    input.geometrie_wapening.zones.lb4 = LineBreak()
+    input.geometrie_wapening.zones.lb5 = LineBreak()
 
     # Main reinforcement - Transverse Bottom
     input.geometrie_wapening.zones.hoofdwapening_dwars_onder_diameter = NumberField(
@@ -455,7 +457,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     )
 
     # Visual separator for bijlegwapening
-    input.geometrie_wapening.zones.lb5 = LineBreak()
+    input.geometrie_wapening.zones.lb6 = LineBreak()
 
     # Additional reinforcement toggle
     input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)    
@@ -466,41 +468,41 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
         operand=Lookup("$row.heeft_bijlegwapening"),
     )
 
-    input.geometrie_wapening.zones.lb6 = LineBreak()
+    input.geometrie_wapening.zones.lb7 = LineBreak()
 
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(
         "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
     )
-    input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = NumberField(
-        "H.o.h. afstand bijlegwapening langsrichting boven", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
+    input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = OutputField(
+        "H.o.h. afstand bijlegwapening langsrichting boven", value=Lookup("$row.hoofdwapening_langs_boven_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
-    input.geometrie_wapening.zones.lb7 = LineBreak()
+    input.geometrie_wapening.zones.lb8 = LineBreak()
 
     # Additional reinforcement - Longitudinal bottom
     input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
         "Diameter bijlegwapening langsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
     )
-    input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = NumberField(
-        "H.o.h. afstand bijlegwapening langsrichting onder", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
+    input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = OutputField(
+        "H.o.h. afstand bijlegwapening langsrichting onder", value=Lookup("$row.hoofdwapening_langs_onder_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
-    input.geometrie_wapening.zones.lb8 = LineBreak()
+    input.geometrie_wapening.zones.lb9 = LineBreak()
 
     # Additional reinforcement - Transverse top
     input.geometrie_wapening.zones.bijlegwapening_dwars_boven_diameter = NumberField(
         "Diameter bijlegwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
     )
-    input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = NumberField(
-        "H.o.h. afstand bijlegwapening dwarsrichting boven", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
+    input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = OutputField(
+        "H.o.h. afstand bijlegwapening dwarsrichting boven", value=Lookup("$row.hoofdwapening_dwars_boven_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
     )
-    input.geometrie_wapening.zones.lb9 = LineBreak()
+    input.geometrie_wapening.zones.lb10 = LineBreak()
     # Additional reinforcement - Transverse bottom
     input.geometrie_wapening.zones.bijlegwapening_dwars_onder_diameter = NumberField(
         "Diameter bijlegwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
     )
-    input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = NumberField(
-        "H.o.h. afstand bijlegwapening dwarsrichting onder", default=150.0, suffix="mm", flex=53, visible=_bijleg_visibility
+    input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = OutputField(
+        "H.o.h. afstand bijlegwapening dwarsrichting onder", value=Lookup("$row.hoofdwapening_dwars_onder_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
     )
 
     # ----------------------------------------
