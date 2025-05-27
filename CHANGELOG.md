@@ -9,6 +9,7 @@ Semantic versioning is used to denote different versions of this project.
 ### Changed
 - Split the concrete cover input into separate fields for top and bottom cover values, allowing for different cover specifications for the top and bottom of the plate.
 - Split the shear reinforcement input fields into separate fields for top and bottom.
+- Reinforcement input changed so that user can input reinforcement configurations and apply them onto multiple zones, instead of repeating input per zone. Changed explanatory text. 
 ### Fixed
 
 ## [`v0.0.5`] - 2025-05-22

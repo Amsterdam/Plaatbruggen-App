@@ -123,21 +123,6 @@ DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for 
 
 
 # --- Functions for dynamic reinforcement zones ---
-def calculate_max_array(params: Mapping, **kwargs) -> int:  # noqa: ARG001
-    """
-    Calculate the maximum number of reinforcement zones based on bridge segments.
-
-    Args:
-        params: Parameters object containing bridge_segments_array
-        **kwargs: Additional keyword arguments (unused).
-
-    Returns:
-        The maximum number of reinforcement zones (3 per segment)
-
-    """
-    sections = len(params.bridge_segments_array)
-    return 3 * (sections - 1)
-
 
 def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     """
@@ -353,7 +338,8 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
 
     # --- Reinforcement Geometry (in geometrie_wapening tab) ---
     input.geometrie_wapening.explanation = Text(
-        """Op deze pagina kan de wapening van de brug worden ingevoerd. De wapening moet ingevoerd worden per zone.
+        """Op deze pagina kan de wapening van de brug worden ingevoerd. Er kunnen oneindig veel wapeningconfiguraties worden toegevoegd.
+        Er kan per configuratie worden aangegeven in welke zones deze moet worden toegepast.
 De zones corresponderen met de plaatzones die worden gegenereerd op basis van de geometrie:
 - Bij de minimale geometrie (2 doorsnedes) ontstaan er 3 zones: "1-1", "2-1" en "3-1"
 - Voor elke extra doorsnede komen er 3 nieuwe zones bij: "1-2", "2-2", "3-2", etc.
@@ -361,10 +347,15 @@ De zones corresponderen met de plaatzones die worden gegenereerd op basis van de
 - Het getal na het streepje geeft aan bij welk segment de zone hoort
 
 Eerst wordt er gevraagd naar de eigenschappen van de hoofdwapening in langs- en dwarsrichting.
-Vervolgens kan er per veld aangeklikt worden, of er extra bijlegwapening aanwezig is in de zone.
+Vervolgens kan er aangeklikt worden, of er extra bijlegwapening aanwezig is in de configuratie.
 Wanneer dit wordt aangevinkt, verschijnen dezelfde invoervelden nogmaals, om deze bijlegwapening te definiëren.
-In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwapeningsnet gelegd."""
-    )  # General reinforcement parameters
+In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwapeningsnet gelegd, met dezelfde hart op hart afstand.
+
+Zorg ervoor dat elke zone altijd precies 1 keer is aangevinkt, anders kan het model niet correct worden gegenereerd.
+Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningsconfiguraties worden gedefinieerd."""
+    )  
+    
+    # General reinforcement parameters
     input.geometrie_wapening.staalsoort = OptionField(
         "Staalsoort",
         options=get_steel_qualities(),
@@ -398,13 +389,12 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     )
 
     input.geometrie_wapening.zones = DynamicArray(
-        "Wapening per zone",
-        min=3,
-        max=calculate_max_array,
+        "Wapeningsconfiguraties",
+        min=1,  # Always require at least one configuration
         name="reinforcement_zones_array",
         default=[
             {
-                "zone_number": "1-1",
+                "zone_number": ["1-1"],  # Default to first zone, but can select multiple
                 "hoofdwapening_langs_boven_diameter": 12.0,
                 "hoofdwapening_langs_boven_hart_op_hart": 150.0,
                 "hoofdwapening_langs_onder_diameter": 12.0,
@@ -414,37 +404,15 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
                 "hoofdwapening_dwars_onder_diameter": 12.0,
                 "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
                 "heeft_bijlegwapening": False,
-            },
-            {
-                "zone_number": "2-1",
-                "hoofdwapening_langs_boven_diameter": 12.0,
-                "hoofdwapening_langs_boven_hart_op_hart": 150.0,
-                "hoofdwapening_langs_onder_diameter": 12.0,
-                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
-                "hoofdwapening_dwars_boven_diameter": 12.0,
-                "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
-                "hoofdwapening_dwars_onder_diameter": 12.0,
-                "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
-                "heeft_bijlegwapening": False,
-            },
-            {
-                "zone_number": "3-1",
-                "hoofdwapening_langs_boven_diameter": 12.0,
-                "hoofdwapening_langs_boven_hart_op_hart": 150.0,
-                "hoofdwapening_langs_onder_diameter": 12.0,
-                "hoofdwapening_langs_onder_hart_op_hart": 150.0,                
-                "hoofdwapening_dwars_boven_diameter": 12.0,
-                "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
-                "hoofdwapening_dwars_onder_diameter": 12.0,
-                "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
-                "heeft_bijlegwapening": False,
-            },
+            }
         ],
     )
 
-    # Zone number display
-    input.geometrie_wapening.zones.zone_number = OptionField(
-        "Zone nummer", options=define_options_numbering, description="Dit is het zone nummer dat correspondeert met de zone in de brug."
+    # Zone number selection
+    input.geometrie_wapening.zones.zone_number = MultiSelectField(
+        "Zones", 
+        options=define_options_numbering,
+        description="Selecteer de zones waar deze wapeningsconfiguratie moet worden toegepast."
     )
 
     input.geometrie_wapening.zones.lb2 = LineBreak()
@@ -490,7 +458,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
     input.geometrie_wapening.zones.lb5 = LineBreak()
 
     # Additional reinforcement toggle
-    input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)
+    input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)    
 
     # Additional reinforcement fields - only visible when heeft_bijlegwapening is True
     _bijleg_visibility = DynamicArrayConstraint(

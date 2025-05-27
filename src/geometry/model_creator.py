@@ -66,8 +66,26 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901,
 
     Returns:
         trimesh.Trimesh: A trimesh object representing the rebars.
-
     """
+
+    def parse_zone_number(zone_numbers: list[str] | str) -> list[tuple[int, int]]:
+        """Parse zone numbers into a list of (position, segment) tuples.
+        
+        Args:
+            zone_numbers: Either a single zone number string or a list of zone number strings
+                        in the format "X-Y" where X is the position (1,2,3) and Y is the segment number.
+        
+        Returns:
+            List of tuples, each containing (position, segment_idx) where segment_idx is 0-based.
+        """
+        if isinstance(zone_numbers, str):
+            zone_numbers = [zone_numbers]
+        
+        result = []
+        for zone_number in zone_numbers:
+            position, segment = map(int, zone_number.split("-"))
+            result.append((position, segment - 1))  # Convert to 0-based segment index
+        return result
 
     def get_cumulative_distance(segment_idx: int) -> float:
         """Calculate the cumulative distance to the start of a segment."""
@@ -89,12 +107,26 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901,
             "hoh_shear_top": zone_entry.hoofdwapening_dwars_boven_hart_op_hart / 1000,
             "diam_shear_bottom": zone_entry.hoofdwapening_dwars_onder_diameter / 1000,
             "hoh_shear_bottom": zone_entry.hoofdwapening_dwars_onder_hart_op_hart / 1000,
-        }
-
-    def parse_zone_number(zone_number: str) -> tuple[int, int]:
-        """Parse zone number 'X-Y' into position (1,2,3) and segment index (1,2,...)."""
-        position, segment = map(int, zone_number.split("-"))
-        return position, segment - 1  # Convert to 0-based segment index
+        }    
+    
+    def parse_zone_number(zone_numbers: list[str] | str) -> list[tuple[int, int]]:
+        """Parse zone numbers into a list of (position, segment) tuples.
+        
+        Args:
+            zone_numbers: Either a single zone number string or a list of zone number strings
+                        in the format "X-Y" where X is the position (1,2,3) and Y is the segment number.
+        
+        Returns:
+            List of tuples, each containing (position, segment_idx) where segment_idx is 0-based.
+        """
+        if isinstance(zone_numbers, str):
+            zone_numbers = [zone_numbers]
+        
+        result = []
+        for zone_number in zone_numbers:
+            position, segment = map(int, zone_number.split("-"))
+            result.append((position, segment - 1))  # Convert to 0-based segment index
+        return result
 
     def get_zone_dimensions(position: int, segment_idx: int) -> dict:
         """Get geometric dimensions for a zone based on its position and segment."""
@@ -182,8 +214,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901,
                 positions.extend([-offset, offset])
 
         positions.sort()
-        return [pos + y_offset for pos in positions]
-
+        return [pos + y_offset for pos in positions]    
     def get_shear_positions(width_eff: float, hoh: float, diameter_shear: float, zone_params: dict) -> list[float]:
         """Calculate positions for shear reinforcement."""
         n_rebars = int(width_eff / hoh)
@@ -295,58 +326,68 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901,
     z_position_top = params.bridge_segments_array[0].dz_2 - params.bridge_segments_array[0].dz
     rebar_scene = trimesh.Scene()
 
-    # Process each reinforcement zone
-    for zone_entry in reinforcement_zones_array:
-        # Parse zone number to get position and segment
-        position, segment_idx = parse_zone_number(zone_entry.zone_number)
+    print("Processing reinforcement configurations...")
 
-        # Get parameters and dimensions for this zone
-        zone_params = get_zone_parameters(zone_entry)
-        zone_dims = get_zone_dimensions(position, segment_idx)
+    # Process each reinforcement configuration
+    for config_entry in reinforcement_zones_array:
+        # Get all zones where this configuration should be applied
+        zone_tuples = parse_zone_number(config_entry.zone_number)
+        
+        print(f"Configuration applies to zones: {config_entry.zone_number}")
+        
+        # Get parameters for this configuration
+        zone_params = get_zone_parameters(config_entry)
 
-        # Calculate the cumulative distance to this segment
-        x_offset = get_cumulative_distance(segment_idx)
+        # Apply configuration to each zone
+        for position, segment_idx in zone_tuples:
+            print(f"  Applying to zone {position}-{segment_idx+1}")
+            
+            # Get dimensions for this specific zone
+            zone_dims = get_zone_dimensions(position, segment_idx)
 
-        # Calculate widths, positions and offsets
-        effective_widths = calculate_effective_widths(zone_params, zone_dims)
-        z_positions = calculate_z_positions(position == 2, zone_params)
-        y_offset = calculate_y_offset(position, segment_idx)
+            # Calculate the cumulative distance to this segment
+            x_offset = get_cumulative_distance(segment_idx)
 
-        # Create longitudinal reinforcement
-        bottom_positions = calculate_rebar_positions(effective_widths["long_bottom"], zone_params["hoh_long_bottom"], y_offset)
-        create_rebar_meshes(
-            bottom_positions,
-            z_positions["long_bottom"],
-            zone_params["diam_long_bottom"],
-            zone_dims["length"],
-            x_offset,
-            zone_dims["height_start"],
-            zone_dims["height_end"],
-        )
+            # Calculate widths, positions and offsets
+            effective_widths = calculate_effective_widths(zone_params, zone_dims)
+            z_positions = calculate_z_positions(position == 2, zone_params)
+            y_offset = calculate_y_offset(position, segment_idx)
 
-        top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
-        create_rebar_meshes(
-            top_positions,
-            z_positions["long_top"],
-            zone_params["diam_long_top"],
-            zone_dims["length"],
-            x_offset,
-            zone_dims["height_start"],
-            zone_dims["height_end"],
-        )        
-        # Create bottom shear reinforcement
-        if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
-            shear_positions_bottom = get_shear_positions(effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"], zone_params)
-            create_shear_rebars(
-                shear_positions_bottom, y_offset, zone_dims["bz"], zone_params["diam_shear_bottom"], z_positions["shear_bottom"], x_offset, zone_dims["height_start"], zone_dims["height_end"]
+            # Create longitudinal reinforcement
+            bottom_positions = calculate_rebar_positions(effective_widths["long_bottom"], zone_params["hoh_long_bottom"], y_offset)
+            create_rebar_meshes(
+                bottom_positions,
+                z_positions["long_bottom"],
+                zone_params["diam_long_bottom"],
+                zone_dims["length"],
+                x_offset,
+                zone_dims["height_start"],
+                zone_dims["height_end"],
             )
 
-        # Create top shear reinforcement
-        if zone_params.get("hoh_shear_top") and zone_params.get("diam_shear_top"):
-            shear_positions_top = get_shear_positions(effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"], zone_params)
-            create_shear_rebars(
-                shear_positions_top, y_offset, zone_dims["bz"], zone_params["diam_shear_top"], z_positions["shear_top"], x_offset, zone_dims["height_start"], zone_dims["height_end"]
-            )
+            top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
+            create_rebar_meshes(
+                top_positions,
+                z_positions["long_top"],
+                zone_params["diam_long_top"],
+                zone_dims["length"],
+                x_offset,
+                zone_dims["height_start"],
+                zone_dims["height_end"],
+            )        
+            # Create bottom shear reinforcement
+            if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
+                shear_positions_bottom = get_shear_positions(effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"], zone_params)
+                create_shear_rebars(
+                    shear_positions_bottom, y_offset, zone_dims["bz"], zone_params["diam_shear_bottom"], z_positions["shear_bottom"], x_offset, zone_dims["height_start"], zone_dims["height_end"]
+                )
+
+            # Create top shear reinforcement
+            if zone_params.get("hoh_shear_top") and zone_params.get("diam_shear_top"):
+                shear_positions_top = get_shear_positions(effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"], zone_params)
+                create_shear_rebars(
+                    shear_positions_top, y_offset, zone_dims["bz"], zone_params["diam_shear_top"], z_positions["shear_top"], x_offset, zone_dims["height_start"], zone_dims["height_end"]
+                )
 
     return rebar_scene  # type: ignore[return-value]  # Scene is functionally compatible with Trimesh in this context
 
