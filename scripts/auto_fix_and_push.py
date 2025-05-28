@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Auto-fix code quality issues and push when clean."""
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -15,6 +16,14 @@ from tests.test_utils import (  # noqa: E402
     safe_emoji_text,
     should_use_concise_mode,
 )
+
+
+def is_running_in_git_hook() -> bool:
+    """Check if we're running inside a git hook to avoid recursive calls."""
+    return any(
+        var in os.environ 
+        for var in ["PRE_COMMIT", "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL"]
+    ) or "pre-commit" in sys.argv[0].lower()
 
 
 def run_command_with_output(cmd: list[str], description: str) -> tuple[int, str]:
@@ -117,65 +126,82 @@ def show_progress(iteration: int, force_concise: bool) -> None:
         print(f"\n{colored_text(f'--- Iteration {iteration} ---', Colors.CYAN, bold=True)}")  # noqa: T201
 
 
-def handle_formatting(force_concise: bool) -> tuple[bool, int]:
+def handle_formatting(force_concise: bool, in_hook: bool) -> tuple[bool, int]:
     """Handle ruff formatting step."""
     format_success, files_formatted = run_ruff_format()
     if files_formatted > 0:
         if not force_concise:
             print(colored_text(f"🔧 Formatted {files_formatted} file(s)", Colors.YELLOW))  # noqa: T201
 
-        commit_msg = f"Auto-format code ({files_formatted} file{'s' if files_formatted != 1 else ''})"
-        if commit_changes(commit_msg):
-            if not force_concise:
-                print(colored_text("✅ Formatting changes committed", Colors.GREEN))  # noqa: T201
-        else:
-            print(colored_text("❌ Failed to commit formatting changes", Colors.RED))  # noqa: T201
-            return False, files_formatted
+        # Only commit if NOT in git hook (to avoid conflicts)
+        if not in_hook:
+            commit_msg = f"Auto-format code ({files_formatted} file{'s' if files_formatted != 1 else ''})"
+            if commit_changes(commit_msg):
+                if not force_concise:
+                    print(colored_text("✅ Formatting changes committed", Colors.GREEN))  # noqa: T201
+            else:
+                print(colored_text("❌ Failed to commit formatting changes", Colors.RED))  # noqa: T201
+                return False, files_formatted
+        elif not force_concise:
+            print(colored_text("📝 Changes applied (will be committed with your push)", Colors.BLUE))  # noqa: T201
 
     return True, files_formatted
 
 
-def handle_style_fixes(force_concise: bool) -> tuple[bool, int]:
+def handle_style_fixes(force_concise: bool, in_hook: bool) -> tuple[bool, int]:
     """Handle ruff style fix step."""
     check_success, issues_fixed = run_ruff_check_fix()
     if issues_fixed > 0:
         if not force_concise:
             print(colored_text(f"🔧 Fixed {issues_fixed} code style issue(s)", Colors.YELLOW))  # noqa: T201
 
-        commit_msg = f"Auto-fix code style issues ({issues_fixed} issue{'s' if issues_fixed != 1 else ''})"
-        if commit_changes(commit_msg):
-            if not force_concise:
-                print(colored_text("✅ Style fix changes committed", Colors.GREEN))  # noqa: T201
-        else:
-            print(colored_text("❌ Failed to commit style fixes", Colors.RED))  # noqa: T201
-            return False, issues_fixed
+        # Only commit if NOT in git hook (to avoid conflicts)
+        if not in_hook:
+            commit_msg = f"Auto-fix code style issues ({issues_fixed} issue{'s' if issues_fixed != 1 else ''})"
+            if commit_changes(commit_msg):
+                if not force_concise:
+                    print(colored_text("✅ Style fix changes committed", Colors.GREEN))  # noqa: T201
+            else:
+                print(colored_text("❌ Failed to commit style fixes", Colors.RED))  # noqa: T201
+                return False, issues_fixed
+        elif not force_concise:
+            print(colored_text("📝 Changes applied (will be committed with your push)", Colors.BLUE))  # noqa: T201
 
     return True, issues_fixed
 
 
-def handle_successful_push(force_concise: bool) -> int:
-    """Handle successful completion and push."""
-    if not force_concise:
-        print(colored_text("\n🎉 All quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
-        print(colored_text("📤 Pushing to remote...", Colors.BLUE))  # noqa: T201
-
-    try:
-        subprocess.run(["git", "push"], cwd=project_root, check=True, capture_output=True)
-    except subprocess.CalledProcessError as e:
+def handle_successful_completion(force_concise: bool, in_hook: bool) -> int:
+    """Handle successful completion."""
+    if in_hook:
+        # When running in git hook, just indicate success - let git push continue
         if force_concise:
-            safe_emoji_text("❌ PUSH FAILED", "PUSH FAILED")
+            safe_emoji_text("✅ ALL CHECKS PASSED", "ALL CHECKS PASSED")
         else:
-            print(colored_text("❌ Push failed", Colors.RED, bold=True))  # noqa: T201
-        print(f"Git push error: {e}")  # noqa: T201
-        return 1
-    else:
-        if force_concise:
-            safe_emoji_text("✅ PUSH SUCCESSFUL", "PUSH SUCCESSFUL")
-            print("All quality issues auto-fixed and pushed!")  # noqa: T201
-        else:
-            print(colored_text("✅ Push successful!", Colors.GREEN, bold=True))  # noqa: T201
-            print(colored_text("All quality issues have been auto-fixed and committed.", Colors.GREEN))  # noqa: T201
+            print(colored_text("✅ All quality checks passed! Push will continue...", Colors.GREEN, bold=True))  # noqa: T201
         return 0
+    else:
+        # When running standalone, actually push
+        if not force_concise:
+            print(colored_text("\n🎉 All quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
+            print(colored_text("📤 Pushing to remote...", Colors.BLUE))  # noqa: T201
+
+        try:
+            subprocess.run(["git", "push"], cwd=project_root, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            if force_concise:
+                safe_emoji_text("❌ PUSH FAILED", "PUSH FAILED")
+            else:
+                print(colored_text("❌ Push failed", Colors.RED, bold=True))  # noqa: T201
+            print(f"Git push error: {e}")  # noqa: T201
+            return 1
+        else:
+            if force_concise:
+                safe_emoji_text("✅ PUSH SUCCESSFUL", "PUSH SUCCESSFUL")
+                print("All quality issues auto-fixed and pushed!")  # noqa: T201
+            else:
+                print(colored_text("✅ Push successful!", Colors.GREEN, bold=True))  # noqa: T201
+                print(colored_text("All quality issues have been auto-fixed and committed.", Colors.GREEN))  # noqa: T201
+            return 0
 
 
 def show_remaining_issues(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, force_concise: bool) -> None:
@@ -195,14 +221,17 @@ def show_remaining_issues(ruff_clean: bool, mypy_clean: bool, tests_clean: bool,
         print(colored_text(f"⚠️  Remaining issues: {', '.join(remaining_issues)}", Colors.YELLOW))  # noqa: T201
 
 
-def show_manual_fix_instructions(force_concise: bool) -> None:
+def show_manual_fix_instructions(force_concise: bool, in_hook: bool) -> None:
     """Show instructions for manual fixes."""
     if force_concise:
         safe_emoji_text("❌ AUTO-FIX INCOMPLETE", "AUTO-FIX INCOMPLETE")
         print("Some issues require manual fixing.")  # noqa: T201
         print("Run: python scripts/run_ruff_check.py")  # noqa: T201
     else:
-        print(colored_text("\n❌ Could not auto-fix all issues", Colors.RED, bold=True))  # noqa: T201
+        if in_hook:
+            print(colored_text("\n❌ Cannot auto-fix all issues - push blocked", Colors.RED, bold=True))  # noqa: T201
+        else:
+            print(colored_text("\n❌ Could not auto-fix all issues", Colors.RED, bold=True))  # noqa: T201
         print(colored_text("Some issues require manual intervention:", Colors.YELLOW))  # noqa: T201
         print(colored_text("  • Run 'python scripts/run_ruff_check.py' for detailed code style issues", Colors.CYAN))  # noqa: T201
         print(colored_text("  • Run 'python scripts/run_mypy.py' for type checking issues", Colors.CYAN))  # noqa: T201
@@ -212,23 +241,27 @@ def show_manual_fix_instructions(force_concise: bool) -> None:
 def auto_fix_and_push() -> int:
     """Auto-fix issues and push when everything is clean."""
     force_concise = should_use_concise_mode()
+    in_hook = is_running_in_git_hook()
     max_iterations = 3
     iteration = 0
 
     if not force_concise:
-        print(colored_text("🔄 Starting auto-fix and push process...", Colors.BLUE, bold=True))  # noqa: T201
+        if in_hook:
+            print(colored_text("🔄 Pre-commit: Auto-fixing code quality issues...", Colors.BLUE, bold=True))  # noqa: T201
+        else:
+            print(colored_text("🔄 Starting auto-fix and push process...", Colors.BLUE, bold=True))  # noqa: T201
 
     while iteration < max_iterations:
         iteration += 1
         show_progress(iteration, force_concise)
 
         # Step 1: Apply ruff formatting
-        format_ok, files_formatted = handle_formatting(force_concise)
+        format_ok, files_formatted = handle_formatting(force_concise, in_hook)
         if not format_ok:
             return 1
 
         # Step 2: Apply ruff check fixes
-        style_ok, issues_fixed = handle_style_fixes(force_concise)
+        style_ok, issues_fixed = handle_style_fixes(force_concise, in_hook)
         if not style_ok:
             return 1
 
@@ -236,7 +269,7 @@ def auto_fix_and_push() -> int:
         ruff_clean, mypy_clean, tests_clean = run_quality_checks()
 
         if ruff_clean and mypy_clean and tests_clean:
-            return handle_successful_push(force_concise)
+            return handle_successful_completion(force_concise, in_hook)
 
         # Step 4: Show remaining issues
         show_remaining_issues(ruff_clean, mypy_clean, tests_clean, force_concise)
@@ -246,7 +279,7 @@ def auto_fix_and_push() -> int:
             break
 
     # If we get here, we couldn't auto-fix everything
-    show_manual_fix_instructions(force_concise)
+    show_manual_fix_instructions(force_concise, in_hook)
     return 1
 
 
