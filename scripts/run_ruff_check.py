@@ -113,6 +113,10 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
             lines = output.strip().split("\n") if output else []
             error_count = extract_error_count(lines)
             
+
+
+
+            
             if error_count > 0:
                 # Try to auto-commit and push the fixes
                 if auto_commit_and_push_fixes(error_count):
