@@ -37,7 +37,8 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
-# from src.report.report_functions import create_export_report  # Import the report creation function  # TEMPORARILY COMMENTED OUT - docxtpl network issue
+
+# NOTE: Report functionality disabled due to docxtpl network connectivity issues
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
 from viktor.views import (
@@ -413,7 +414,4 @@ class BridgeController(ViktorController):
 
         """
         # TEMPORARILY DISABLED - docxtpl network issue
-        raise UserError("Report generation temporarily disabled due to network connectivity issues with docxtpl dependency.")
-        # using File object
-        # pdf = create_export_report(params)
-        # return PDFResult(file=pdf)
+        raise UserError("Report generation temporarily disabled due to network connectivity issues.")
