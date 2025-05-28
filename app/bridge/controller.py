@@ -4,24 +4,8 @@ from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
+
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
-from viktor.core import File, ViktorController
-from viktor.errors import UserError  # Add UserError
-from viktor.views import (
-    DataGroup,  # Add DataGroup
-    DataItem,  # Add DataItem
-    DataResult,  # Add DataResult
-    DataView,  # Add DataView
-    GeometryResult,
-    GeometryView,
-    MapPoint,  # Add MapPoint
-    MapResult,  # Add MapResult
-    MapView,  # Add MapView
-    PDFResult,
-    PDFView,
-    PlotlyResult,  # Import PlotlyResult
-    PlotlyView,  # Import PlotlyView
-)
 
 # ParamsForLoadZones protocol and validate_load_zone_widths are in app.bridge.utils
 from app.bridge.utils import validate_load_zone_widths
@@ -53,7 +37,24 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
-from src.report.report_functions import create_export_report  # Import the report creation function
+# from src.report.report_functions import create_export_report  # Import the report creation function  # TEMP: Commented out due to missing docxtpl
+from viktor.core import File, ViktorController
+from viktor.errors import UserError  # Add UserError
+from viktor.views import (
+    DataGroup,  # Add DataGroup
+    DataItem,  # Add DataItem
+    DataResult,  # Add DataResult
+    DataView,  # Add DataView
+    GeometryResult,
+    GeometryView,
+    MapPoint,  # Add MapPoint
+    MapResult,  # Add MapResult
+    MapView,  # Add MapView
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
+)
 
 # Import parametrization from the separate file
 from .parametrization import (
@@ -398,20 +399,21 @@ class BridgeController(ViktorController):
     # output - Rapport
     # ============================================================================================================
 
-    @PDFView("Rapport", duration_guess=1)
-    def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:  # noqa: ARG002
-        """
-        Generates a PDF report for the bridge design.
-
-        Args:
-            params (BridgeParametrization): Input parameters for the bridge dimensions.
-            **kwargs: Additional arguments.
-
-        Returns:
-            File: A PDF file containing the report.
-
-        """
-        # using File object
-        pdf = create_export_report(params)
-
-        return PDFResult(file=pdf)
+    # TEMP: Commented out due to missing docxtpl dependency
+    # @PDFView("Rapport", duration_guess=1)
+    # def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:  # noqa: ARG002
+    #     """
+    #     Generates a PDF report for the bridge design.
+    #
+    #     Args:
+    #         params (BridgeParametrization): Input parameters for the bridge dimensions.
+    #         **kwargs: Additional arguments.
+    #
+    #     Returns:
+    #         File: A PDF file containing the report.
+    #
+    #     """
+    #     # using File object
+    #     pdf = create_export_report(params)
+    #
+    #     return PDFResult(file=pdf)
