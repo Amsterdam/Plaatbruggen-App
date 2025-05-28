@@ -134,7 +134,7 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
 
         # Extract error count
         error_count = extract_error_count(lines)
-        
+
         if warning_mode:
             safe_emoji_text("WARNING: RUFF CHECK WARNINGS", "RUFF CHECK WARNINGS")
             print(colorized_status_message(f"Found {error_count} code style issues", is_success=False, is_warning=True))  # noqa: T201
