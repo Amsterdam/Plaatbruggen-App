@@ -195,7 +195,6 @@ def report_results(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, change
             print(colored_text("Push will proceed...", Colors.GREEN))  # noqa: T201
         return 0
 
-
     # Show what failed
     failures = []
     if not ruff_clean:
