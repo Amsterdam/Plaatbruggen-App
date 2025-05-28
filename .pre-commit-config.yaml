@@ -9,7 +9,7 @@
 # 2. In your terminal, navigate to your repository and run `pre-commit install`.
 #    This will install the hooks.
 # 3. Now, the hooks will automatically run every time you try to push.
-#    They will auto-fix formatting/style issues and block the push if there are remaining issues.
+#    If formatting is needed, the push will be blocked with instructions to format first.
 # 4. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
 # 5. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
 
@@ -19,25 +19,17 @@ fail_fast: true
 repos:
   - repo: local
     hooks:
-      - id: ruff-format
-        name: Format code with Ruff
-        entry: python -m ruff format --config=.ruff.toml
-        language: system
-        stages: [pre-push]
-        types: [python]
-        pass_filenames: false
-        
-      - id: ruff-check-fix
-        name: Fix code style issues with Ruff
-        entry: python -m ruff check --fix --config=.ruff.toml
-        language: system
-        stages: [pre-push]
-        types: [python]
-        pass_filenames: false
-        
       - id: ruff-check
         name: Check code style with Ruff
         entry: python -m ruff check --config=.ruff.toml
+        language: system
+        stages: [pre-push]
+        types: [python]
+        pass_filenames: false
+        
+      - id: ruff-format-check
+        name: Check code formatting with Ruff
+        entry: python -m ruff format --check --config=.ruff.toml
         language: system
         stages: [pre-push]
         types: [python]

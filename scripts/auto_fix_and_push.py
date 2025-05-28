@@ -20,10 +20,7 @@ from tests.test_utils import (  # noqa: E402
 
 def is_running_in_git_hook() -> bool:
     """Check if we're running inside a git hook to avoid recursive calls."""
-    return any(
-        var in os.environ 
-        for var in ["PRE_COMMIT", "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL"]
-    ) or "pre-commit" in sys.argv[0].lower()
+    return any(var in os.environ for var in ["PRE_COMMIT", "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL"]) or "pre-commit" in sys.argv[0].lower()
 
 
 def run_command_with_output(cmd: list[str], description: str) -> tuple[int, str]:
@@ -179,29 +176,28 @@ def handle_successful_completion(force_concise: bool, in_hook: bool) -> int:
         else:
             print(colored_text("✅ All quality checks passed! Push will continue...", Colors.GREEN, bold=True))  # noqa: T201
         return 0
-    else:
-        # When running standalone, actually push
-        if not force_concise:
-            print(colored_text("\n🎉 All quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
-            print(colored_text("📤 Pushing to remote...", Colors.BLUE))  # noqa: T201
+    # When running standalone, actually push
+    if not force_concise:
+        print(colored_text("\n🎉 All quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
+        print(colored_text("📤 Pushing to remote...", Colors.BLUE))  # noqa: T201
 
-        try:
-            subprocess.run(["git", "push"], cwd=project_root, check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            if force_concise:
-                safe_emoji_text("❌ PUSH FAILED", "PUSH FAILED")
-            else:
-                print(colored_text("❌ Push failed", Colors.RED, bold=True))  # noqa: T201
-            print(f"Git push error: {e}")  # noqa: T201
-            return 1
+    try:
+        subprocess.run(["git", "push"], cwd=project_root, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        if force_concise:
+            safe_emoji_text("❌ PUSH FAILED", "PUSH FAILED")
         else:
-            if force_concise:
-                safe_emoji_text("✅ PUSH SUCCESSFUL", "PUSH SUCCESSFUL")
-                print("All quality issues auto-fixed and pushed!")  # noqa: T201
-            else:
-                print(colored_text("✅ Push successful!", Colors.GREEN, bold=True))  # noqa: T201
-                print(colored_text("All quality issues have been auto-fixed and committed.", Colors.GREEN))  # noqa: T201
-            return 0
+            print(colored_text("❌ Push failed", Colors.RED, bold=True))  # noqa: T201
+        print(f"Git push error: {e}")  # noqa: T201
+        return 1
+    else:
+        if force_concise:
+            safe_emoji_text("✅ PUSH SUCCESSFUL", "PUSH SUCCESSFUL")
+            print("All quality issues auto-fixed and pushed!")  # noqa: T201
+        else:
+            print(colored_text("✅ Push successful!", Colors.GREEN, bold=True))  # noqa: T201
+            print(colored_text("All quality issues have been auto-fixed and committed.", Colors.GREEN))  # noqa: T201
+        return 0
 
 
 def show_remaining_issues(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, force_concise: bool) -> None:
