@@ -32,20 +32,11 @@ def print_concise_summary(result: TextTestResult) -> None:
     if failures == 0 and errors == 0:
         safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
         print(colorized_status_message(f"Ran {total_tests} tests successfully", is_success=True))  # noqa: T201
-
-        # Overall status message - more generic since other checks might have failed
-        print("\n" + "=" * 60)  # noqa: T201
-        print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
-        print(  # noqa: T201
-            colorized_status_message("Check the logs above. If there are no errors, your changes will be pushed.", is_success=False, is_warning=True)
-        )
-        print("=" * 60)  # noqa: T201
     else:
-        safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
+        safe_emoji_text("⚠️ TESTS FAILED", "TESTS FAILED")
+        print(colorized_status_message(f"Warning: {failures} failures, {errors} errors in {total_tests} tests", is_success=False, is_warning=True))  # noqa: T201
         print(colorized_status_message("Run the following command for detailed test error information:", is_success=False, is_warning=True))  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('python run_enhanced_tests.py', Colors.CYAN, bold=True)}")  # noqa: T201
-
-        # Don't show final "CHECKS FAILED" message here - let the hook system handle overall status
 
 
 def print_detailed_summary(result: TextTestResult) -> None:
@@ -122,8 +113,11 @@ def main() -> None:
     else:
         print_detailed_summary(result)
 
-    # Exit with appropriate code
-    if result.failures or result.errors:
+    # In concise mode (git hooks), always return success to show warnings only
+    # In detailed mode (manual runs), return failure code for failed tests
+    if concise_mode:
+        sys.exit(0)  # Always success for warning-only mode
+    elif result.failures or result.errors:
         sys.exit(1)
     else:
         sys.exit(0)

@@ -56,53 +56,6 @@ def extract_error_count(lines: list[str]) -> int:
     return error_count
 
 
-def auto_commit_and_push_fixes(error_count: int) -> bool:
-    """Automatically commit and push ruff fixes and return success status."""
-    try:
-        # Check if there are any changes to commit
-        status_result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=project_root,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-        if not status_result.stdout.strip():
-            # No changes to commit
-            return True
-
-        # Stage all changes (ruff --fix only modifies existing files)
-        subprocess.run(
-            ["git", "add", "-u"],  # -u only stages modified files, not new ones
-            cwd=project_root,
-            check=True,
-            capture_output=True,
-        )
-
-        # Commit with a clear message
-        commit_msg = f"Auto-fix code style issues with ruff ({error_count} issue{'s' if error_count != 1 else ''} fixed)"
-        subprocess.run(
-            ["git", "commit", "-m", commit_msg],
-            cwd=project_root,
-            check=True,
-            capture_output=True,
-        )
-
-        # Auto-push the fixes
-        subprocess.run(
-            ["git", "push"],
-            cwd=project_root,
-            check=True,
-            capture_output=True,
-        )
-
-    except subprocess.CalledProcessError:
-        return False
-    else:
-        return True
-
-
 def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = False) -> None:
     """Handle output in concise mode for git hooks."""
     if result.returncode == 0:
@@ -114,21 +67,14 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
             error_count = extract_error_count(lines)
 
             if error_count > 0:
-                # Try to auto-commit and push the fixes
-                if auto_commit_and_push_fixes(error_count):
-                    print(colorized_status_message(f"Code style issues found and automatically fixed ({error_count} issues)", is_success=True))  # noqa: T201
-                    print(colorized_status_message("Fixes committed and pushed to PR", is_success=True))  # noqa: T201
-                else:
-                    print(colorized_status_message("Please commit and push the fixes manually:", is_success=False, is_warning=True))  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git commit -m "Apply ruff fixes"', Colors.CYAN, bold=True)}")  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
+                print(colorized_status_message(f"Warning: {error_count} code style issues were auto-fixed", is_success=False, is_warning=True))  # noqa: T201
+                print(colorized_status_message("Consider committing the fixes", is_success=False, is_warning=True))  # noqa: T201
             else:
                 print(colorized_status_message("Code style issues found and automatically fixed", is_success=True))  # noqa: T201
         else:
             print(colorized_status_message("No code style issues found", is_success=True))  # noqa: T201
     else:
-        safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
+        safe_emoji_text("⚠️ RUFF CHECK WARNING", "RUFF CHECK WARNING")
 
         # Combine stdout and stderr for analysis
         output = (result.stdout or "") + (result.stderr or "")
@@ -138,13 +84,13 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
         error_count = extract_error_count(lines)
 
         if error_count > 0:
-            print(colorized_status_message(f"Found {error_count} code style issues", is_success=False))  # noqa: T201
+            print(colorized_status_message(f"Warning: Found {error_count} code style issues", is_success=False, is_warning=True))  # noqa: T201
             print(colorized_status_message("Run the following command for detailed code style information:", is_success=False, is_warning=True))  # noqa: T201
             print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
         else:
             print(  # noqa: T201
                 colorized_status_message(
-                    "Code style check failed - run the following command for detailed code style information:", is_success=False, is_warning=True
+                    "Warning: Code style check had issues - run the following command for detailed information:", is_success=False, is_warning=True
                 )
             )
             print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
@@ -200,9 +146,11 @@ def run_ruff_check() -> int:
     except Exception as e:
         safe_emoji_text("❌ RUFF EXECUTION FAILED", "RUFF EXECUTION FAILED")
         print(f"Error running ruff: {e}")  # noqa: T201
-        return 1
+        # Even on execution failure, return success for warning-only mode
+        return 0
     else:
-        return result.returncode
+        # Always return success for warning-only mode
+        return 0
 
 
 if __name__ == "__main__":

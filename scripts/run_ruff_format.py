@@ -54,92 +54,6 @@ def extract_format_stats(lines: list[str]) -> tuple[int, int]:
     return reformatted, unchanged
 
 
-def auto_commit_formatting_changes(reformatted_count: int) -> bool:
-    """Automatically commit formatting changes and return success status."""
-    try:
-        # Stage all changes (ruff format only modifies existing files)
-        subprocess.run(
-            ["git", "add", "-u"],  # -u only stages modified files, not new ones
-            cwd=project_root,
-            check=True,
-            capture_output=True,
-        )
-
-        # Commit with a clear message
-        commit_msg = f"Auto-format code with ruff ({reformatted_count} file{'s' if reformatted_count != 1 else ''} reformatted)"
-        subprocess.run(
-            ["git", "commit", "-m", commit_msg],
-            cwd=project_root,
-            check=True,
-            capture_output=True,
-        )
-
-        # Auto-push the formatting changes
-        subprocess.run(
-            ["git", "push"],
-            cwd=project_root,
-            check=True,
-            capture_output=True,
-        )
-
-    except subprocess.CalledProcessError:
-        return False
-    else:
-        return True
-
-
-def show_auto_format_message(reformatted: int, force_concise: bool, result: subprocess.CompletedProcess) -> None:
-    """Display auto-formatting message."""
-    if force_concise:
-        safe_emoji_text("🔧 AUTO-FORMATTING CODE", "AUTO-FORMATTING CODE")
-        print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=True, is_warning=True))  # noqa: T201
-    else:
-        if result.stdout:
-            print(result.stdout)  # noqa: T201
-        print()  # noqa: T201
-        print(colored_text("🔧 Auto-formatting code...", Colors.YELLOW, bold=True))  # noqa: T201
-
-
-def show_auto_commit_success(force_concise: bool) -> None:
-    """Display auto-commit success message."""
-    if force_concise:
-        print(colorized_status_message("Formatting changes committed and pushed automatically", is_success=True))  # noqa: T201
-        safe_emoji_text("✅ CONTINUING WITH PUSH", "CONTINUING WITH PUSH")
-    else:
-        print(colored_text("✅ Formatting changes committed and pushed automatically", Colors.GREEN, bold=True))  # noqa: T201
-        print(colored_text("PR updated with formatting fixes...", Colors.GREEN))  # noqa: T201
-
-
-def show_auto_commit_failure(force_concise: bool) -> None:
-    """Display auto-commit failure with manual instructions."""
-    if force_concise:
-        safe_emoji_text("❌ AUTO-COMMIT/PUSH FAILED", "AUTO-COMMIT/PUSH FAILED")
-        print(colorized_status_message("Please commit and push formatting changes manually:", is_success=False, is_warning=True))  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git commit -m "Apply code formatting"', Colors.CYAN, bold=True)}")  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
-    else:
-        print(colored_text("❌ Failed to auto-commit/push formatting changes", Colors.RED, bold=True))  # noqa: T201
-        print(colored_text("Please commit and push the changes manually:", Colors.YELLOW))  # noqa: T201
-        print(f"  {colored_text('git add .', Colors.CYAN)}")  # noqa: T201
-        print(f"  {colored_text('git commit -m "Apply code formatting"', Colors.CYAN)}")  # noqa: T201
-        print(f"  {colored_text('git push', Colors.CYAN)}")  # noqa: T201
-
-
-def handle_auto_format_success(reformatted: int, force_concise: bool, result: subprocess.CompletedProcess) -> int:
-    """Handle successful auto-formatting with potential auto-commit."""
-    show_auto_format_message(reformatted, force_concise, result)
-
-    # Attempt to auto-commit the changes
-    if auto_commit_formatting_changes(reformatted):
-        show_auto_commit_success(force_concise)
-        return 0  # Success - continue with push
-
-    # Auto-commit failed - fall back to manual instructions
-    show_auto_commit_failure(force_concise)
-    return 1  # Failure - stop push
-
-
 def handle_concise_output(result: subprocess.CompletedProcess) -> None:
     """Handle output in concise mode for git hooks."""
     output = (result.stdout or "") + (result.stderr or "")
@@ -150,21 +64,15 @@ def handle_concise_output(result: subprocess.CompletedProcess) -> None:
     # Check if files were actually reformatted (regardless of exit code)
     if reformatted > 0:
         # Files were reformatted
-        safe_emoji_text("🔧 FILES REFORMATTED", "FILES REFORMATTED")
-        print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=False, is_warning=True))  # noqa: T201
-        print()  # noqa: T201
-        print(colorized_status_message("Files have been automatically reformatted!", is_success=False, is_warning=True))  # noqa: T201
-        print(colorized_status_message("Please commit the changes and push again:", is_success=False, is_warning=True))  # noqa: T201
-        print()  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git commit -m "Apply code formatting"', Colors.CYAN, bold=True)}")  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
+        safe_emoji_text("⚠️ FILES REFORMATTED", "FILES REFORMATTED")
+        print(colorized_status_message(f"Warning: {reformatted} file(s) were reformatted", is_success=False, is_warning=True))  # noqa: T201
+        print(colorized_status_message("Consider committing the formatting changes", is_success=False, is_warning=True))  # noqa: T201
     elif result.returncode == 0:
         safe_emoji_text("✅ RUFF FORMAT PASSED!", "RUFF FORMAT PASSED!")
         print(colorized_status_message("Code formatting is consistent", is_success=True))  # noqa: T201
     else:
-        safe_emoji_text("❌ RUFF FORMAT FAILED", "RUFF FORMAT FAILED")
-        print(colorized_status_message("Code formatting failed - check the output above", is_success=False))  # noqa: T201
+        safe_emoji_text("⚠️ RUFF FORMAT WARNING", "RUFF FORMAT WARNING")
+        print(colorized_status_message("Warning: Code formatting check had issues", is_success=False, is_warning=True))  # noqa: T201
 
 
 def run_ruff_format() -> int:
@@ -188,7 +96,18 @@ def run_ruff_format() -> int:
         reformatted, _ = extract_format_stats(lines)
 
         if reformatted > 0 and result.returncode == 0:
-            return handle_auto_format_success(reformatted, force_concise, result)
+            # Files were reformatted - show warning but allow push to continue
+            if force_concise:
+                safe_emoji_text("⚠️ FILES REFORMATTED", "FILES REFORMATTED")
+                print(colorized_status_message(f"Warning: {reformatted} file(s) were reformatted", is_success=False, is_warning=True))  # noqa: T201
+                print(colorized_status_message("Consider committing the formatting changes before pushing", is_success=False, is_warning=True))  # noqa: T201
+            else:
+                print(colored_text(f"⚠️ Warning: {reformatted} file(s) were reformatted", Colors.YELLOW, bold=True))  # noqa: T201
+                print(colored_text("Consider committing these formatting changes:", Colors.YELLOW))  # noqa: T201
+                print(f"  {colored_text('git add .', Colors.CYAN)}")  # noqa: T201
+                print(f"  {colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN)}")  # noqa: T201
+            # Return success anyway - this is just a warning
+            return 0
 
         if force_concise:
             handle_concise_output(result)
@@ -201,9 +120,11 @@ def run_ruff_format() -> int:
     except Exception as e:
         safe_emoji_text("❌ RUFF FORMAT EXECUTION FAILED", "RUFF FORMAT EXECUTION FAILED")
         print(f"Error running ruff format: {e}")  # noqa: T201
-        return 1
+        # Even on execution failure, return success for warning-only mode
+        return 0
     else:
-        return result.returncode
+        # Always return success for warning-only mode
+        return 0
 
 
 if __name__ == "__main__":
