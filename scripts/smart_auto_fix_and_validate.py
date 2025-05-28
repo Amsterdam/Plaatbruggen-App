@@ -17,7 +17,6 @@ from tests.test_utils import (  # noqa: E402
 )
 
 
-
 def run_quality_script(script_name: str, description: str) -> tuple[int, str]:
     """Run one of our quality check scripts and return exit code and output."""
     script_path = project_root / "scripts" / script_name
