@@ -94,7 +94,6 @@ def run_ruff_check_fix() -> tuple[bool, int]:
     return exit_code == 0, issues_fixed
 
 
-
 def run_quality_checks() -> tuple[bool, bool, bool]:
     """Run all quality checks and return (ruff_check_clean, mypy_clean, tests_clean)."""
     # Check ruff style issues (without fixing)
