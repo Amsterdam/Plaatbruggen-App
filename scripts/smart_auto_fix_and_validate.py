@@ -216,13 +216,19 @@ def report_final_results(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, 
     if all_clean:
         if force_concise:
             if changes_made:
-                print(safe_emoji_text("✅ AUTO-FIXED & VALIDATED", "AUTO-FIXED & VALIDATED"))  # noqa: T201
+                if is_git_hook_environment():
+                    print(safe_emoji_text("✅ AUTO-FIXED & STAGED", "AUTO-FIXED & STAGED"))  # noqa: T201
+                else:
+                    print(safe_emoji_text("✅ AUTO-FIXED & VALIDATED", "AUTO-FIXED & VALIDATED"))  # noqa: T201
             else:
                 print(safe_emoji_text("✅ ALL CHECKS PASSED", "ALL CHECKS PASSED"))  # noqa: T201
         else:
             print(safe_emoji_text("🎉 All quality checks passed!", "All quality checks passed!"))  # noqa: T201
             if changes_made:
-                print(colored_text("Auto-fixes have been applied and committed.", Colors.GREEN))  # noqa: T201
+                if is_git_hook_environment():
+                    print(colored_text("Auto-fixes have been staged for the current commit.", Colors.GREEN))  # noqa: T201
+                else:
+                    print(colored_text("Auto-fixes have been applied and committed.", Colors.GREEN))  # noqa: T201
             print(colored_text("Push will proceed...", Colors.GREEN))  # noqa: T201
         return 0
 
