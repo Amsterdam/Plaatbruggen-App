@@ -279,6 +279,7 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Act - call bypassing decorator - this should raise UserError when disabled
         from viktor.errors import UserError
+
         with pytest.raises(UserError, match="Report generation is temporarily disabled"):
             original_method(self.controller, self.default_params)
 
@@ -372,6 +373,7 @@ class TestBridgeControllerViews(unittest.TestCase):
 
         # Act - call bypassing decorator - this should raise UserError when disabled
         from viktor.errors import UserError
+
         with pytest.raises(UserError, match="Report generation is temporarily disabled"):
             original_method(self.controller, self.default_params)
 

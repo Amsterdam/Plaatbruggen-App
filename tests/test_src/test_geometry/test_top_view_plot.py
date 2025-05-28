@@ -67,7 +67,7 @@ class TestTopViewPlot(unittest.TestCase):
             if "Waarschuwing" in ann.text:
                 warning_annotation = ann
                 break
-        
+
         assert warning_annotation is not None
         assert "<b>Waarschuwing (Belastingzones):</b> Warning 1" in warning_annotation.text
         assert "<b>Waarschuwing (Belastingzones):</b> Another warning here." in warning_annotation.text
@@ -166,11 +166,11 @@ class TestTopViewPlot(unittest.TestCase):
         fig = build_top_view_figure(geo_data)
 
         assert len(fig.layout.annotations) == 3  # 2 zone annotations + 1 north arrow
-        
+
         # Find zone annotations (not the north arrow)
         zone_annotations = [ann for ann in fig.layout.annotations if "<b>Zone" in ann.text]
         assert len(zone_annotations) == 2
-        
+
         ann_1 = zone_annotations[0]
         assert ann_1.x == 1
         assert ann_1.y == 2
