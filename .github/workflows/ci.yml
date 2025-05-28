@@ -1,9 +1,7 @@
-name: Continuous Integration
+name: CI
 
 on:
   pull_request:
-    branches: [ development, main ]
-  push:
     branches: [ development, main ]
 
 jobs:
@@ -11,28 +9,47 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements_dev.txt
-
-      - name: Run Ruff code style check
-        run: python scripts/run_ruff_check.py
-
-      - name: Run Ruff code formatter check
-        run: python scripts/run_ruff_format.py
-
-      - name: Run MyPy type checking
-        run: python scripts/run_mypy.py
-
-      - name: Run unit tests
-        run: python run_enhanced_tests.py 
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements_dev.txt
+    
+    - name: Run Ruff code style check
+      id: ruff-check
+      continue-on-error: true
+      run: python scripts/run_ruff_check.py
+    
+    - name: Run Ruff code formatter check
+      id: ruff-format
+      continue-on-error: true
+      run: python scripts/run_ruff_format.py
+    
+    - name: Run MyPy type checking
+      id: mypy
+      continue-on-error: true
+      run: python scripts/run_mypy.py
+    
+    - name: Run unit tests
+      id: tests
+      continue-on-error: true
+      run: python run_enhanced_tests.py
+    
+    - name: Check if any step failed
+      if: steps.ruff-check.outcome == 'failure' || steps.ruff-format.outcome == 'failure' || steps.mypy.outcome == 'failure' || steps.tests.outcome == 'failure'
+      run: |
+        echo "❌ One or more quality checks failed:"
+        echo "- Ruff style check: ${{ steps.ruff-check.outcome }}"
+        echo "- Ruff formatter: ${{ steps.ruff-format.outcome }}"
+        echo "- MyPy type check: ${{ steps.mypy.outcome }}"
+        echo "- Unit tests: ${{ steps.tests.outcome }}"
+        echo ""
+        echo "Please review the logs above and fix all issues before merging."
+        exit 1 
