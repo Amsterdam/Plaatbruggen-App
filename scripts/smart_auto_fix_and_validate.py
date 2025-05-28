@@ -22,8 +22,6 @@ def run_quality_script(script_name: str, description: str) -> tuple[int, str]:
     """Run one of our quality check scripts and return exit code and output."""
     script_path = project_root / "scripts" / script_name
     try:
-        # Intentional type error for testing - assigning string to int variable
-        test_var: int = "this will cause a mypy error"  # type: ignore will be removed to show error
         result = subprocess.run(
             [sys.executable, str(script_path)], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=project_root, check=False
         )
