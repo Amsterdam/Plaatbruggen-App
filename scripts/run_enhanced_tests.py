@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import TextTestResult
 
 # Add the project root to Python path
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from tests.test_utils import (  # noqa: E402

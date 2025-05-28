@@ -44,7 +44,7 @@ repos:
 
       - id: run-unit-tests
         name: Unit tests
-        entry: python run_enhanced_tests.py
+        entry: python scripts/run_enhanced_tests.py
         language: system
         stages: [pre-push]
         pass_filenames: false
