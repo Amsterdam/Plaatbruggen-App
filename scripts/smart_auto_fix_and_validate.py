@@ -20,12 +20,8 @@ from tests.test_utils import (  # noqa: E402
 
 def is_git_hook_environment() -> bool:
     """Check if we're running in a git hook environment."""
-    return any(
-        var in os.environ 
-        for var in ["PRE_COMMIT", "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL"]
-    ) or any(
-        term in str(sys.argv[0]).lower() 
-        for term in ["pre-commit", "hook"]
+    return any(var in os.environ for var in ["PRE_COMMIT", "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL"]) or any(
+        term in str(sys.argv[0]).lower() for term in ["pre-commit", "hook"]
     )
 
 
@@ -78,11 +74,8 @@ def commit_changes(message: str) -> bool:
 
 def apply_ruff_formatting() -> tuple[bool, int]:
     """Apply ruff formatting and return (success, files_changed)."""
-    exit_code, output = run_command_with_output(
-        [sys.executable, "-m", "ruff", "format", "--config=.ruff.toml"], 
-        "ruff format"
-    )
-    
+    exit_code, output = run_command_with_output([sys.executable, "-m", "ruff", "format", "--config=.ruff.toml"], "ruff format")
+
     # Count reformatted files
     files_changed = 0
     for line in output.split("\n"):
@@ -95,17 +88,14 @@ def apply_ruff_formatting() -> tuple[bool, int]:
                         break
             except (IndexError, ValueError):
                 pass
-    
+
     return exit_code == 0, files_changed
 
 
 def apply_ruff_fixes() -> tuple[bool, int]:
     """Apply ruff style fixes and return (success, issues_fixed)."""
-    exit_code, output = run_command_with_output(
-        [sys.executable, "-m", "ruff", "check", "--fix", "--config=.ruff.toml"], 
-        "ruff check --fix"
-    )
-    
+    exit_code, output = run_command_with_output([sys.executable, "-m", "ruff", "check", "--fix", "--config=.ruff.toml"], "ruff check --fix")
+
     # Count fixed issues
     issues_fixed = 0
     for line in output.split("\n"):
@@ -118,34 +108,22 @@ def apply_ruff_fixes() -> tuple[bool, int]:
                         break
             except (IndexError, ValueError):
                 pass
-    
+
     return exit_code == 0, issues_fixed
 
 
 def run_quality_checks() -> tuple[bool, bool, bool]:
     """Run quality checks and return (ruff_clean, mypy_clean, tests_clean)."""
     # Check ruff (style and formatting)
-    ruff_exit, _ = run_command_with_output(
-        [sys.executable, "-m", "ruff", "check", "--config=.ruff.toml"], 
-        "ruff check"
-    )
-    format_exit, _ = run_command_with_output(
-        [sys.executable, "-m", "ruff", "format", "--check", "--config=.ruff.toml"], 
-        "ruff format --check"
-    )
-    
+    ruff_exit, _ = run_command_with_output([sys.executable, "-m", "ruff", "check", "--config=.ruff.toml"], "ruff check")
+    format_exit, _ = run_command_with_output([sys.executable, "-m", "ruff", "format", "--check", "--config=.ruff.toml"], "ruff format --check")
+
     # Check mypy
-    mypy_exit, _ = run_command_with_output(
-        [sys.executable, "-m", "mypy", "app", "src"], 
-        "mypy"
-    )
-    
+    mypy_exit, _ = run_command_with_output([sys.executable, "-m", "mypy", "app", "src"], "mypy")
+
     # Run tests
-    test_exit, _ = run_command_with_output(
-        [sys.executable, "run_enhanced_tests.py"], 
-        "tests"
-    )
-    
+    test_exit, _ = run_command_with_output([sys.executable, "run_enhanced_tests.py"], "tests")
+
     return (ruff_exit == 0 and format_exit == 0), mypy_exit == 0, test_exit == 0
 
 
@@ -155,54 +133,54 @@ def main() -> int:
     in_git_hook = is_git_hook_environment()
     
     if not force_concise:
-        print(colored_text("🚀 Smart Auto-Fix and Validate", Colors.BLUE, bold=True))  # noqa: T201
+        print(colored_text("Smart Auto-Fix and Validate", Colors.BLUE, bold=True))  # noqa: T201
         print(colored_text("Checking and fixing code quality issues...", Colors.BLUE))  # noqa: T201
     
     # Step 1: Apply formatting fixes
     if not force_concise:
-        print(colored_text("📝 Applying code formatting...", Colors.CYAN))  # noqa: T201
+        print(colored_text("Applying code formatting...", Colors.CYAN))  # noqa: T201
     
     format_success, files_formatted = apply_ruff_formatting()
     if not format_success:
-        print(colored_text("❌ Code formatting failed", Colors.RED))  # noqa: T201
+        print(colored_text("Code formatting failed", Colors.RED))  # noqa: T201
         return 1
     
     formatting_changes_made = files_formatted > 0
     if formatting_changes_made and not force_concise:
-        print(colored_text(f"🔧 Formatted {files_formatted} file(s)", Colors.YELLOW))  # noqa: T201
+        print(colored_text(f"Formatted {files_formatted} file(s)", Colors.YELLOW))  # noqa: T201
     
     # Step 2: Apply style fixes
     if not force_concise:
-        print(colored_text("🔧 Applying style fixes...", Colors.CYAN))  # noqa: T201
+        print(colored_text("Applying style fixes...", Colors.CYAN))  # noqa: T201
     
     style_success, issues_fixed = apply_ruff_fixes()
     if not style_success:
-        print(colored_text("❌ Style fixes failed", Colors.RED))  # noqa: T201
+        print(colored_text("Style fixes failed", Colors.RED))  # noqa: T201
         return 1
     
     style_changes_made = issues_fixed > 0
     if style_changes_made and not force_concise:
-        print(colored_text(f"🔧 Fixed {issues_fixed} style issue(s)", Colors.YELLOW))  # noqa: T201
+        print(colored_text(f"Fixed {issues_fixed} style issue(s)", Colors.YELLOW))  # noqa: T201
     
     # Step 3: Commit auto-fixes if any were made
     changes_made = formatting_changes_made or style_changes_made
     if changes_made:
         if has_unstaged_changes():
             if not stage_all_changes():
-                print(colored_text("❌ Failed to stage auto-fix changes", Colors.RED))  # noqa: T201
+                print(colored_text("Failed to stage auto-fix changes", Colors.RED))  # noqa: T201
                 return 1
         
         commit_msg = f"Auto-fix code quality ({files_formatted} formatted, {issues_fixed} style fixes)"
         if commit_changes(commit_msg):
             if not force_concise:
-                print(colored_text("✅ Auto-fixes committed", Colors.GREEN))  # noqa: T201
+                print(colored_text("Auto-fixes committed", Colors.GREEN))  # noqa: T201
         else:
-            print(colored_text("❌ Failed to commit auto-fixes", Colors.RED))  # noqa: T201
+            print(colored_text("Failed to commit auto-fixes", Colors.RED))  # noqa: T201
             return 1
     
     # Step 4: Run quality validation checks
     if not force_concise:
-        print(colored_text("🔍 Running quality checks...", Colors.CYAN))  # noqa: T201
+        print(colored_text("Running quality checks...", Colors.CYAN))  # noqa: T201
     
     ruff_clean, mypy_clean, tests_clean = run_quality_checks()
     
@@ -210,11 +188,11 @@ def main() -> int:
     if ruff_clean and mypy_clean and tests_clean:
         if force_concise:
             if changes_made:
-                safe_emoji_text("✅ AUTO-FIXED & VALIDATED", "AUTO-FIXED & VALIDATED")
+                safe_emoji_text("AUTO-FIXED & VALIDATED", "AUTO-FIXED & VALIDATED")
             else:
-                safe_emoji_text("✅ ALL CHECKS PASSED", "ALL CHECKS PASSED")
+                safe_emoji_text("ALL CHECKS PASSED", "ALL CHECKS PASSED")
         else:
-            print(colored_text("✅ All quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
+            print(colored_text("All quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
             if changes_made:
                 print(colored_text("Auto-fixes have been applied and committed.", Colors.GREEN))  # noqa: T201
             print(colored_text("Push will proceed...", Colors.GREEN))  # noqa: T201
@@ -230,10 +208,10 @@ def main() -> int:
             failures.append("Tests")
         
         if force_concise:
-            safe_emoji_text("❌ QUALITY CHECKS FAILED", "QUALITY CHECKS FAILED")
+            safe_emoji_text("QUALITY CHECKS FAILED", "QUALITY CHECKS FAILED")
             print(f"Failed: {', '.join(failures)}")  # noqa: T201
         else:
-            print(colored_text("❌ Quality checks failed - push blocked", Colors.RED, bold=True))  # noqa: T201
+            print(colored_text("Quality checks failed - push blocked", Colors.RED, bold=True))  # noqa: T201
             print(colored_text(f"Failed checks: {', '.join(failures)}", Colors.YELLOW))  # noqa: T201
             print(colored_text("Please fix the remaining issues manually:", Colors.CYAN))  # noqa: T201
             print(colored_text("  • Run 'python -m ruff check .' for style issues", Colors.CYAN))  # noqa: T201
@@ -244,4 +222,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())
