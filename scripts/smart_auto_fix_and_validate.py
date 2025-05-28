@@ -12,6 +12,7 @@ sys.path.insert(0, str(project_root))
 from tests.test_utils import (  # noqa: E402
     Colors,
     colored_text,
+    is_git_hook_environment,
     safe_emoji_text,
     should_use_concise_mode,
 )
@@ -149,15 +150,26 @@ def validate_quality(force_concise: bool) -> tuple[bool, bool, bool]:
 
 
 def commit_auto_fixes(changes_made: bool, force_concise: bool) -> bool:
-    """Commit auto-fixes if any were made."""
+    """Handle auto-fixes - commit if standalone, stage if in git hook."""
     if not changes_made:
         return True
 
-    if has_unstaged_changes() and not stage_all_changes():
+    if not has_unstaged_changes():
+        return True
+
+    if not stage_all_changes():
         if not force_concise:
             print(safe_emoji_text("❌ Failed to stage auto-fix changes", "Failed to stage auto-fix changes"))  # noqa: T201
         return False
 
+    # If we're in a git hook context, just stage the changes
+    # The original commit/push will include the auto-fixes
+    if is_git_hook_environment():
+        if not force_concise:
+            print(safe_emoji_text("✅ Auto-fixes staged for current commit", "Auto-fixes staged for current commit"))  # noqa: T201
+        return True
+
+    # If running standalone, commit the auto-fixes
     commit_msg = "Auto-fix code quality (formatting and style)"
     if commit_changes(commit_msg):
         if not force_concise:
