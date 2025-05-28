@@ -212,10 +212,13 @@ def report_final_results(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, 
             if changes_made:
                 if is_git_hook_environment():
                     print(safe_emoji_text("✅ AUTO-FIXED & STAGED", "AUTO-FIXED & STAGED"))  # noqa: T201
+                    print("Quality checks passed - any push errors below are git conflicts, not code quality issues")  # noqa: T201
                 else:
                     print(safe_emoji_text("✅ AUTO-FIXED & VALIDATED", "AUTO-FIXED & VALIDATED"))  # noqa: T201
             else:
                 print(safe_emoji_text("✅ ALL CHECKS PASSED", "ALL CHECKS PASSED"))  # noqa: T201
+                if is_git_hook_environment():
+                    print("Quality checks passed - any push errors below are git conflicts, not code quality issues")  # noqa: T201
         else:
             print(safe_emoji_text("🎉 All quality checks passed!", "All quality checks passed!"))  # noqa: T201
             if changes_made:
@@ -223,7 +226,7 @@ def report_final_results(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, 
                     print(colored_text("Auto-fixes have been staged for the current commit.", Colors.GREEN))  # noqa: T201
                 else:
                     print(colored_text("Auto-fixes have been applied and committed.", Colors.GREEN))  # noqa: T201
-            print(colored_text("Push will proceed...", Colors.GREEN))  # noqa: T201
+            print(colored_text("Code quality validation complete - push will proceed...", Colors.GREEN))  # noqa: T201
         return 0
 
     # Show warnings for unfixable issues, but don't block push
@@ -231,7 +234,7 @@ def report_final_results(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, 
 
     if force_concise:
         print(safe_emoji_text("⚠️ PUSH WITH WARNINGS", "PUSH WITH WARNINGS"))  # noqa: T201
-        print("Some issues need manual fixing, but push will continue.")  # noqa: T201
+        print("Code quality warnings above - any additional push errors below are git conflicts")  # noqa: T201
     else:
         print(safe_emoji_text("⚠️ Proceeding with warnings...", "Proceeding with warnings..."))  # noqa: T201
         print(colored_text("Push will continue, but please address the warnings above.", Colors.YELLOW))  # noqa: T201
