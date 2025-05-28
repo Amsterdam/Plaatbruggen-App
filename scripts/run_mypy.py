@@ -31,7 +31,10 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess, warning_mode
         print(colorized_status_message("No type checking issues found", is_success=True))  # noqa: T201
     else:
         if warning_mode:
-            safe_emoji_text("⚠️ MYPY CHECK WARNINGS", "MYPY CHECK WARNINGS")
+            safe_emoji_text("WARNING: MYPY CHECK WARNINGS", "MYPY CHECK WARNINGS")
+            print(colorized_status_message("Type checking issues found:", is_success=False, is_warning=True))  # noqa: T201
+            print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
+            print(colorized_status_message("WARNING: Type checking failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
         else:
             safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
 
@@ -53,7 +56,7 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess, warning_mode
             print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
         else:
             if warning_mode:
-                print(colorized_status_message("⚠️ WARNING: Type checking failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
+                print(colorized_status_message("WARNING: Type checking failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
             else:
                 print(  # noqa: T201
                     colorized_status_message(

@@ -37,19 +37,21 @@ def print_concise_summary(result: TextTestResult, warning_mode: bool = False) ->
         print("\n" + "=" * 60)  # noqa: T201
         if warning_mode:
             print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("⚠️ Push will succeed even if there are warnings above.", is_success=False, is_warning=True))  # noqa: T201
+            print(colorized_status_message("WARNING: Push will succeed even if there are warnings above.", is_success=False, is_warning=True))  # noqa: T201
             print(colorized_status_message("However, PRs with warnings cannot be merged until issues are fixed.", is_success=False, is_warning=True))  # noqa: T201
         else:
             print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
             print(  # noqa: T201
-                colorized_status_message("Check the logs above. If there are no errors, your changes will be pushed.", is_success=False, is_warning=True)
+                colorized_status_message(
+                    "Check the logs above. If there are no errors, your changes will be pushed.", is_success=False, is_warning=True
+                )
             )
         print("=" * 60)  # noqa: T201
     else:
         if warning_mode:
-            safe_emoji_text("⚠️ TESTS FAILED", "TESTS FAILED")
+            safe_emoji_text("WARNING: TESTS FAILED", "TESTS FAILED")
             print(colorized_status_message(f"Test failures found: {failures + errors} issues", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("⚠️ WARNING: This PR cannot be merged until test failures are fixed!", is_success=False, is_warning=True))  # noqa: T201
+            print(colorized_status_message("WARNING: This PR cannot be merged until test failures are fixed!", is_success=False, is_warning=True))  # noqa: T201
             print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
         else:
             safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")

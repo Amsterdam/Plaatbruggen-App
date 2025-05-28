@@ -128,17 +128,21 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
         else:
             print(colorized_status_message("No code style issues found", is_success=True))  # noqa: T201
     else:
-        if warning_mode:
-            safe_emoji_text("⚠️ RUFF CHECK WARNINGS", "RUFF CHECK WARNINGS")
-        else:
-            safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
-
         # Combine stdout and stderr for analysis
         output = (result.stdout or "") + (result.stderr or "")
         lines = output.strip().split("\n") if output else []
 
         # Extract error count
         error_count = extract_error_count(lines)
+        
+        if warning_mode:
+            safe_emoji_text("WARNING: RUFF CHECK WARNINGS", "RUFF CHECK WARNINGS")
+            print(colorized_status_message(f"Found {error_count} code style issues", is_success=False, is_warning=True))  # noqa: T201
+            print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
+            print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
+            print(colorized_status_message("WARNING: Code style check failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
+        else:
+            safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
 
         if error_count > 0:
             if warning_mode:
@@ -150,7 +154,7 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
             print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
         else:
             if warning_mode:
-                print(colorized_status_message("⚠️ WARNING: Code style check failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
+                print(colorized_status_message("WARNING: Code style check failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
             else:
                 print(  # noqa: T201
                     colorized_status_message(

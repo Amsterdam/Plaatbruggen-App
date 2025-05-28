@@ -151,7 +151,7 @@ def handle_concise_output(result: subprocess.CompletedProcess, warning_mode: boo
     if reformatted > 0:
         # Files were reformatted
         if warning_mode:
-            safe_emoji_text("⚠️ FILES REFORMATTED", "FILES REFORMATTED")
+            safe_emoji_text("WARNING: FILES REFORMATTED", "FILES REFORMATTED")
             print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=False, is_warning=True))  # noqa: T201
         else:
             safe_emoji_text("🔧 FILES REFORMATTED", "FILES REFORMATTED")
@@ -168,8 +168,8 @@ def handle_concise_output(result: subprocess.CompletedProcess, warning_mode: boo
         print(colorized_status_message("Code formatting is consistent", is_success=True))  # noqa: T201
     else:
         if warning_mode:
-            safe_emoji_text("⚠️ RUFF FORMAT WARNINGS", "RUFF FORMAT WARNINGS")
-            print(colorized_status_message("⚠️ WARNING: Code formatting failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
+            safe_emoji_text("WARNING: RUFF FORMAT WARNINGS", "RUFF FORMAT WARNINGS")
+            print(colorized_status_message("WARNING: Code formatting failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
         else:
             safe_emoji_text("❌ RUFF FORMAT FAILED", "RUFF FORMAT FAILED")
         print(colorized_status_message("Code formatting failed - check the output above", is_success=False))  # noqa: T201
