@@ -23,6 +23,7 @@ repos:
         language: system
         stages: [pre-push]
         pass_filenames: false
+        always_run: true
         verbose: true
 
       - id: ruff-format
@@ -31,6 +32,7 @@ repos:
         language: system
         stages: [pre-push]
         pass_filenames: false
+        always_run: true
         verbose: true
 
       - id: mypy

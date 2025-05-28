@@ -35,7 +35,7 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess, warning_mode
         error_count = len(error_lines)
         note_lines = [line for line in lines if ": note:" in line]
         note_count = len(note_lines)
-        
+
         if warning_mode:
             safe_emoji_text("WARNING: MYPY CHECK WARNINGS", "MYPY CHECK WARNINGS")
             if error_count > 0 or note_count > 0:
