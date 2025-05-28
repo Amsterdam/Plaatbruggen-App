@@ -151,7 +151,6 @@ def commit_auto_fixes(changes_made: bool, force_concise: bool) -> bool:
     if not has_unstaged_changes():
         return True
 
-
     if not stage_all_changes():
         if not force_concise:
             print(safe_emoji_text("❌ Failed to stage auto-fix changes", "Failed to stage auto-fix changes"))  # noqa: T201
