@@ -93,9 +93,6 @@ def handle_mypy_detailed_output(result: subprocess.CompletedProcess) -> None:
                         )
                         continue
 
-
-
-
             # Default case - print as is (like summary lines)
             print(line)  # noqa: T201
     if result.stderr:
