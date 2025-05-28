@@ -37,6 +37,7 @@ def run_check_script(script_name: str) -> tuple[int, str]:
             capture_output=True,
             text=True,
             cwd=project_root,
+            check=False,
         )
         return result.returncode, result.stdout + result.stderr
     except Exception as e:
@@ -46,25 +47,25 @@ def run_check_script(script_name: str) -> tuple[int, str]:
 def show_merge_warning() -> int:
     """Show warning about potential merge issues but don't block push."""
     force_concise = setup_environment()
-    
+
     # Check all quality scripts
     checks = [
         ("run_ruff_check.py", "Code style"),
-        ("run_ruff_format.py", "Code formatting"), 
+        ("run_ruff_format.py", "Code formatting"),
         ("run_mypy.py", "Type checking"),
         ("../run_enhanced_tests.py", "Unit tests"),
     ]
-    
+
     failed_checks = []
-    
+
     if not force_concise:
         print(colored_text("🔍 Running code quality checks...", Colors.BLUE, bold=True))  # noqa: T201
-    
+
     for script, name in checks:
         exit_code, _ = run_check_script(script)
         if exit_code != 0:
             failed_checks.append(name)
-    
+
     if failed_checks:
         if force_concise:
             safe_emoji_text("⚠️  CODE QUALITY WARNING", "CODE QUALITY WARNING")
@@ -74,22 +75,21 @@ def show_merge_warning() -> int:
         else:
             print()  # noqa: T201
             print(colored_text("⚠️  CODE QUALITY WARNING", Colors.YELLOW, bold=True))  # noqa: T201
-            print(colored_text("="*60, Colors.YELLOW))  # noqa: T201
+            print(colored_text("=" * 60, Colors.YELLOW))  # noqa: T201
             print(colored_text("The following checks found issues:", Colors.YELLOW))  # noqa: T201
             for check in failed_checks:
                 print(f"  • {colored_text(check, Colors.RED)}")  # noqa: T201
             print()  # noqa: T201
             print(colored_text("⚠️  This branch may not be able to merge with development!", Colors.YELLOW, bold=True))  # noqa: T201
             print(colored_text("Consider fixing these issues before creating a pull request.", Colors.YELLOW))  # noqa: T201
-            print(colored_text("="*60, Colors.YELLOW))  # noqa: T201
-    else:
-        if not force_concise:
-            print(colored_text("✅ All code quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
-            print(colored_text("This branch should be ready to merge with development.", Colors.GREEN))  # noqa: T201
-    
+            print(colored_text("=" * 60, Colors.YELLOW))  # noqa: T201
+    elif not force_concise:
+        print(colored_text("✅ All code quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
+        print(colored_text("This branch should be ready to merge with development.", Colors.GREEN))  # noqa: T201
+
     # Always return 0 (success) to allow push to continue
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(show_merge_warning()) 
+    sys.exit(show_merge_warning())

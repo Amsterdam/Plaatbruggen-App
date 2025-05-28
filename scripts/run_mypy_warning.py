@@ -16,10 +16,10 @@ def run_mypy_warning() -> int:
     """Run mypy but always return success to allow push."""
     # Run the actual mypy check but ignore the return code
     run_mypy()
-    
+
     # Always return 0 (success) to allow push to continue
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(run_mypy_warning()) 
+    sys.exit(run_mypy_warning())

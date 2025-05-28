@@ -22,10 +22,10 @@ def run_tests_warning() -> int:
     except Exception:
         # Even if tests fail to run, don't block the push
         pass
-    
+
     # Always return 0 (success) to allow push to continue
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(run_tests_warning()) 
+    sys.exit(run_tests_warning())

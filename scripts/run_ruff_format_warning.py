@@ -16,10 +16,10 @@ def run_ruff_format_warning() -> int:
     """Run ruff format but always return success to allow push."""
     # Run the actual format check but ignore the return code
     run_ruff_format()
-    
+
     # Always return 0 (success) to allow push to continue
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(run_ruff_format_warning()) 
+    sys.exit(run_ruff_format_warning())

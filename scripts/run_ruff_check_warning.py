@@ -16,10 +16,10 @@ def run_ruff_check_warning() -> int:
     """Run ruff check but always return success to allow push."""
     # Run the actual check but ignore the return code
     run_ruff_check()
-    
+
     # Always return 0 (success) to allow push to continue
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(run_ruff_check_warning()) 
+    sys.exit(run_ruff_check_warning())
