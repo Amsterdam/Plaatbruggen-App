@@ -44,7 +44,6 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess, warning_mode
         if error_count > 0 or note_count > 0:
             if warning_mode:
                 print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False, is_warning=True))  # noqa: T201
-                print(colorized_status_message("⚠️ WARNING: This PR cannot be merged until type checking issues are fixed!", is_success=False, is_warning=True))  # noqa: T201
                 print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
             else:
                 print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False))  # noqa: T201
@@ -108,7 +107,7 @@ def run_mypy() -> int:
     """Run mypy and provide concise summary."""
     # Check for warning mode
     warning_mode = "--warning-mode" in sys.argv
-    
+
     # Use the improved environment detection from test_utils
     force_concise = should_use_concise_mode()
 

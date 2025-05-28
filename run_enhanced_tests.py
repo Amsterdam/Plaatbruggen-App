@@ -101,7 +101,7 @@ def main() -> None:
     """Run all tests with enhanced reporting."""
     # Check for warning mode
     warning_mode = "--warning-mode" in sys.argv
-    
+
     # Enable colors for Git environments (like Git Bash) even if detection is conservative
     if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "TERM"]):
         os.environ["FORCE_COLOR"] = "1"

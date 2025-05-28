@@ -116,13 +116,13 @@ def show_auto_commit_failure(force_concise: bool) -> None:
         safe_emoji_text("❌ AUTO-COMMIT/PUSH FAILED", "AUTO-COMMIT/PUSH FAILED")
         print(colorized_status_message("Please commit and push formatting changes manually:", is_success=False, is_warning=True))  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN, bold=True)}")  # noqa: T201
+        print(f"  {safe_arrow()}{colored_text('git commit -m "Apply code formatting"', Colors.CYAN, bold=True)}")  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
     else:
         print(colored_text("❌ Failed to auto-commit/push formatting changes", Colors.RED, bold=True))  # noqa: T201
         print(colored_text("Please commit and push the changes manually:", Colors.YELLOW))  # noqa: T201
         print(f"  {colored_text('git add .', Colors.CYAN)}")  # noqa: T201
-        print(f"  {colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN)}")  # noqa: T201
+        print(f"  {colored_text('git commit -m "Apply code formatting"', Colors.CYAN)}")  # noqa: T201
         print(f"  {colored_text('git push', Colors.CYAN)}")  # noqa: T201
 
 
@@ -153,7 +153,6 @@ def handle_concise_output(result: subprocess.CompletedProcess, warning_mode: boo
         if warning_mode:
             safe_emoji_text("⚠️ FILES REFORMATTED", "FILES REFORMATTED")
             print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("⚠️ WARNING: This PR cannot be merged until formatting changes are committed!", is_success=False, is_warning=True))  # noqa: T201
         else:
             safe_emoji_text("🔧 FILES REFORMATTED", "FILES REFORMATTED")
             print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=False, is_warning=True))  # noqa: T201
@@ -162,7 +161,7 @@ def handle_concise_output(result: subprocess.CompletedProcess, warning_mode: boo
         print(colorized_status_message("Please commit the changes and push again:", is_success=False, is_warning=True))  # noqa: T201
         print()  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-        print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply code formatting\"', Colors.CYAN, bold=True)}")  # noqa: T201
+        print(f"  {safe_arrow()}{colored_text('git commit -m "Apply code formatting"', Colors.CYAN, bold=True)}")  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
     elif result.returncode == 0:
         safe_emoji_text("✅ RUFF FORMAT PASSED!", "RUFF FORMAT PASSED!")
@@ -180,7 +179,7 @@ def run_ruff_format() -> int:
     """Run ruff format and provide enhanced messaging."""
     # Check for warning mode
     warning_mode = "--warning-mode" in sys.argv
-    
+
     force_concise = setup_environment()
 
     try:
@@ -207,8 +206,7 @@ def run_ruff_format() -> int:
                 else:
                     show_auto_format_message(reformatted, force_concise, result)
                 return 0  # Always return success in warning mode
-            else:
-                return handle_auto_format_success(reformatted, force_concise, result)
+            return handle_auto_format_success(reformatted, force_concise, result)
 
         if force_concise:
             handle_concise_output(result, warning_mode)

@@ -121,7 +121,7 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
                 else:
                     print(colorized_status_message("Please commit and push the fixes manually:", is_success=False, is_warning=True))  # noqa: T201
                     print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply ruff fixes\"', Colors.CYAN, bold=True)}")  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('git commit -m "Apply ruff fixes"', Colors.CYAN, bold=True)}")  # noqa: T201
                     print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
             else:
                 print(colorized_status_message("Code style issues found and automatically fixed", is_success=True))  # noqa: T201
@@ -143,7 +143,6 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
         if error_count > 0:
             if warning_mode:
                 print(colorized_status_message(f"Found {error_count} code style issues", is_success=False, is_warning=True))  # noqa: T201
-                print(colorized_status_message("⚠️ WARNING: This PR cannot be merged until code style issues are fixed!", is_success=False, is_warning=True))  # noqa: T201
                 print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
             else:
                 print(colorized_status_message(f"Found {error_count} code style issues", is_success=False))  # noqa: T201
@@ -165,7 +164,7 @@ def run_ruff_check() -> int:
     """Run ruff check and provide concise summary."""
     # Check for warning mode
     warning_mode = "--warning-mode" in sys.argv
-    
+
     force_concise = setup_environment()
 
     # Always use --fix mode to automatically fix issues when possible
