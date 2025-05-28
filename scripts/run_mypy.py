@@ -20,7 +20,7 @@ from tests.test_utils import (  # noqa: E402
 )
 
 
-def handle_mypy_concise_output(result: subprocess.CompletedProcess, warning_mode: bool = False) -> None:
+def handle_mypy_concise_output(result: subprocess.CompletedProcess) -> None:
     """Handle MyPy output in concise mode for git hooks."""
     # Combine stdout and stderr for analysis
     output = (result.stdout or "") + (result.stderr or "")
@@ -30,34 +30,28 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess, warning_mode
         safe_emoji_text("✅ MYPY CHECK PASSED!", "MYPY CHECK PASSED!")
         print(colorized_status_message("No type checking issues found", is_success=True))  # noqa: T201
     else:
+        safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
+
         # Count errors from output
         error_lines = [line for line in lines if ": error:" in line]
         error_count = len(error_lines)
         note_lines = [line for line in lines if ": note:" in line]
         note_count = len(note_lines)
 
-        if warning_mode:
-            safe_emoji_text("WARNING: MYPY CHECK WARNINGS", "MYPY CHECK WARNINGS")
-            if error_count > 0 or note_count > 0:
-                print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
+        if error_count > 0 or note_count > 0:
+            print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False))  # noqa: T201
+            print(  # noqa: T201
+                colorized_status_message("Run the following command for detailed type checking information:", is_success=False, is_warning=True)
+            )
             print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
-            print(colorized_status_message("WARNING: Type checking failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
         else:
-            safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
-            if error_count > 0 or note_count > 0:
-                print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False))  # noqa: T201
-                print(  # noqa: T201
-                    colorized_status_message("Run the following command for detailed type checking information:", is_success=False, is_warning=True)
+            print(  # noqa: T201
+                colorized_status_message(
+                    "Type checking failed - run the following command for detailed type checking information:",
+                    is_success=False,
+                    is_warning=True,
                 )
-            else:
-                print(  # noqa: T201
-                    colorized_status_message(
-                        "Type checking failed - run the following command for detailed type checking information:",
-                        is_success=False,
-                        is_warning=True,
-                    )
-                )
+            )
             print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
 
 
@@ -101,9 +95,6 @@ def handle_mypy_detailed_output(result: subprocess.CompletedProcess) -> None:
 
 def run_mypy() -> int:
     """Run mypy and provide concise summary."""
-    # Check for warning mode
-    warning_mode = "--warning-mode" in sys.argv
-
     # Use the improved environment detection from test_utils
     force_concise = should_use_concise_mode()
 
@@ -117,17 +108,16 @@ def run_mypy() -> int:
         )
 
         if force_concise:
-            handle_mypy_concise_output(result, warning_mode)
+            handle_mypy_concise_output(result)
         else:
             handle_mypy_detailed_output(result)
 
     except Exception as e:
         safe_emoji_text("❌ MYPY EXECUTION FAILED", "MYPY EXECUTION FAILED")
         print(colorized_status_message(f"Error running mypy: {e}", is_success=False))  # noqa: T201
-        return 0 if warning_mode else 1
+        return 1
     else:
-        # In warning mode, always return 0 (success) to allow push to continue
-        return 0 if warning_mode else result.returncode
+        return result.returncode
 
 
 if __name__ == "__main__":

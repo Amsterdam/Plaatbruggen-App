@@ -22,7 +22,7 @@ from tests.test_utils import (  # noqa: E402
 )
 
 
-def print_concise_summary(result: TextTestResult, warning_mode: bool = False) -> None:
+def print_concise_summary(result: TextTestResult) -> None:
     """Print a concise summary for git hooks."""
     total_tests = result.testsRun
     failures = len(result.failures)
@@ -33,29 +33,16 @@ def print_concise_summary(result: TextTestResult, warning_mode: bool = False) ->
         safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
         print(colorized_status_message(f"Ran {total_tests} tests successfully", is_success=True))  # noqa: T201
 
-        # Overall status message - different message based on warning mode
+        # Overall status message - more generic since other checks might have failed
         print("\n" + "=" * 60)  # noqa: T201
-        if warning_mode:
-            print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("WARNING: Push will succeed even if there are warnings above.", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("However, PRs with warnings cannot be merged until issues are fixed.", is_success=False, is_warning=True))  # noqa: T201
-        else:
-            print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
-            print(  # noqa: T201
-                colorized_status_message(
-                    "Check the logs above. If there are no errors, your changes will be pushed.", is_success=False, is_warning=True
-                )
-            )
+        print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
+        print(  # noqa: T201
+            colorized_status_message("Check the logs above. If there are no errors, your changes will be pushed.", is_success=False, is_warning=True)
+        )
         print("=" * 60)  # noqa: T201
     else:
-        if warning_mode:
-            safe_emoji_text("WARNING: TESTS FAILED", "TESTS FAILED")
-            print(colorized_status_message(f"Test failures found: {failures + errors} issues", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("WARNING: This PR cannot be merged until test failures are fixed!", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
-        else:
-            safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
-            print(colorized_status_message("Run the following command for detailed test error information:", is_success=False, is_warning=True))  # noqa: T201
+        safe_emoji_text("❌ TESTS FAILED", "TESTS FAILED")
+        print(colorized_status_message("Run the following command for detailed test error information:", is_success=False, is_warning=True))  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('python run_enhanced_tests.py', Colors.CYAN, bold=True)}")  # noqa: T201
 
         # Don't show final "CHECKS FAILED" message here - let the hook system handle overall status
@@ -106,9 +93,6 @@ def print_detailed_summary(result: TextTestResult) -> None:
 
 def main() -> None:
     """Run all tests with enhanced reporting."""
-    # Check for warning mode
-    warning_mode = "--warning-mode" in sys.argv
-
     # Enable colors for Git environments (like Git Bash) even if detection is conservative
     if any(os.environ.get(var) for var in ["MSYSTEM", "MINGW_PREFIX", "TERM"]):
         os.environ["FORCE_COLOR"] = "1"
@@ -134,15 +118,12 @@ def main() -> None:
 
     # Print appropriate summary
     if concise_mode:
-        print_concise_summary(result, warning_mode)
+        print_concise_summary(result)
     else:
         print_detailed_summary(result)
 
     # Exit with appropriate code
-    if warning_mode:
-        # In warning mode, always exit with 0 to allow push to continue
-        sys.exit(0)
-    elif result.failures or result.errors:
+    if result.failures or result.errors:
         sys.exit(1)
     else:
         sys.exit(0)
