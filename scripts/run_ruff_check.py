@@ -109,7 +109,7 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
     output = (result.stdout or "") + (result.stderr or "")
     lines = output.strip().split("\n") if output else []
     error_count = extract_error_count(lines)
-    
+
     if result.returncode == 0:
         safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!")
         if fix_mode and error_count > 0:
@@ -120,39 +120,37 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
                 print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
                 print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
                 print(colorized_status_message("WARNING: Code style check failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
+            # Try to auto-commit and push the fixes
+            elif auto_commit_and_push_fixes(error_count):
+                print(colorized_status_message(f"Code style issues found and automatically fixed ({error_count} issues)", is_success=True))  # noqa: T201
+                print(colorized_status_message("Fixes committed and pushed to PR", is_success=True))  # noqa: T201
             else:
-                # Try to auto-commit and push the fixes
-                if auto_commit_and_push_fixes(error_count):
-                    print(colorized_status_message(f"Code style issues found and automatically fixed ({error_count} issues)", is_success=True))  # noqa: T201
-                    print(colorized_status_message("Fixes committed and pushed to PR", is_success=True))  # noqa: T201
-                else:
-                    print(colorized_status_message("Please commit and push the fixes manually:", is_success=False, is_warning=True))  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git commit -m "Apply ruff fixes"', Colors.CYAN, bold=True)}")  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
+                print(colorized_status_message("Please commit and push the fixes manually:", is_success=False, is_warning=True))  # noqa: T201
+                print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
+                print(f"  {safe_arrow()}{colored_text('git commit -m "Apply ruff fixes"', Colors.CYAN, bold=True)}")  # noqa: T201
+                print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
         else:
             print(colorized_status_message("No code style issues found", is_success=True))  # noqa: T201
+    # Ruff failed - this means there are issues that couldn't be auto-fixed
+    elif warning_mode:
+        safe_emoji_text("WARNING: RUFF CHECK WARNINGS", "RUFF CHECK WARNINGS")
+        print(colorized_status_message(f"Found {error_count} code style issues", is_success=False, is_warning=True))  # noqa: T201
+        print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
+        print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
+        print(colorized_status_message("WARNING: Code style check failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
     else:
-        # Ruff failed - this means there are issues that couldn't be auto-fixed
-        if warning_mode:
-            safe_emoji_text("WARNING: RUFF CHECK WARNINGS", "RUFF CHECK WARNINGS")
-            print(colorized_status_message(f"Found {error_count} code style issues", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
+        safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
+        if error_count > 0:
+            print(colorized_status_message(f"Found {error_count} code style issues", is_success=False))  # noqa: T201
+            print(colorized_status_message("Run the following command for detailed code style information:", is_success=False, is_warning=True))  # noqa: T201
             print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
-            print(colorized_status_message("WARNING: Code style check failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
         else:
-            safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
-            if error_count > 0:
-                print(colorized_status_message(f"Found {error_count} code style issues", is_success=False))  # noqa: T201
-                print(colorized_status_message("Run the following command for detailed code style information:", is_success=False, is_warning=True))  # noqa: T201
-                print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
-            else:
-                print(  # noqa: T201
-                    colorized_status_message(
-                        "Code style check failed - run the following command for detailed code style information:", is_success=False, is_warning=True
-                    )
+            print(  # noqa: T201
+                colorized_status_message(
+                    "Code style check failed - run the following command for detailed code style information:", is_success=False, is_warning=True
                 )
-                print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
+            )
+            print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
 
 
 def run_ruff_check() -> int:
