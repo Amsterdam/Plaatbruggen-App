@@ -57,6 +57,7 @@ def main() -> int:
     if not run_command([sys.executable, "-m", "ruff", "check", "--fix", "--config=.ruff.toml"], "ruff check --fix"):
         return 1
 
+
     if not force_concise:
         print(colored_text("✅ All auto-fixes applied!", Colors.GREEN, bold=True))  # noqa: T201
         print(colored_text("Now you can commit and push your changes.", Colors.GREEN))  # noqa: T201
