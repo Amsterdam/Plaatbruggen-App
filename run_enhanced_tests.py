@@ -33,12 +33,17 @@ def print_concise_summary(result: TextTestResult, warning_mode: bool = False) ->
         safe_emoji_text("✅ ALL TESTS PASSED!", "ALL TESTS PASSED!")
         print(colorized_status_message(f"Ran {total_tests} tests successfully", is_success=True))  # noqa: T201
 
-        # Overall status message - more generic since other checks might have failed
+        # Overall status message - different message based on warning mode
         print("\n" + "=" * 60)  # noqa: T201
-        print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
-        print(  # noqa: T201
-            colorized_status_message("Check the logs above. If there are no errors, your changes will be pushed.", is_success=False, is_warning=True)
-        )
+        if warning_mode:
+            print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
+            print(colorized_status_message("⚠️ Push will succeed even if there are warnings above.", is_success=False, is_warning=True))  # noqa: T201
+            print(colorized_status_message("However, PRs with warnings cannot be merged until issues are fixed.", is_success=False, is_warning=True))  # noqa: T201
+        else:
+            print(colorized_status_message("ALL CHECKS COMPLETED", is_success=False, is_warning=True))  # noqa: T201
+            print(  # noqa: T201
+                colorized_status_message("Check the logs above. If there are no errors, your changes will be pushed.", is_success=False, is_warning=True)
+            )
         print("=" * 60)  # noqa: T201
     else:
         if warning_mode:
