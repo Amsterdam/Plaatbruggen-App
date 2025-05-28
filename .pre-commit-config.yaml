@@ -1,5 +1,5 @@
 # .pre-commit-config.yaml
-# This file configures the pre-commit hooks that will be run before each push.
+# This file configures the pre-commit hooks that will be run before each commit.
 # See https://pre-commit.com for more information.
 # See https://pre-commit.com/hooks.html for more hooks.
 
@@ -8,25 +8,44 @@
 #    In most cases, this will involve running `pip install pre-commit`.
 # 2. In your terminal, navigate to your repository and run `pre-commit install`.
 #    This will install the hooks.
-# 3. Now, just run `git push` - the hook will automatically:
-#    - Apply all code formatting and style fixes
-#    - Commit those fixes automatically  
-#    - Run all quality checks (ruff, mypy, tests)
-#    - Push everything if all checks pass
-# 4. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
-# 5. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
-
-# Stop on first failure for clear error reporting
-fail_fast: true
+# 3. Now, the hooks will automatically run every time you try to make a commit.
+#    If any of the hooks fail, the commit will be aborted.
+# 4. If a hook fails and you see errors, fix them and try to commit again.
+#    The hooks will run again and the commit will only be made if they all pass.
+# 5. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
+# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.3
 
 repos:
   - repo: local
     hooks:
-      - id: smart-auto-fix-and-validate
-        name: Auto-fix code and validate quality
-        entry: python scripts/smart_auto_fix_and_validate.py
+      - id: ruff-check
+        name: Ruff code style check
+        entry: python scripts/run_ruff_check.py
         language: system
         stages: [pre-push]
         pass_filenames: false
         verbose: true
-        always_run: true
+
+      - id: ruff-format
+        name: Ruff code formatter
+        entry: python scripts/run_ruff_format.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true
+
+      - id: mypy
+        name: MyPy type checking
+        entry: python scripts/run_mypy.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true
+
+      - id: run-unit-tests
+        name: Unit tests
+        entry: python run_enhanced_tests.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true
