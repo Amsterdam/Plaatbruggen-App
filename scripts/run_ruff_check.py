@@ -56,12 +56,76 @@ def extract_error_count(lines: list[str]) -> int:
     return error_count
 
 
+def auto_commit_and_push_fixes(error_count: int) -> bool:
+    """Automatically commit and push ruff fixes and return success status."""
+    try:
+        # Check if there are any changes to commit
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=project_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        
+        if not status_result.stdout.strip():
+            # No changes to commit
+            return True
+            
+        # Stage all changes (ruff --fix only modifies existing files)
+        subprocess.run(
+            ["git", "add", "-u"],  # -u only stages modified files, not new ones
+            cwd=project_root,
+            check=True,
+            capture_output=True,
+        )
+
+        # Commit with a clear message
+        commit_msg = f"Auto-fix code style issues with ruff ({error_count} issue{'s' if error_count != 1 else ''} fixed)"
+        subprocess.run(
+            ["git", "commit", "-m", commit_msg],
+            cwd=project_root,
+            check=True,
+            capture_output=True,
+        )
+
+        # Auto-push the fixes
+        subprocess.run(
+            ["git", "push"],
+            cwd=project_root,
+            check=True,
+            capture_output=True,
+        )
+
+    except subprocess.CalledProcessError:
+        return False
+    else:
+        return True
+
+
 def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = False) -> None:
     """Handle output in concise mode for git hooks."""
     if result.returncode == 0:
         safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!")
         if fix_mode and result.stdout and "fixed" in result.stdout.lower():
-            print(colorized_status_message("Code style issues found and automatically fixed", is_success=True))  # noqa: T201
+            # Extract error count to see how many were fixed
+            output = (result.stdout or "") + (result.stderr or "")
+            lines = output.strip().split("\n") if output else []
+            error_count = extract_error_count(lines)
+            
+            if error_count > 0:
+                # Try to auto-commit and push the fixes
+                if auto_commit_and_push_fixes(error_count):
+                    print(colorized_status_message(f"Code style issues found and automatically fixed ({error_count} issues)", is_success=True))  # noqa: T201
+                    print(colorized_status_message("Fixes committed and pushed to PR", is_success=True))  # noqa: T201
+                else:
+                    print(colorized_status_message(f"Code style issues found and automatically fixed ({error_count} issues)", is_success=True, is_warning=True))  # noqa: T201
+                    print(colorized_status_message("Please commit and push the fixes manually:", is_success=False, is_warning=True))  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply ruff fixes\"', Colors.CYAN, bold=True)}")  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
+            else:
+                print(colorized_status_message("Code style issues found and automatically fixed", is_success=True))  # noqa: T201
         else:
             print(colorized_status_message("No code style issues found", is_success=True))  # noqa: T201
     else:

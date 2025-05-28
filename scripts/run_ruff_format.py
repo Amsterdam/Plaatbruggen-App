@@ -74,6 +74,14 @@ def auto_commit_formatting_changes(reformatted_count: int) -> bool:
             capture_output=True,
         )
 
+        # Auto-push the formatting changes
+        subprocess.run(
+            ["git", "push"],
+            cwd=project_root,
+            check=True,
+            capture_output=True,
+        )
+
     except subprocess.CalledProcessError:
         return False
     else:
@@ -95,24 +103,24 @@ def show_auto_format_message(reformatted: int, force_concise: bool, result: subp
 def show_auto_commit_success(force_concise: bool) -> None:
     """Display auto-commit success message."""
     if force_concise:
-        print(colorized_status_message("Formatting changes committed automatically", is_success=True))  # noqa: T201
+        print(colorized_status_message("Formatting changes committed and pushed automatically", is_success=True))  # noqa: T201
         safe_emoji_text("✅ CONTINUING WITH PUSH", "CONTINUING WITH PUSH")
     else:
-        print(colored_text("✅ Formatting changes committed automatically", Colors.GREEN, bold=True))  # noqa: T201
-        print(colored_text("Continuing with push...", Colors.GREEN))  # noqa: T201
+        print(colored_text("✅ Formatting changes committed and pushed automatically", Colors.GREEN, bold=True))  # noqa: T201
+        print(colored_text("PR updated with formatting fixes...", Colors.GREEN))  # noqa: T201
 
 
 def show_auto_commit_failure(force_concise: bool) -> None:
     """Display auto-commit failure with manual instructions."""
     if force_concise:
-        safe_emoji_text("❌ AUTO-COMMIT FAILED", "AUTO-COMMIT FAILED")
-        print(colorized_status_message("Please commit formatting changes manually:", is_success=False, is_warning=True))  # noqa: T201
+        safe_emoji_text("❌ AUTO-COMMIT/PUSH FAILED", "AUTO-COMMIT/PUSH FAILED")
+        print(colorized_status_message("Please commit and push formatting changes manually:", is_success=False, is_warning=True))  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git commit -m "Apply code formatting"', Colors.CYAN, bold=True)}")  # noqa: T201
         print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
     else:
-        print(colored_text("❌ Failed to auto-commit formatting changes", Colors.RED, bold=True))  # noqa: T201
-        print(colored_text("Please commit the changes manually:", Colors.YELLOW))  # noqa: T201
+        print(colored_text("❌ Failed to auto-commit/push formatting changes", Colors.RED, bold=True))  # noqa: T201
+        print(colored_text("Please commit and push the changes manually:", Colors.YELLOW))  # noqa: T201
         print(f"  {colored_text('git add .', Colors.CYAN)}")  # noqa: T201
         print(f"  {colored_text('git commit -m "Apply code formatting"', Colors.CYAN)}")  # noqa: T201
         print(f"  {colored_text('git push', Colors.CYAN)}")  # noqa: T201
