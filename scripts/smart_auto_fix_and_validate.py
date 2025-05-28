@@ -95,6 +95,11 @@ def apply_auto_fixes(force_concise: bool) -> tuple[bool, bool]:
 
     format_exit, format_output = run_quality_script("run_ruff_format.py", "ruff format")
 
+    # Debug: show what we got from the format script
+    if not force_concise:
+        print(f"Format exit code: {format_exit}")  # noqa: T201
+        print(f"Format output (first 200 chars): {format_output[:200]}")  # noqa: T201
+
     # Check if formatting made changes (look for "reformatted" in output)
     if "reformatted" in format_output.lower():
         changes_made = True
@@ -106,6 +111,11 @@ def apply_auto_fixes(force_concise: bool) -> tuple[bool, bool]:
         print(colored_text("🔧 Applying style fixes...", Colors.CYAN))  # noqa: T201
 
     check_exit, check_output = run_quality_script("run_ruff_check.py", "ruff check")
+
+    # Debug: show what we got from the check script
+    if not force_concise:
+        print(f"Check exit code: {check_exit}")  # noqa: T201
+        print(f"Check output (first 200 chars): {check_output[:200]}")  # noqa: T201
 
     # Check if style fixes were made (look for "Fixed" in output)
     if "fixed" in check_output.lower() or "Fixed" in check_output:
@@ -126,16 +136,24 @@ def validate_quality(force_concise: bool) -> tuple[bool, bool, bool]:
         print(colored_text("🔍 Validating code quality...", Colors.CYAN))  # noqa: T201
 
     # Check ruff formatting (should be clean after auto-fixes)
-    format_exit, _ = run_quality_script("run_ruff_format.py", "ruff format check")
+    format_exit, format_output = run_quality_script("run_ruff_format.py", "ruff format check")
 
     # Check ruff style (should be clean after auto-fixes)
-    check_exit, _ = run_quality_script("run_ruff_check.py", "ruff check")
+    check_exit, check_output = run_quality_script("run_ruff_check.py", "ruff check")
 
     # Check mypy (can't be auto-fixed)
     mypy_exit, mypy_output = run_quality_script("run_mypy.py", "mypy")
 
     # Run tests (can't be auto-fixed)
-    test_exit, test_output = run_quality_script("run_enhanced_tests.py", "tests")
+    test_exit, test_output = run_enhanced_tests()
+
+    # Debug: show validation results
+    if not force_concise:
+        print("Validation results:")  # noqa: T201
+        print(f"  Format check: exit={format_exit}")  # noqa: T201
+        print(f"  Style check: exit={check_exit}")  # noqa: T201
+        print(f"  MyPy check: exit={mypy_exit}")  # noqa: T201
+        print(f"  Tests: exit={test_exit}")  # noqa: T201
 
     # For ruff, we consider it clean if exit code is 0 OR if no unfixable issues remain
     ruff_clean = format_exit == 0 and check_exit == 0
