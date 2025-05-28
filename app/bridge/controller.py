@@ -37,7 +37,7 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
-# from src.report.report_functions import create_export_report  # Import the report creation function  # TEMP: Commented out due to missing docxtpl
+# from src.report.report_functions import create_export_report  # Import the report creation function  # TEMPORARILY COMMENTED OUT - docxtpl network issue
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
 from viktor.views import (
@@ -399,21 +399,21 @@ class BridgeController(ViktorController):
     # output - Rapport
     # ============================================================================================================
 
-    # TEMP: Commented out due to missing docxtpl dependency
-    # @PDFView("Rapport", duration_guess=1)
-    # def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:  # noqa: ARG002
-    #     """
-    #     Generates a PDF report for the bridge design.
-    #
-    #     Args:
-    #         params (BridgeParametrization): Input parameters for the bridge dimensions.
-    #         **kwargs: Additional arguments.
-    #
-    #     Returns:
-    #         File: A PDF file containing the report.
-    #
-    #     """
-    #     # using File object
-    #     pdf = create_export_report(params)
-    #
-    #     return PDFResult(file=pdf)
+    @PDFView("Rapport", duration_guess=1)
+    def get_output_report(self, params: BridgeParametrization, **kwargs) -> PDFResult:  # noqa: ARG002
+        """
+        Generates a PDF report for the bridge design.
+
+        Args:
+            params (BridgeParametrization): Input parameters for the bridge dimensions.
+            **kwargs: Additional arguments.
+
+        Returns:
+            File: A PDF file containing the report.
+
+        """
+        # TEMPORARILY DISABLED - docxtpl network issue
+        raise UserError("Report generation temporarily disabled due to network connectivity issues with docxtpl dependency.")
+        # using File object
+        # pdf = create_export_report(params)
+        # return PDFResult(file=pdf)
