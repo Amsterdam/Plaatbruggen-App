@@ -153,7 +153,11 @@ def handle_concise_output(result: subprocess.CompletedProcess, warning_mode: boo
         if warning_mode:
             safe_emoji_text("⚠️  WARNING: FILES REFORMATTED", "WARNING: FILES REFORMATTED")
             print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=False, is_warning=True))  # noqa: T201
-            print(colorized_status_message("WARNING: This PR cannot be merged until formatting changes are committed!", is_success=False, is_warning=True))  # noqa: T201
+            print(
+                colorized_status_message(
+                    "WARNING: This PR cannot be merged until formatting changes are committed!", is_success=False, is_warning=True
+                )
+            )  # noqa: T201
         else:
             safe_emoji_text("🔧 FILES REFORMATTED", "FILES REFORMATTED")
             print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=False, is_warning=True))  # noqa: T201
@@ -167,13 +171,12 @@ def handle_concise_output(result: subprocess.CompletedProcess, warning_mode: boo
     elif result.returncode == 0:
         safe_emoji_text("✅ RUFF FORMAT PASSED!", "RUFF FORMAT PASSED!")
         print(colorized_status_message("Code formatting is consistent", is_success=True))  # noqa: T201
+    elif warning_mode:
+        safe_emoji_text("⚠️  WARNING: RUFF FORMAT WARNINGS", "WARNING: RUFF FORMAT WARNINGS")
+        print(colorized_status_message("WARNING: Code formatting failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
     else:
-        if warning_mode:
-            safe_emoji_text("⚠️  WARNING: RUFF FORMAT WARNINGS", "WARNING: RUFF FORMAT WARNINGS")
-            print(colorized_status_message("WARNING: Code formatting failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
-        else:
-            safe_emoji_text("❌ RUFF FORMAT FAILED", "RUFF FORMAT FAILED")
-            print(colorized_status_message("Code formatting failed - check the output above", is_success=False))  # noqa: T201
+        safe_emoji_text("❌ RUFF FORMAT FAILED", "RUFF FORMAT FAILED")
+        print(colorized_status_message("Code formatting failed - check the output above", is_success=False))  # noqa: T201
 
 
 def run_ruff_format() -> int:
@@ -184,46 +187,89 @@ def run_ruff_format() -> int:
     force_concise = setup_environment()
 
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "ruff", "format", "--config=.ruff.toml"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            cwd=project_root,
-            check=False,
-        )
+        # In warning mode, use --check to avoid modifying files
+        # In normal mode, allow modifications and auto-commit
+        if warning_mode:
+            # Use --check mode to see what would be changed without modifying files
+            result = subprocess.run(
+                [sys.executable, "-m", "ruff", "format", "--check", "--config=.ruff.toml"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                cwd=project_root,
+                check=False,
+            )
+        else:
+            # Normal mode - allow file modifications
+            result = subprocess.run(
+                [sys.executable, "-m", "ruff", "format", "--config=.ruff.toml"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                cwd=project_root,
+                check=False,
+            )
 
-        # Check if files were reformatted
-        output = (result.stdout or "") + (result.stderr or "")
-        lines = output.strip().split("\n") if output else []
-        reformatted, _ = extract_format_stats(lines)
-
-        if reformatted > 0 and result.returncode == 0:
-            # In warning mode, don't auto-commit, just warn
-            if warning_mode:
+        # In warning mode with --check, ruff format will exit with code 1 if changes would be made
+        # We need to handle this differently than the normal mode
+        if warning_mode:
+            if result.returncode == 1:
+                # Files would be reformatted - show warning but allow push to continue
                 if force_concise:
-                    handle_concise_output(result, warning_mode)
+                    safe_emoji_text("⚠️  WARNING: FILES NEED FORMATTING", "WARNING: FILES NEED FORMATTING")
+                    print(colorized_status_message("Code formatting issues detected - files would be reformatted", is_success=False, is_warning=True))  # noqa: T201
+                    print(colorized_status_message("WARNING: This PR cannot be merged until formatting is fixed!", is_success=False, is_warning=True))  # noqa: T201
                 else:
-                    show_auto_format_message(reformatted, force_concise, result)
+                    if result.stdout:
+                        print(result.stdout)  # noqa: T201
+                    print()  # noqa: T201
+                    print(colored_text("⚠️  WARNING: Code formatting issues detected!", Colors.YELLOW, bold=True))  # noqa: T201
+                    print(colored_text("Files would be reformatted. Run 'ruff format' to fix.", Colors.YELLOW))  # noqa: T201
+                return 0  # Always return success in warning mode to allow push
+            elif result.returncode == 0:
+                # No formatting needed
+                if force_concise:
+                    safe_emoji_text("✅ RUFF FORMAT PASSED!", "RUFF FORMAT PASSED!")
+                    print(colorized_status_message("Code formatting is consistent", is_success=True))  # noqa: T201
+                return 0
+            else:
+                # Some other error occurred
+                if force_concise:
+                    safe_emoji_text("⚠️  WARNING: RUFF FORMAT ERROR", "WARNING: RUFF FORMAT ERROR")
+                    print(colorized_status_message("WARNING: Code formatting check failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
+                else:
+                    print(colored_text("⚠️  WARNING: Ruff format encountered an error", Colors.YELLOW, bold=True))  # noqa: T201
+                    if result.stdout:
+                        print(result.stdout)  # noqa: T201
+                    if result.stderr:
+                        print(result.stderr, file=sys.stderr)  # noqa: T201
                 return 0  # Always return success in warning mode
-            return handle_auto_format_success(reformatted, force_concise, result)
+        else:
+            # Normal mode - existing logic for auto-commit
+            # Check if files were reformatted
+            output = (result.stdout or "") + (result.stderr or "")
+            lines = output.strip().split("\n") if output else []
+            reformatted, _ = extract_format_stats(lines)
 
-        if force_concise:
-            handle_concise_output(result, warning_mode)
-        elif result.stdout:
-            print(result.stdout)  # noqa: T201
+            if reformatted > 0 and result.returncode == 0:
+                return handle_auto_format_success(reformatted, force_concise, result)
 
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)  # noqa: T201
+            if force_concise:
+                handle_concise_output(result, warning_mode)
+            elif result.stdout:
+                print(result.stdout)  # noqa: T201
+
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)  # noqa: T201
+
+            return result.returncode
 
     except Exception as e:
         safe_emoji_text("❌ RUFF FORMAT EXECUTION FAILED", "RUFF FORMAT EXECUTION FAILED")
         print(f"Error running ruff format: {e}")  # noqa: T201
         return 0 if warning_mode else 1
-    else:
-        # In warning mode, always return 0 (success) to allow push to continue
-        return 0 if warning_mode else result.returncode
 
 
 if __name__ == "__main__":
