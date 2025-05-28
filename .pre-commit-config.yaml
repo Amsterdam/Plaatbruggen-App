@@ -1,5 +1,5 @@
 # .pre-commit-config.yaml
-# This file configures the pre-commit hooks that will be run before each commit.
+# This file configures the pre-commit hooks that will be run before each push.
 # See https://pre-commit.com for more information.
 # See https://pre-commit.com/hooks.html for more hooks.
 
@@ -8,19 +8,18 @@
 #    In most cases, this will involve running `pip install pre-commit`.
 # 2. In your terminal, navigate to your repository and run `pre-commit install`.
 #    This will install the hooks.
-# 3. Now, the hooks will automatically run every time you try to make a commit.
-#    If any of the hooks fail, the commit will be aborted.
-# 4. If a hook fails and you see errors, fix them and try to commit again.
-#    The hooks will run again and the commit will only be made if they all pass.
+# 3. Now, the hooks will automatically run every time you try to push.
+#    If any of the hooks find issues, you'll see warnings but the push will continue.
+# 4. Issues shown in warnings will prevent your PR from being merged until fixed.
 # 5. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
-# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.3
+# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
 
 repos:
   - repo: local
     hooks:
       - id: ruff-check
         name: Ruff code style check
-        entry: python scripts/run_ruff_check.py
+        entry: python scripts/run_ruff_check.py --warning-mode
         language: system
         stages: [pre-push]
         pass_filenames: false
@@ -28,7 +27,7 @@ repos:
 
       - id: ruff-format
         name: Ruff code formatter
-        entry: python scripts/run_ruff_format.py
+        entry: python scripts/run_ruff_format.py --warning-mode
         language: system
         stages: [pre-push]
         pass_filenames: false
@@ -36,7 +35,7 @@ repos:
 
       - id: mypy
         name: MyPy type checking
-        entry: python scripts/run_mypy.py
+        entry: python scripts/run_mypy.py --warning-mode
         language: system
         stages: [pre-push]
         pass_filenames: false
@@ -44,7 +43,7 @@ repos:
 
       - id: run-unit-tests
         name: Unit tests
-        entry: python run_enhanced_tests.py
+        entry: python run_enhanced_tests.py --warning-mode
         language: system
         stages: [pre-push]
         pass_filenames: false

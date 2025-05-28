@@ -103,7 +103,7 @@ def auto_commit_and_push_fixes(error_count: int) -> bool:
         return True
 
 
-def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = False) -> None:
+def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = False, warning_mode: bool = False) -> None:
     """Handle output in concise mode for git hooks."""
     if result.returncode == 0:
         safe_emoji_text("✅ RUFF CHECK PASSED!", "RUFF CHECK PASSED!")
@@ -121,14 +121,17 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
                 else:
                     print(colorized_status_message("Please commit and push the fixes manually:", is_success=False, is_warning=True))  # noqa: T201
                     print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
-                    print(f"  {safe_arrow()}{colored_text('git commit -m "Apply ruff fixes"', Colors.CYAN, bold=True)}")  # noqa: T201
+                    print(f"  {safe_arrow()}{colored_text('git commit -m \"Apply ruff fixes\"', Colors.CYAN, bold=True)}")  # noqa: T201
                     print(f"  {safe_arrow()}{colored_text('git push', Colors.CYAN, bold=True)}")  # noqa: T201
             else:
                 print(colorized_status_message("Code style issues found and automatically fixed", is_success=True))  # noqa: T201
         else:
             print(colorized_status_message("No code style issues found", is_success=True))  # noqa: T201
     else:
-        safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
+        if warning_mode:
+            safe_emoji_text("⚠️ RUFF CHECK WARNINGS", "RUFF CHECK WARNINGS")
+        else:
+            safe_emoji_text("❌ RUFF CHECK FAILED", "RUFF CHECK FAILED")
 
         # Combine stdout and stderr for analysis
         output = (result.stdout or "") + (result.stderr or "")
@@ -138,20 +141,31 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
         error_count = extract_error_count(lines)
 
         if error_count > 0:
-            print(colorized_status_message(f"Found {error_count} code style issues", is_success=False))  # noqa: T201
-            print(colorized_status_message("Run the following command for detailed code style information:", is_success=False, is_warning=True))  # noqa: T201
+            if warning_mode:
+                print(colorized_status_message(f"Found {error_count} code style issues", is_success=False, is_warning=True))  # noqa: T201
+                print(colorized_status_message("⚠️ WARNING: This PR cannot be merged until code style issues are fixed!", is_success=False, is_warning=True))  # noqa: T201
+                print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
+            else:
+                print(colorized_status_message(f"Found {error_count} code style issues", is_success=False))  # noqa: T201
+                print(colorized_status_message("Run the following command for detailed code style information:", is_success=False, is_warning=True))  # noqa: T201
             print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
         else:
-            print(  # noqa: T201
-                colorized_status_message(
-                    "Code style check failed - run the following command for detailed code style information:", is_success=False, is_warning=True
+            if warning_mode:
+                print(colorized_status_message("⚠️ WARNING: Code style check failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
+            else:
+                print(  # noqa: T201
+                    colorized_status_message(
+                        "Code style check failed - run the following command for detailed code style information:", is_success=False, is_warning=True
+                    )
                 )
-            )
             print(f"  {safe_arrow()}{colored_text('python scripts/run_ruff_check.py', Colors.CYAN, bold=True)}")  # noqa: T201
 
 
 def run_ruff_check() -> int:
     """Run ruff check and provide concise summary."""
+    # Check for warning mode
+    warning_mode = "--warning-mode" in sys.argv
+    
     force_concise = setup_environment()
 
     # Always use --fix mode to automatically fix issues when possible
@@ -170,7 +184,7 @@ def run_ruff_check() -> int:
         )
 
         if force_concise:
-            handle_concise_output(result, fix_mode)
+            handle_concise_output(result, fix_mode, warning_mode)
         else:
             # In detailed mode, show full output with improved formatting
             if result.stdout:
@@ -200,9 +214,10 @@ def run_ruff_check() -> int:
     except Exception as e:
         safe_emoji_text("❌ RUFF EXECUTION FAILED", "RUFF EXECUTION FAILED")
         print(f"Error running ruff: {e}")  # noqa: T201
-        return 1
+        return 0 if warning_mode else 1
     else:
-        return result.returncode
+        # In warning mode, always return 0 (success) to allow push to continue
+        return 0 if warning_mode else result.returncode
 
 
 if __name__ == "__main__":
