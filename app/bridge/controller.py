@@ -412,7 +412,5 @@ class BridgeController(ViktorController):
             File: A PDF file containing the report.
 
         """
-        # using File object
-        pdf = create_export_report(params)
-
-        return PDFResult(file=pdf)
+        # TEMPORARILY DISABLED - docxtpl network issue
+        raise UserError("Report generation is temporarily disabled due to network connectivity issues with required dependencies.")

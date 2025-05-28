@@ -34,7 +34,7 @@ class TestTopViewPlot(unittest.TestCase):
 
         assert isinstance(fig, go.Figure)
         assert len(fig.data) == 0  # No traces expected
-        assert len(fig.layout.annotations) == 0  # No annotations expected
+        assert len(fig.layout.annotations) == 1  # One north arrow annotation expected
 
         # Check basic layout properties
         assert fig.layout.title.text == "Bovenaanzicht (Top View)"
@@ -45,10 +45,10 @@ class TestTopViewPlot(unittest.TestCase):
         assert fig.layout.hovermode == "closest"
         assert fig.layout.yaxis.scaleanchor == "x"
         assert fig.layout.yaxis.scaleratio == 1
-        assert fig.layout.margin.l == 0
-        assert fig.layout.margin.r == 50
-        assert fig.layout.margin.t == 50
-        assert fig.layout.margin.b == 115
+        assert fig.layout.margin.l == 20
+        assert fig.layout.margin.r == 20
+        assert fig.layout.margin.t == 100
+        assert fig.layout.margin.b == 20
         assert fig.layout.plot_bgcolor == "white"
 
     def test_build_top_view_figure_with_validation_warnings(self) -> None:
@@ -59,9 +59,16 @@ class TestTopViewPlot(unittest.TestCase):
 
         assert isinstance(fig, go.Figure)
         assert len(fig.data) == 0
-        assert len(fig.layout.annotations) == 1  # One consolidated warning annotation
+        assert len(fig.layout.annotations) == 2  # North arrow + one consolidated warning annotation
 
-        warning_annotation = fig.layout.annotations[0]
+        # Find the warning annotation (not the north arrow)
+        warning_annotation = None
+        for ann in fig.layout.annotations:
+            if "Waarschuwing" in ann.text:
+                warning_annotation = ann
+                break
+        
+        assert warning_annotation is not None
         assert "<b>Waarschuwing (Belastingzones):</b> Warning 1" in warning_annotation.text
         assert "<b>Waarschuwing (Belastingzones):</b> Another warning here." in warning_annotation.text
         assert warning_annotation.font.color == "orangered"
@@ -158,8 +165,13 @@ class TestTopViewPlot(unittest.TestCase):
         ]
         fig = build_top_view_figure(geo_data)
 
-        assert len(fig.layout.annotations) == 2
-        ann_1 = fig.layout.annotations[0]
+        assert len(fig.layout.annotations) == 3  # 2 zone annotations + 1 north arrow
+        
+        # Find zone annotations (not the north arrow)
+        zone_annotations = [ann for ann in fig.layout.annotations if "<b>Zone" in ann.text]
+        assert len(zone_annotations) == 2
+        
+        ann_1 = zone_annotations[0]
         assert ann_1.x == 1
         assert ann_1.y == 2
         assert ann_1.text == "<b>Zone A</b>"
@@ -179,28 +191,32 @@ class TestTopViewPlot(unittest.TestCase):
             {"x": 6, "y": 6, "text": "Explicit Center", "align": "center", "xanchor": "center", "yanchor": "middle"},  # Explicit values
         ]
         fig = build_top_view_figure(geo_data)
-        assert len(fig.layout.annotations) == 6
+        assert len(fig.layout.annotations) == 7  # 6 dimension texts + 1 north arrow
+
+        # Filter out the north arrow annotation to get only dimension text annotations
+        dim_annotations = [ann for ann in fig.layout.annotations if ann.text not in ["⥊"]]
+        assert len(dim_annotations) == 6
 
         # Default (type: width)
-        ann_default = next(a for a in fig.layout.annotations if a.text == "<b>Default</b>")
+        ann_default = next(a for a in dim_annotations if a.text == "<b>Default</b>")
         assert ann_default.align == "left"
         assert ann_default.xanchor == "left"
         assert ann_default.yanchor == "middle"
 
-        ann_length = next(a for a in fig.layout.annotations if a.text == "<b>Length</b>")
+        ann_length = next(a for a in dim_annotations if a.text == "<b>Length</b>")
         assert ann_length.align == "center"
         assert ann_length.xanchor == "center"
         assert ann_length.yanchor == "bottom"
 
         # Rotated 180
-        ann_rot180 = next(a for a in fig.layout.annotations if a.text == "<b>Rotated 180</b>")
+        ann_rot180 = next(a for a in dim_annotations if a.text == "<b>Rotated 180</b>")
         assert ann_rot180.align == "right"
         assert ann_rot180.xanchor == "right"
         assert ann_rot180.yanchor == "middle"
         assert ann_rot180.textangle in (180, -180)
 
         # Rotated 90
-        ann_rot90 = next(a for a in fig.layout.annotations if a.text == "<b>Rotated 90</b>")
+        ann_rot90 = next(a for a in dim_annotations if a.text == "<b>Rotated 90</b>")
         assert ann_rot90.align == "center"
         assert ann_rot90.xanchor == "center"
         assert ann_rot90.yanchor == "middle"
@@ -226,8 +242,8 @@ class TestTopViewPlot(unittest.TestCase):
             xanchor="center",
             yanchor="bottom",
         )
+        assert len(fig.layout.annotations) == 2  # 1 mocked CS annotation + 1 north arrow
         assert mock_cs_annotations[0] in fig.layout.annotations
-        assert len(fig.layout.annotations) == 1
 
     @patch("src.geometry.top_view_plot.create_text_annotations_from_data")
     def test_build_top_view_figure_with_all_data_types(self, mock_create_text_annotations: MagicMock) -> None:
@@ -248,7 +264,7 @@ class TestTopViewPlot(unittest.TestCase):
 
         assert isinstance(fig, go.Figure)
         assert len(fig.data) == 2  # 1 polygon + 1 line
-        assert len(fig.layout.annotations) == 4  # zone, dim, cs, warning
+        assert len(fig.layout.annotations) == 5  # zone, dim, cs, warning + north arrow
 
         # Check polygon trace
         assert list(fig.data[0].x) == [0, 1, 0, 0]
@@ -263,6 +279,7 @@ class TestTopViewPlot(unittest.TestCase):
         assert "<b>Dim1</b>" in texts
         assert "Mocked CS Anno for All Data" in texts
         assert "<b>Waarschuwing (Belastingzones):</b> Test Warning" in texts
+        assert "⥊" in texts  # North arrow
 
         mock_create_text_annotations.assert_called_once_with(
             label_data=geo_data["cross_section_labels"],

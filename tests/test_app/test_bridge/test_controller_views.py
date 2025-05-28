@@ -271,25 +271,16 @@ class TestBridgeControllerViews(unittest.TestCase):
         error_point = result.features[0]
         assert "Ongeldige entity ID" in error_point._description  # noqa: SLF001
 
-    @patch("app.bridge.controller.convert_word_to_pdf")
     @view_test_wrapper("get_output_report")
-    def test_get_output_report_execution(self, mock_convert_pdf: MagicMock) -> None:
+    def test_get_output_report_execution(self) -> None:
         """Test actual execution of get_output_report."""
-        # Arrange
-        mock_pdf_file = Mock()
-        mock_convert_pdf.return_value = mock_pdf_file
-
         # Access the original method directly
         original_method = self.controller.__class__.get_output_report
 
-        # Act - call bypassing decorator
-        result = original_method(self.controller, self.default_params)
-
-        # Assert
-        from viktor.views import PDFResult
-
-        assert isinstance(result, PDFResult)
-        mock_convert_pdf.assert_called_once()
+        # Act - call bypassing decorator - this should raise UserError when disabled
+        from viktor.errors import UserError
+        with pytest.raises(UserError, match="Report generation is temporarily disabled"):
+            original_method(self.controller, self.default_params)
 
     # ============================================================================================================
     # Error Handling Tests
@@ -373,25 +364,16 @@ class TestBridgeControllerViews(unittest.TestCase):
         assert bridge_id_item is not None
         assert bridge_id_item._value == "BRIDGE-COMPLEX-001"  # noqa: SLF001
 
-    @patch("app.bridge.controller.convert_word_to_pdf")
     @view_test_wrapper("get_output_report")
-    def test_download_report_execution(self, mock_convert_pdf: MagicMock) -> None:
+    def test_download_report_execution(self) -> None:
         """Test actual execution of get_output_report."""
-        # Arrange
-        mock_pdf_file = Mock()
-        mock_convert_pdf.return_value = mock_pdf_file
-
         # Access the original method directly
         original_method = self.controller.__class__.get_output_report
 
-        # Act - call bypassing decorator
-        result = original_method(self.controller, self.default_params)
-
-        # Assert
-        from viktor.views import PDFResult
-
-        assert isinstance(result, PDFResult)
-        mock_convert_pdf.assert_called_once()
+        # Act - call bypassing decorator - this should raise UserError when disabled
+        from viktor.errors import UserError
+        with pytest.raises(UserError, match="Report generation is temporarily disabled"):
+            original_method(self.controller, self.default_params)
 
 
 if __name__ == "__main__":
