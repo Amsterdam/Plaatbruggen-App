@@ -29,7 +29,7 @@ def run_quality_script(script_name: str, description: str) -> tuple[int, str]:
             encoding="utf-8",
             errors="replace",
             cwd=project_root,
-            check=False,
+            check=False
         )
         return result.returncode, (result.stdout or "") + (result.stderr or "")
     except Exception as e:
