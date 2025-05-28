@@ -21,7 +21,7 @@ from tests.test_utils import (  # noqa: E402
 def run_mypy_warning() -> int:
     """Run mypy but always return success to allow push."""
     force_concise = should_use_concise_mode()
-    
+
     try:
         # Run mypy directly
         result = subprocess.run(
@@ -42,7 +42,7 @@ def run_mypy_warning() -> int:
             # Count errors and warnings
             output = (result.stdout or "") + (result.stderr or "")
             lines = output.strip().split("\n") if output else []
-            
+
             error_count = 0
             for line in lines:
                 if ": error:" in line or ": warning:" in line:

@@ -19,13 +19,13 @@ from tests.test_utils import (  # noqa: E402
 
 
 def run_ruff_format_warning() -> int:
-    """Run ruff format but always return success to allow push."""
+    """Run ruff format in check mode but always return success to allow push."""
     force_concise = should_use_concise_mode()
-    
+
     try:
-        # Run ruff format directly without auto-push logic
+        # Run ruff format in check mode (don't modify files, just report)
         result = subprocess.run(
-            [sys.executable, "-m", "ruff", "format", "--config=.ruff.toml"],
+            [sys.executable, "-m", "ruff", "format", "--check", "--config=.ruff.toml"],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -34,41 +34,23 @@ def run_ruff_format_warning() -> int:
             check=False,
         )
 
-        # Check if files were reformatted
-        output = (result.stdout or "") + (result.stderr or "")
-        lines = output.strip().split("\n") if output else []
-        
-        reformatted = 0
-        for line in lines:
-            if "reformatted" in line.lower():
-                try:
-                    parts = line.split()
-                    for i, part in enumerate(parts):
-                        if part in {"file", "files"} and i > 0 and parts[i - 1].isdigit():
-                            if "reformatted" in line[:line.index(part)]:
-                                reformatted = int(parts[i - 1])
-                                break
-                except (IndexError, ValueError):
-                    pass
-
-        # Show results but don't auto-commit/push
-        if reformatted > 0:
-            if force_concise:
-                safe_emoji_text("🔧 FILES REFORMATTED", "FILES REFORMATTED")
-                print(colorized_status_message(f"Reformatted {reformatted} file(s)", is_success=True, is_warning=True))  # noqa: T201
-            else:
-                print(colored_text("🔧 Auto-formatting applied", Colors.YELLOW, bold=True))  # noqa: T201
-                print(colored_text(f"Reformatted {reformatted} file(s)", Colors.GREEN))  # noqa: T201
-        elif result.returncode == 0:
+        # Show results
+        if result.returncode == 0:
             if not force_concise:
                 print(colored_text("✅ Code formatting is consistent", Colors.GREEN))  # noqa: T201
         else:
+            # Check output for formatting issues
+            output = (result.stdout or "") + (result.stderr or "")
+
             if force_concise:
-                safe_emoji_text("❌ RUFF FORMAT FAILED", "RUFF FORMAT FAILED")
+                safe_emoji_text("⚠️  FORMATTING ISSUES", "FORMATTING ISSUES")
+                print(colorized_status_message("Code formatting inconsistencies found", is_success=False, is_warning=True))  # noqa: T201
             else:
-                print(colored_text("❌ Code formatting failed", Colors.RED, bold=True))  # noqa: T201
-                if result.stderr:
-                    print(result.stderr, file=sys.stderr)  # noqa: T201
+                print(colored_text("⚠️  Code formatting inconsistencies found", Colors.YELLOW, bold=True))  # noqa: T201
+                print(colored_text("Run 'python scripts/run_ruff_format.py' to auto-fix", Colors.YELLOW))  # noqa: T201
+                if output.strip():
+                    print(colored_text("Files that need formatting:", Colors.YELLOW))  # noqa: T201
+                    print(output)  # noqa: T201
 
     except Exception as e:
         if force_concise:

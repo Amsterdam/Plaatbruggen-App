@@ -21,7 +21,7 @@ from tests.test_utils import (  # noqa: E402
 def run_ruff_check_warning() -> int:
     """Run ruff check but always return success to allow push."""
     force_concise = should_use_concise_mode()
-    
+
     try:
         # Run ruff check directly without auto-push logic
         result = subprocess.run(
@@ -42,7 +42,7 @@ def run_ruff_check_warning() -> int:
             # Count violations
             output = (result.stdout or "") + (result.stderr or "")
             lines = output.strip().split("\n") if output else []
-            
+
             violation_count = 0
             for line in lines:
                 if "Found" in line and "violation" in line:

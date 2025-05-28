@@ -9,51 +9,19 @@
 # 2. In your terminal, navigate to your repository and run `pre-commit install`.
 #    This will install the hooks.
 # 3. Now, the hooks will automatically run every time you try to push.
-#    If any of the hooks find issues, warnings will be shown but push will continue.
+#    The auto-fix hook will apply formatting and style fixes, commit them, and push when all checks pass.
 # 4. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
 # 5. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
 
-# Don't stop on first failure - run all checks to show complete picture
-fail_fast: false
+# Stop on first failure since we want the auto-fix process to handle everything
+fail_fast: true
 
 repos:
   - repo: local
     hooks:
-      - id: ruff-check-warning
-        name: Ruff code style check (warning only)
-        entry: python scripts/run_ruff_check_warning.py
-        language: system
-        stages: [pre-push]
-        pass_filenames: false
-        verbose: true
-
-      - id: ruff-format-warning
-        name: Ruff code formatter (warning only)
-        entry: python scripts/run_ruff_format_warning.py
-        language: system
-        stages: [pre-push]
-        pass_filenames: false
-        verbose: true
-
-      - id: mypy-warning
-        name: MyPy type checking (warning only)
-        entry: python scripts/run_mypy_warning.py
-        language: system
-        stages: [pre-push]
-        pass_filenames: false
-        verbose: true
-
-      - id: run-unit-tests-warning
-        name: Unit tests (warning only)
-        entry: python scripts/run_tests_warning.py
-        language: system
-        stages: [pre-push]
-        pass_filenames: false
-        verbose: true
-
-      - id: merge-warning
-        name: Branch merge warning
-        entry: python scripts/show_merge_warning.py
+      - id: auto-fix-and-push
+        name: Auto-fix code quality issues and push
+        entry: python scripts/auto_fix_and_push.py
         language: system
         stages: [pre-push]
         pass_filenames: false
