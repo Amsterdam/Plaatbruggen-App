@@ -30,33 +30,26 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess, warning_mode
         safe_emoji_text("✅ MYPY CHECK PASSED!", "MYPY CHECK PASSED!")
         print(colorized_status_message("No type checking issues found", is_success=True))  # noqa: T201
     else:
-        if warning_mode:
-            safe_emoji_text("WARNING: MYPY CHECK WARNINGS", "MYPY CHECK WARNINGS")
-            print(colorized_status_message("Type checking issues found:", is_success=False, is_warning=True))  # noqa: T201
-            print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
-            print(colorized_status_message("WARNING: Type checking failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
-        else:
-            safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
-
         # Count errors from output
         error_lines = [line for line in lines if ": error:" in line]
         error_count = len(error_lines)
         note_lines = [line for line in lines if ": note:" in line]
         note_count = len(note_lines)
-
-        if error_count > 0 or note_count > 0:
-            if warning_mode:
+        
+        if warning_mode:
+            safe_emoji_text("WARNING: MYPY CHECK WARNINGS", "MYPY CHECK WARNINGS")
+            if error_count > 0 or note_count > 0:
                 print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False, is_warning=True))  # noqa: T201
-                print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
-            else:
+            print(colorized_status_message("Run the following command to fix issues:", is_success=False, is_warning=True))  # noqa: T201
+            print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
+            print(colorized_status_message("WARNING: Type checking failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
+        else:
+            safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
+            if error_count > 0 or note_count > 0:
                 print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False))  # noqa: T201
                 print(  # noqa: T201
                     colorized_status_message("Run the following command for detailed type checking information:", is_success=False, is_warning=True)
                 )
-            print(f"  {safe_arrow()}{colored_text('python scripts/run_mypy.py', Colors.CYAN, bold=True)}")  # noqa: T201
-        else:
-            if warning_mode:
-                print(colorized_status_message("WARNING: Type checking failed - this PR cannot be merged!", is_success=False, is_warning=True))  # noqa: T201
             else:
                 print(  # noqa: T201
                     colorized_status_message(
