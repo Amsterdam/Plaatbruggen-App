@@ -205,7 +205,7 @@ def report_final_results(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, 
             else:
                 safe_emoji_text("✅ ALL CHECKS PASSED", "ALL CHECKS PASSED")
         else:
-            print(colored_text("🎉 All quality checks passed!", Colors.GREEN, bold=True))  # noqa: T201
+            safe_emoji_text("🎉 All quality checks passed!", "All quality checks passed!")
             if changes_made:
                 print(colored_text("Auto-fixes have been applied and committed.", Colors.GREEN))  # noqa: T201
             print(colored_text("Push will proceed...", Colors.GREEN))  # noqa: T201
@@ -229,7 +229,7 @@ def main() -> int:
     force_concise = should_use_concise_mode()
 
     if not force_concise:
-        print(colored_text("🚀 Smart Auto-Fix and Validate", Colors.BLUE, bold=True))  # noqa: T201
+        safe_emoji_text("🚀 Smart Auto-Fix and Validate", "Smart Auto-Fix and Validate")
         print(colored_text("Automatically fixing and validating code quality...", Colors.BLUE))  # noqa: T201
 
     # Step 1: Apply auto-fixes
