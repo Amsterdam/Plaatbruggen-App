@@ -161,13 +161,6 @@ def handle_successful_push(force_concise: bool) -> int:
 
     try:
         subprocess.run(["git", "push"], cwd=project_root, check=True, capture_output=True)
-        if force_concise:
-            safe_emoji_text("✅ PUSH SUCCESSFUL", "PUSH SUCCESSFUL")
-            print("All quality issues auto-fixed and pushed!")  # noqa: T201
-        else:
-            print(colored_text("✅ Push successful!", Colors.GREEN, bold=True))  # noqa: T201
-            print(colored_text("All quality issues have been auto-fixed and committed.", Colors.GREEN))  # noqa: T201
-        return 0
     except subprocess.CalledProcessError as e:
         if force_concise:
             safe_emoji_text("❌ PUSH FAILED", "PUSH FAILED")
@@ -175,6 +168,14 @@ def handle_successful_push(force_concise: bool) -> int:
             print(colored_text("❌ Push failed", Colors.RED, bold=True))  # noqa: T201
         print(f"Git push error: {e}")  # noqa: T201
         return 1
+    else:
+        if force_concise:
+            safe_emoji_text("✅ PUSH SUCCESSFUL", "PUSH SUCCESSFUL")
+            print("All quality issues auto-fixed and pushed!")  # noqa: T201
+        else:
+            print(colored_text("✅ Push successful!", Colors.GREEN, bold=True))  # noqa: T201
+            print(colored_text("All quality issues have been auto-fixed and committed.", Colors.GREEN))  # noqa: T201
+        return 0
 
 
 def show_remaining_issues(ruff_clean: bool, mypy_clean: bool, tests_clean: bool, force_concise: bool) -> None:
