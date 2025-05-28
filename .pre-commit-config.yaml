@@ -8,52 +8,23 @@
 #    In most cases, this will involve running `pip install pre-commit`.
 # 2. In your terminal, navigate to your repository and run `pre-commit install`.
 #    This will install the hooks.
-# 3. Now, just run `git push` - the hooks will automatically:
-#    - Check code formatting with ruff format (warnings only)
-#    - Check code style with ruff check (warnings only)
-#    - Check type annotations with mypy (warnings only)
-#    - Run all unit tests (warnings only)
-#    - Show helpful warnings but allow push to continue
+# 3. Now, just run `git push` - the hook will automatically:
+#    - Apply all code formatting and style fixes
+#    - Commit those fixes automatically  
+#    - Run all quality checks (ruff, mypy, tests)
+#    - Push everything if all checks pass
 # 4. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
 # 5. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
 
-# Don't stop on first failure - run all checks and show all warnings
-fail_fast: false
-
+# Stop on first failure for clear error reporting
+fail_fast: true
 
 repos:
   - repo: local
     hooks:
-      - id: ruff-format-warning
-        name: Code Formatting Check (Warning Only)
-        entry: python scripts/run_ruff_format.py
-        language: system
-        stages: [pre-push]
-        pass_filenames: false
-        verbose: true
-        always_run: true
-        
-      - id: ruff-check-warning
-        name: Code Style Check (Warning Only)
-        entry: python scripts/run_ruff_check.py
-        language: system
-        stages: [pre-push]
-        pass_filenames: false
-        verbose: true
-        always_run: true
-        
-      - id: mypy-warning
-        name: Type Checking (Warning Only)
-        entry: python scripts/run_mypy.py
-        language: system
-        stages: [pre-push]
-        pass_filenames: false
-        verbose: true
-        always_run: true
-        
-      - id: tests-warning
-        name: Unit Tests (Warning Only)
-        entry: python run_enhanced_tests.py
+      - id: smart-auto-fix-and-validate
+        name: Auto-fix code and validate quality
+        entry: python scripts/smart_auto_fix_and_validate.py
         language: system
         stages: [pre-push]
         pass_filenames: false

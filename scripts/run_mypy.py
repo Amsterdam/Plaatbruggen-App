@@ -30,7 +30,7 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess) -> None:
         safe_emoji_text("✅ MYPY CHECK PASSED!", "MYPY CHECK PASSED!")
         print(colorized_status_message("No type checking issues found", is_success=True))  # noqa: T201
     else:
-        safe_emoji_text("⚠️ MYPY CHECK WARNING", "MYPY CHECK WARNING")
+        safe_emoji_text("❌ MYPY CHECK FAILED", "MYPY CHECK FAILED")
 
         # Count errors from output
         error_lines = [line for line in lines if ": error:" in line]
@@ -39,7 +39,7 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess) -> None:
         note_count = len(note_lines)
 
         if error_count > 0 or note_count > 0:
-            print(colorized_status_message(f"Warning: Found {error_count} errors, {note_count} notes", is_success=False, is_warning=True))  # noqa: T201
+            print(colorized_status_message(f"Found {error_count} errors, {note_count} notes", is_success=False))  # noqa: T201
             print(  # noqa: T201
                 colorized_status_message("Run the following command for detailed type checking information:", is_success=False, is_warning=True)
             )
@@ -47,7 +47,7 @@ def handle_mypy_concise_output(result: subprocess.CompletedProcess) -> None:
         else:
             print(  # noqa: T201
                 colorized_status_message(
-                    "Warning: Type checking had issues - run the following command for detailed information:",
+                    "Type checking failed - run the following command for detailed type checking information:",
                     is_success=False,
                     is_warning=True,
                 )
@@ -115,11 +115,9 @@ def run_mypy() -> int:
     except Exception as e:
         safe_emoji_text("❌ MYPY EXECUTION FAILED", "MYPY EXECUTION FAILED")
         print(colorized_status_message(f"Error running mypy: {e}", is_success=False))  # noqa: T201
-        # Even on execution failure, return success for warning-only mode
-        return 0
+        return 1
     else:
-        # Always return success for warning-only mode
-        return 0
+        return result.returncode
 
 
 if __name__ == "__main__":
