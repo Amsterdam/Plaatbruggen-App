@@ -119,11 +119,6 @@ def handle_concise_output(result: subprocess.CompletedProcess, fix_mode: bool = 
                     print(colorized_status_message(f"Code style issues found and automatically fixed ({error_count} issues)", is_success=True))  # noqa: T201
                     print(colorized_status_message("Fixes committed and pushed to PR", is_success=True))  # noqa: T201
                 else:
-                    print(
-                        colorized_status_message(
-                            f"Code style issues found and automatically fixed ({error_count} issues)", is_success=True, is_warning=True
-                        )
-                    )  # noqa: T201
                     print(colorized_status_message("Please commit and push the fixes manually:", is_success=False, is_warning=True))  # noqa: T201
                     print(f"  {safe_arrow()}{colored_text('git add .', Colors.CYAN, bold=True)}")  # noqa: T201
                     print(f"  {safe_arrow()}{colored_text('git commit -m "Apply ruff fixes"', Colors.CYAN, bold=True)}")  # noqa: T201
