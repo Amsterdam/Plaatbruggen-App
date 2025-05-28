@@ -148,7 +148,6 @@ def validate_quality(force_concise: bool) -> tuple[bool, bool, bool]:
     return ruff_clean, mypy_clean, tests_clean
 
 
-
 def commit_auto_fixes(changes_made: bool, force_concise: bool) -> bool:
     """Commit auto-fixes if any were made."""
     if not changes_made:
