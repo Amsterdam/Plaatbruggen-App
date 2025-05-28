@@ -23,13 +23,7 @@ def run_quality_script(script_name: str, description: str) -> tuple[int, str]:
     script_path = project_root / "scripts" / script_name
     try:
         result = subprocess.run(
-            [sys.executable, str(script_path)],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            cwd=project_root,
-            check=False
+            [sys.executable, str(script_path)], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=project_root, check=False
         )
         return result.returncode, (result.stdout or "") + (result.stderr or "")
     except Exception as e:
