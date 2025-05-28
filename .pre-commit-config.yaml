@@ -16,12 +16,13 @@
 # 4. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
 # 5. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
 
-# Stop on first failure for clear error reporting
-fail_fast: true
+# Continue running all hooks even if some fail (for warning checks)
+fail_fast: false
 
 repos:
   - repo: local
     hooks:
+      # Primary hook: Auto-fix and validate everything
       - id: smart-auto-fix-and-validate
         name: Auto-fix code and validate quality
         entry: python scripts/smart_auto_fix_and_validate.py
@@ -29,4 +30,41 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         verbose: true
+        always_run: true
+        
+      # Warning-only checks for detailed feedback
+      - id: ruff-format-check
+        name: Code formatting check (warning only)
+        entry: python scripts/run_ruff_format.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: false
+        always_run: true
+        
+      - id: ruff-check-warning
+        name: Code style check (warning only)
+        entry: python scripts/run_ruff_check.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: false
+        always_run: true
+        
+      - id: mypy-check-warning
+        name: Type checking (warning only)
+        entry: python scripts/run_mypy.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: false
+        always_run: true
+        
+      - id: tests-warning
+        name: Unit tests (warning only)
+        entry: python run_enhanced_tests.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: false
         always_run: true
