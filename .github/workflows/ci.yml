@@ -40,7 +40,7 @@ jobs:
     - name: Run unit tests
       id: tests
       continue-on-error: true
-      run: python run_enhanced_tests.py
+      run: python scripts/run_enhanced_tests.py
     
     - name: Check if any step failed
       if: steps.ruff-check.outcome == 'failure' || steps.ruff-format.outcome == 'failure' || steps.mypy.outcome == 'failure' || steps.tests.outcome == 'failure'
@@ -62,7 +62,7 @@ jobs:
           echo -e "\033[1;36m  python scripts/run_mypy.py\033[0m  # Fix type checking issues"
         fi
         if [ '${{ steps.tests.outcome }}' = 'failure' ]; then
-          echo -e "\033[1;36m  python run_enhanced_tests.py\033[0m  # Run and debug tests"
+          echo -e "\033[1;36m  python scripts/run_enhanced_tests.py\033[0m  # Run and debug tests"
         fi
         echo ""
         echo -e "\033[1;33mPlease review the logs above and fix all issues before merging.\033[0m"
