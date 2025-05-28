@@ -94,7 +94,7 @@ def apply_auto_fixes(force_concise: bool) -> tuple[bool, bool]:
 
     # Step 1: Apply ruff formatting (this will auto-format files)
     if not force_concise:
-        print(colored_text("🔧 Applying code formatting...", Colors.CYAN))  # noqa: T201
+        safe_emoji_text("🔧 Applying code formatting...", "Applying code formatting...")
 
     format_exit, format_output = run_quality_script("run_ruff_format.py", "ruff format")
 
@@ -106,7 +106,7 @@ def apply_auto_fixes(force_concise: bool) -> tuple[bool, bool]:
 
     # Step 2: Apply ruff style fixes (this will auto-fix style issues)
     if not force_concise:
-        print(colored_text("🔧 Applying style fixes...", Colors.CYAN))  # noqa: T201
+        safe_emoji_text("🔧 Applying style fixes...", "Applying style fixes...")
 
     check_exit, check_output = run_quality_script("run_ruff_check.py", "ruff check")
 
@@ -126,7 +126,7 @@ def apply_auto_fixes(force_concise: bool) -> tuple[bool, bool]:
 def validate_quality(force_concise: bool) -> tuple[bool, bool, bool]:
     """Run all quality checks and return (ruff_clean, mypy_clean, tests_clean)."""
     if not force_concise:
-        print(colored_text("🔍 Validating code quality...", Colors.CYAN))  # noqa: T201
+        safe_emoji_text("🔍 Validating code quality...", "Validating code quality...")
 
     # Check ruff formatting (should be clean after auto-fixes)
     format_exit, format_output = run_quality_script("run_ruff_format.py", "ruff format check")
@@ -146,6 +146,7 @@ def validate_quality(force_concise: bool) -> tuple[bool, bool, bool]:
     tests_clean = test_exit == 0
 
     return ruff_clean, mypy_clean, tests_clean
+
 
 
 def commit_auto_fixes(changes_made: bool, force_concise: bool) -> bool:
