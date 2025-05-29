@@ -628,7 +628,7 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
         current_face_offset = 0
 
         if not params.bridge_segments_array:
-            # If there are no segments, return an empty scene
+            # If there are no segments, return an empty scenes
             # NOTE: Empty scene is the expected behavior for no segments
             return trimesh.Scene()
 

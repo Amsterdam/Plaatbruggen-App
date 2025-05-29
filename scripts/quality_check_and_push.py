@@ -87,10 +87,27 @@ def commit_changes(message: str) -> bool:
         print(f"{Colors.RED}[X] Failed to stage changes{Colors.RESET}")
         return False
 
-    # Commit changes
-    exit_code, _ = run_command(f'git commit -m "{message}"')
+    # Commit changes - use subprocess list to avoid shell quote issues
+    try:
+        result = subprocess.run(
+            ["git", "commit", "-m", message],
+            cwd=Path.cwd(),
+            capture_output=True,
+            text=True,
+            check=False,
+            encoding="utf-8",
+            errors="replace",
+        )
+        exit_code = result.returncode
+        output = result.stdout + result.stderr
+    except Exception as e:
+        print(f"{Colors.RED}[X] Failed to commit changes{Colors.RESET}")
+        print(f"{Colors.RED}    Error: {e}{Colors.RESET}")
+        return False
+
     if exit_code != 0:
         print(f"{Colors.RED}[X] Failed to commit changes{Colors.RESET}")
+        print(f"{Colors.RED}    Error: {output.strip()}{Colors.RESET}")
         return False
 
     print(f"{Colors.GREEN}[+] Changes committed successfully{Colors.RESET}")
@@ -132,6 +149,22 @@ def main() -> int:
     if exit_code != 0:
         print(f"{Colors.RED}[X] Not in a git repository{Colors.RESET}")
         return 1
+
+    # Check for uncommitted changes
+    if check_git_status():
+        print(f"{Colors.YELLOW}[!] Uncommitted changes detected{Colors.RESET}")
+        if not args.dry_run:
+            response = input(f"{Colors.CYAN}Commit all changes before quality checks? (y/N): {Colors.RESET}").strip().lower()
+            if response in ("y", "yes"):
+                commit_message = input(f"{Colors.CYAN}Enter commit message: {Colors.RESET}").strip()
+                if not commit_message:
+                    commit_message = "Manual changes before quality checks"
+                if not commit_changes(commit_message):
+                    return 1
+            else:
+                print(f"{Colors.YELLOW}[i] Proceeding with uncommitted changes (only auto-fixes will be committed){Colors.RESET}")
+        else:
+            print(f"{Colors.YELLOW}[DRY RUN] Would prompt to commit uncommitted changes{Colors.RESET}")
 
     max_iterations = 3  # Prevent infinite loops
     iteration = 0

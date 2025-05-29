@@ -22,48 +22,5 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements_dev.txt
     
-    - name: Run Ruff code style check
-      id: ruff-check
-      continue-on-error: true
-      run: python scripts/run_ruff_check.py
-    
-    - name: Run Ruff code formatter check
-      id: ruff-format
-      continue-on-error: true
-      run: python scripts/run_ruff_format.py
-    
-    - name: Run MyPy type checking
-      id: mypy
-      continue-on-error: true
-      run: python scripts/run_mypy.py
-    
-    - name: Run unit tests
-      id: tests
-      continue-on-error: true
-      run: python scripts/run_enhanced_tests.py
-    
-    - name: Check if any step failed
-      if: steps.ruff-check.outcome == 'failure' || steps.ruff-format.outcome == 'failure' || steps.mypy.outcome == 'failure' || steps.tests.outcome == 'failure'
-      run: |
-        echo -e "\033[1;31m❌ One or more quality checks failed:\033[0m"
-        echo -e "- Ruff style check: $(if [ '${{ steps.ruff-check.outcome }}' = 'success' ]; then echo '\033[1;32msuccess\033[0m'; else echo '\033[1;31mfailure\033[0m'; fi)"
-        echo -e "- Ruff formatter: $(if [ '${{ steps.ruff-format.outcome }}' = 'success' ]; then echo '\033[1;32msuccess\033[0m'; else echo '\033[1;31mfailure\033[0m'; fi)"
-        echo -e "- MyPy type check: $(if [ '${{ steps.mypy.outcome }}' = 'success' ]; then echo '\033[1;32msuccess\033[0m'; else echo '\033[1;31mfailure\033[0m'; fi)"
-        echo -e "- Unit tests: $(if [ '${{ steps.tests.outcome }}' = 'success' ]; then echo '\033[1;32msuccess\033[0m'; else echo '\033[1;31mfailure\033[0m'; fi)"
-        echo ""
-        echo -e "\033[1;33mTo investigate failures locally, run:\033[0m"
-        if [ '${{ steps.ruff-check.outcome }}' = 'failure' ]; then
-          echo -e "\033[1;36m  python scripts/run_ruff_check.py\033[0m  # Fix code style issues"
-        fi
-        if [ '${{ steps.ruff-format.outcome }}' = 'failure' ]; then
-          echo -e "\033[1;36m  python scripts/run_ruff_format.py\033[0m  # Fix formatting issues"
-        fi
-        if [ '${{ steps.mypy.outcome }}' = 'failure' ]; then
-          echo -e "\033[1;36m  python scripts/run_mypy.py\033[0m  # Fix type checking issues"
-        fi
-        if [ '${{ steps.tests.outcome }}' = 'failure' ]; then
-          echo -e "\033[1;36m  python scripts/run_enhanced_tests.py\033[0m  # Run and debug tests"
-        fi
-        echo ""
-        echo -e "\033[1;33mPlease review the logs above and fix all issues before merging.\033[0m"
-        exit 1 
+    - name: Run quality checks
+      run: python scripts/quality_check_and_push.py --dry-run 

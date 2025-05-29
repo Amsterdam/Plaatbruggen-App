@@ -78,7 +78,8 @@ def supports_color() -> bool:  # noqa: PLR0911
             import ctypes
             from ctypes import wintypes
 
-            kernel32 = ctypes.windll.kernel32
+            # Type ignore for MyPy since windll only exists on Windows
+            kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
             handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
             mode = wintypes.DWORD()
             kernel32.GetConsoleMode(handle, ctypes.byref(mode))
