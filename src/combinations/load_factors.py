@@ -12,7 +12,7 @@ valid value.
 """
 
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator  # type: ignore[import]
+from scipy.interpolate import RegularGridInterpolator  # type: ignore[import-untyped]
 
 """"tedstandard: psi_factor.py"""
 

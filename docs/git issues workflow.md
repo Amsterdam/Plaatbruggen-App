@@ -26,7 +26,7 @@ Deze workflow beschrijft hoe we omgaan met issues in de GitHub repository.
     *   Je kunt ook direct vanuit de PR naar de issue linken.
 
 7.  **Code Review en Merge:**
-    *   Een beheerder (zoals Quincy) controleert de Pull Request (code review).
+    *   Een beheerder controleert de Pull Request (code review).
     *   Indien akkoord, wordt de PR gemerged in de `development` branch van de `Amsterdam` repository.
     *   De beheerder sluit de issue (als dit niet automatisch gebeurde door de `Closes #...` tag in de PR).
 
