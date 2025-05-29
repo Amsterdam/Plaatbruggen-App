@@ -154,12 +154,14 @@ def commit_changes(message: str) -> bool:
     print(f"{Colors.BLUE}[*] Committing changes: {message}{Colors.RESET}")
 
     # Add all changes
+    print(f"{Colors.CYAN}[>] Staging changes...{Colors.RESET}")
     exit_code, _ = run_command("git add .")
     if exit_code != 0:
         print(f"{Colors.RED}[X] Failed to stage changes{Colors.RESET}")
         return False
 
     # Commit changes - use subprocess list to avoid shell quote issues
+    print(f"{Colors.CYAN}[>] Creating commit...{Colors.RESET}")
     try:
         result = subprocess.run(
             ["git", "commit", "-m", message],
@@ -267,6 +269,7 @@ def main() -> int:
                 commit_message = input(f"{Colors.CYAN}Enter commit message: {Colors.RESET}").strip()
                 if not commit_message:
                     commit_message = "Manual changes before quality checks"
+                print(f"{Colors.YELLOW}[*] Processing commit...{Colors.RESET}")
                 if not commit_changes(commit_message):
                     return 1
             else:
