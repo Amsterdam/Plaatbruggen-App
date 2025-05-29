@@ -86,10 +86,7 @@ def parse_error_details(name: str, output: str) -> tuple[int, str]:
                 if fixable_match:
                     fixable_count = int(fixable_match.group(1))
                     if fixable_count > 0:
-                        if fixable_count == error_count:
-                            error_details = "all auto-fixable"
-                        else:
-                            error_details = f"{fixable_count} auto-fixable"
+                        error_details = "all auto-fixable" if fixable_count == error_count else f"{fixable_count} auto-fixable"
 
     elif "MyPy" in name:
         # Parse MyPy output for error count
@@ -104,11 +101,7 @@ def parse_error_details(name: str, output: str) -> tuple[int, str]:
                     error_part = line.split("error:")[1].strip()
                     # Extract error type in brackets [error-type] or first meaningful words
                     bracket_match = re.search(r"\[([^\]]+)\]", error_part)
-                    if bracket_match:
-                        error_type = bracket_match.group(1)
-                    else:
-                        # Take first part of error message
-                        error_type = error_part.split(".")[0].split("(")[0].strip()
+                    error_type = bracket_match.group(1) if bracket_match else error_part.split(".")[0].split("(")[0].strip()
                     error_types.add(error_type)
             error_details = ", ".join(list(error_types)[:2])  # Show up to 2 error types
 
