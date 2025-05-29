@@ -103,3 +103,4 @@ max-statements = 75
 "scripts/quality_check_and_push.py" = ["T201", "C901", "PLR0912", "TRY300"]
 "scripts/run_enhanced_tests.py" = ["T201"]
 "ruft.py" = ["T201"]
+"setup_dev.py" = ["T201", "TRY300"]
