@@ -15,6 +15,7 @@ Usage:
 
 import argparse
 import hashlib
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -35,6 +36,8 @@ class CheckResult(NamedTuple):
     can_auto_fix: bool
     command: str
     output: str
+    error_count: int = 0
+    error_details: str = ""
 
 
 class Colors:
@@ -47,6 +50,75 @@ class Colors:
     CYAN = "\033[1;36m"
     BOLD = "\033[1m"
     RESET = "\033[0m"
+
+
+def parse_error_details(name: str, output: str) -> tuple[int, str]:
+    """Parse error details from command output to get count and summary."""
+    error_count = 0
+    error_details = ""
+
+    if "Ruff" in name:
+        # Parse Ruff output for error count
+        # Look for "Found X errors" pattern first (most reliable)
+        found_match = re.search(r"Found (\d+) errors?", output)
+        if found_match:
+            error_count = int(found_match.group(1))
+        else:
+            # Fallback: count individual error lines
+            error_lines = [
+                line
+                for line in output.split("\n")
+                if line.strip() and ".py:" in line and ("error" in line.lower() or "E" in line or "F" in line or "I" in line or "W" in line)
+            ]
+            error_count = len(error_lines)
+
+        # Look for additional info about fixable errors
+        if error_count > 0:
+            # Look for patterns like "Found 5 errors (3 fixed, 2 remaining)" or "Found 10 errors"
+            fixed_remaining_match = re.search(r"Found \d+ errors \((\d+) fixed, (\d+) remaining\)", output)
+            if fixed_remaining_match:
+                fixed_count = int(fixed_remaining_match.group(1))
+                remaining_count = int(fixed_remaining_match.group(2))
+                error_details = f"{fixed_count} auto-fixed, {remaining_count} remaining"
+            else:
+                # Look for "X fixable with ruff check --fix" pattern
+                fixable_match = re.search(r"(\d+) fixable", output)
+                if fixable_match:
+                    fixable_count = int(fixable_match.group(1))
+                    if fixable_count > 0:
+                        error_details = "all auto-fixable" if fixable_count == error_count else f"{fixable_count} auto-fixable"
+
+    elif "MyPy" in name:
+        # Parse MyPy output for error count
+        error_lines = [line for line in output.split("\n") if "error:" in line]
+        error_count = len(error_lines)
+
+        if error_count > 0:
+            # Get first few error types as summary
+            error_types = set()
+            for line in error_lines[:3]:  # Show up to 3 different error types
+                if "error:" in line:
+                    error_part = line.split("error:")[1].strip()
+                    # Extract error type in brackets [error-type] or first meaningful words
+                    bracket_match = re.search(r"\[([^\]]+)\]", error_part)
+                    error_type = bracket_match.group(1) if bracket_match else error_part.split(".")[0].split("(")[0].strip()
+                    error_types.add(error_type)
+            error_details = ", ".join(list(error_types)[:2])  # Show up to 2 error types
+
+    elif "Unit Tests" in name:
+        # Parse test output for failure count
+        if "FAILED" in output:
+            failed_match = re.search(r"(\d+) failed", output)
+            if failed_match:
+                error_count = int(failed_match.group(1))
+                error_details = "test failures"
+        elif "ERROR" in output:
+            error_match = re.search(r"(\d+) error", output)
+            if error_match:
+                error_count = int(error_match.group(1))
+                error_details = "test errors"
+
+    return error_count, error_details
 
 
 def run_command(command: str, capture_output: bool = True) -> tuple[int, str]:
@@ -120,10 +192,23 @@ def run_quality_check(name: str, command: str, can_auto_fix: bool = False) -> Ch
     exit_code, output = run_command(command)
     passed = exit_code == 0
 
-    status = f"{Colors.GREEN}[+] PASSED" if passed else f"{Colors.RED}[X] FAILED"
+    # Parse error details
+    error_count, error_details = parse_error_details(name, output)
+
+    if passed:
+        status = f"{Colors.GREEN}[+] PASSED"
+    else:
+        status = f"{Colors.RED}[X] FAILED"
+        if error_count > 0:
+            status += f" - Found {error_count} error{'s' if error_count != 1 else ''}"
+            if error_details:
+                status += f" ({error_details})"
+
     print(f"    {status}{Colors.RESET}")
 
-    return CheckResult(name=name, passed=passed, can_auto_fix=can_auto_fix, command=command, output=output)
+    return CheckResult(
+        name=name, passed=passed, can_auto_fix=can_auto_fix, command=command, output=output, error_count=error_count, error_details=error_details
+    )
 
 
 def get_git_diff_hash() -> str:
@@ -132,6 +217,29 @@ def get_git_diff_hash() -> str:
     if exit_code != 0:
         return ""
     return hashlib.md5(diff_output.encode()).hexdigest()
+
+
+def print_final_status_report(all_checks: list[CheckResult]) -> list[CheckResult]:
+    """Print the final status report and return failed checks."""
+    print(f"\n{Colors.BOLD}>> Final Status Report{Colors.RESET}")
+    print("=" * 60)
+
+    failed_checks = []
+
+    for check in all_checks:
+        if check.passed:
+            status = f"{Colors.GREEN}[+] PASSED"
+        else:
+            status = f"{Colors.RED}[X] FAILED"
+            if check.error_count > 0:
+                status += f" - Found {check.error_count} error{'s' if check.error_count != 1 else ''}"
+                if check.error_details:
+                    status += f" ({check.error_details})"
+            failed_checks.append(check)
+
+        print(f"  {check.name}: {status}{Colors.RESET}")
+
+    return failed_checks
 
 
 def main() -> int:
@@ -214,29 +322,15 @@ def main() -> int:
         print(f"{Colors.YELLOW}[!] Auto-fixes applied, running checks again...{Colors.RESET}")
 
     # Final status report
-    print(f"\n{Colors.BOLD}>> Final Status Report{Colors.RESET}")
-    print("=" * 60)
-
-    all_checks = [
-        ("Ruff Style Check", ruff_check.passed, "python scripts/run_ruff_check.py"),
-        ("Ruff Formatter", ruff_format.passed, "python scripts/run_ruff_format.py"),
-        ("MyPy Type Check", mypy_check.passed, "python scripts/run_mypy.py"),
-        ("Unit Tests", test_check.passed, "python scripts/run_enhanced_tests.py"),
-    ]
-
-    failed_checks = []
-    for name, passed, command in all_checks:
-        status = f"{Colors.GREEN}[+] PASSED" if passed else f"{Colors.RED}[X] FAILED"
-        print(f"  {name}: {status}{Colors.RESET}")
-        if not passed:
-            failed_checks.append((name, command))
+    all_checks = [ruff_check, ruff_format, mypy_check, test_check]
+    failed_checks = print_final_status_report(all_checks)
 
     # If there are failures that can't be auto-fixed
     if failed_checks:
         print(f"\n{Colors.RED}[X] Some checks failed and cannot be auto-fixed:{Colors.RESET}")
         print(f"{Colors.YELLOW}To investigate and fix manually, run:{Colors.RESET}")
-        for name, command in failed_checks:
-            print(f"  {Colors.CYAN}{command}{Colors.RESET}  # Fix {name}")
+        for check in failed_checks:
+            print(f"  {Colors.CYAN}{check.command}{Colors.RESET}  # Fix {check.name}")
         print(f"\n{Colors.YELLOW}Fix these issues and run this script again.{Colors.RESET}")
         return 1
 
