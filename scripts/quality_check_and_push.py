@@ -208,6 +208,29 @@ def get_git_diff_hash() -> str:
     return hashlib.md5(diff_output.encode()).hexdigest()
 
 
+def print_final_status_report(all_checks: list[CheckResult]) -> list[CheckResult]:
+    """Print the final status report and return failed checks."""
+    print(f"\n{Colors.BOLD}>> Final Status Report{Colors.RESET}")
+    print("=" * 60)
+
+    failed_checks = []
+
+    for check in all_checks:
+        if check.passed:
+            status = f"{Colors.GREEN}[+] PASSED"
+        else:
+            status = f"{Colors.RED}[X] FAILED"
+            if check.error_count > 0:
+                status += f" - Found {check.error_count} error{'s' if check.error_count != 1 else ''}"
+                if check.error_details:
+                    status += f" ({check.error_details})"
+            failed_checks.append(check)
+
+        print(f"  {check.name}: {status}{Colors.RESET}")
+
+    return failed_checks
+
+
 def main() -> int:
     """Main function."""
     parser = argparse.ArgumentParser(description="Run quality checks and push")
@@ -288,24 +311,8 @@ def main() -> int:
         print(f"{Colors.YELLOW}[!] Auto-fixes applied, running checks again...{Colors.RESET}")
 
     # Final status report
-    print(f"\n{Colors.BOLD}>> Final Status Report{Colors.RESET}")
-    print("=" * 60)
-
     all_checks = [ruff_check, ruff_format, mypy_check, test_check]
-    failed_checks = []
-
-    for check in all_checks:
-        if check.passed:
-            status = f"{Colors.GREEN}[+] PASSED"
-        else:
-            status = f"{Colors.RED}[X] FAILED"
-            if check.error_count > 0:
-                status += f" - Found {check.error_count} error{'s' if check.error_count != 1 else ''}"
-                if check.error_details:
-                    status += f" ({check.error_details})"
-            failed_checks.append(check)
-
-        print(f"  {check.name}: {status}{Colors.RESET}")
+    failed_checks = print_final_status_report(all_checks)
 
     # If there are failures that can't be auto-fixed
     if failed_checks:
