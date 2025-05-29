@@ -150,6 +150,22 @@ def main() -> int:
         print(f"{Colors.RED}[X] Not in a git repository{Colors.RESET}")
         return 1
 
+    # Check for uncommitted changes
+    if check_git_status():
+        print(f"{Colors.YELLOW}[!] Uncommitted changes detected{Colors.RESET}")
+        if not args.dry_run:
+            response = input(f"{Colors.CYAN}Commit all changes before quality checks? (y/N): {Colors.RESET}").strip().lower()
+            if response in ("y", "yes"):
+                commit_message = input(f"{Colors.CYAN}Enter commit message: {Colors.RESET}").strip()
+                if not commit_message:
+                    commit_message = "Manual changes before quality checks"
+                if not commit_changes(commit_message):
+                    return 1
+            else:
+                print(f"{Colors.YELLOW}[i] Proceeding with uncommitted changes (only auto-fixes will be committed){Colors.RESET}")
+        else:
+            print(f"{Colors.YELLOW}[DRY RUN] Would prompt to commit uncommitted changes{Colors.RESET}")
+
     max_iterations = 3  # Prevent infinite loops
     iteration = 0
 
