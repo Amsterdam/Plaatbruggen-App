@@ -169,6 +169,9 @@ def main() -> int:
     max_iterations = 3  # Prevent infinite loops
     iteration = 0
 
+
+
+
     while iteration < max_iterations:
         iteration += 1
         print(f"\n{Colors.BOLD}>> Iteration {iteration}{Colors.RESET}")
