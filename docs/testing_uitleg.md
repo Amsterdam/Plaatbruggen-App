@@ -2,6 +2,146 @@
 
 Dit document legt uit hoe ons automatische testsysteem werkt, hoe je ermee werkt, en hoe je problemen oplost.
 
+## 🚀 Setup voor Nieuwe Developers
+
+### Vereiste Versies
+Dit project gebruikt specifieke versies om consistentie tussen lokale en CI omgevingen te garanderen:
+
+- **Ruff** `0.11.7` (code style & formatting)
+- **MyPy** `1.15.0` (type checking)
+- **Python** `3.12+`
+
+### 1️⃣ Initiële Setup (eenmalig)
+
+**🚀 Quick Setup (Recommended):**
+```bash
+# 1. Clone het project
+git clone <repository-url>
+cd automatisch-toetsmodel-plaatbruggen
+
+# 2. Install dependencies
+viktor-cli install                    # Main VIKTOR dependencies
+pip install -r requirements_dev.txt  # Development tools (Ruff, MyPy, etc.)
+
+# 3. Automated setup verification
+python setup_dev.py
+```
+
+**🔧 Manual Setup (Step-by-step):**
+```bash
+# 1-2: Same as above
+
+# 3. Verify installation manually
+python ruft.py --dry-run
+```
+
+### 2️⃣ Verificatie van Setup
+
+Test of alles werkt:
+
+```bash
+# Test alle quality checks (zoals bij git push)
+python ruft.py --dry-run
+
+# Of gebruik het volledige script:
+python scripts/quality_check_and_push.py --dry-run
+```
+
+**Verwachte output:**
+```
+>> Starting Quality Check and Push Workflow
+============================================================
+>> Iteration 1
+----------------------------------------
+[>] Running Ruff Style Check...
+    [+] PASSED
+[>] Running Ruff Formatter...
+    [+] PASSED
+[>] Running MyPy Type Check...
+    [+] PASSED
+[>] Running Unit Tests...
+    [+] PASSED
+
+>> Final Status Report
+============================================================
+  Ruff Style Check: [+] PASSED
+  Ruff Formatter: [+] PASSED
+  MyPy Type Check: [+] PASSED
+  Unit Tests: [+] PASSED
+
+[+] All quality checks passed!
+```
+
+### 3️⃣ Dagelijks Gebruik
+
+**Voor elke feature/bugfix:**
+
+```bash
+# 1. Maak nieuwe branch
+git checkout -b feature/nieuwe-functionaliteit
+
+# 2. Maak je wijzigingen
+# ... programmeren ...
+
+# 3. Test je code
+python ruft.py --dry-run
+
+# 4. Als alles groen is, commit en push
+git add .
+git commit -m "feat: voeg nieuwe functionaliteit toe"
+git push origin feature/nieuwe-functionaliteit
+```
+
+**De quality checks draaien automatisch bij `git push`!**
+
+### 4️⃣ Troubleshooting Setup
+
+**❌ `ModuleNotFoundError: No module named 'ruff'`**
+```bash
+pip install -r requirements_dev.txt
+```
+
+**❌ `viktor-cli command not found`**
+```bash
+# Install Viktor CLI first
+pip install viktor-cli
+# Then install dependencies
+viktor-cli install
+```
+
+**❌ `python scripts/... not found`**
+```bash
+# Zorg dat je in de root directory bent:
+cd automatisch-toetsmodel-plaatbruggen
+ls -la  # Je moet 'scripts/' folder zien
+```
+
+**❌ Quality checks falen bij clean repository**
+```bash
+# Forceer clean install:
+pip uninstall ruff mypy -y
+pip install -r requirements_dev.txt
+```
+
+### 5️⃣ IDE Setup (Optioneel maar Aanbevolen)
+
+**VS Code:**
+```json
+// .vscode/settings.json
+{
+    "python.linting.enabled": true,
+    "python.linting.mypyEnabled": true,
+    "ruff.args": ["--config=.ruff.toml"],
+    "editor.formatOnSave": true,
+    "python.defaultInterpreterPath": "./venv/Scripts/python"
+}
+```
+
+**PyCharm:**
+- External Tools → Add Ruff
+- File Watchers → Add MyPy
+- Code Style → Import from `.ruff.toml`
+
 ## 🎯 Wat Deze Kwaliteitscontroles Doen
 
 Ons project heeft **4 automatische kwaliteitscontroles** bij elke push:
@@ -26,7 +166,7 @@ Ons project heeft **4 automatische kwaliteitscontroles** bij elke push:
 - **VIKTOR interface functioneert**: Views, controllers, en parametrization  
 - **Geen regressies**: Vangt kapotte functionaliteit op voordat het productie bereikt
 
-## 🔄 Push Workflow
+## 🎯 Push Workflow
 
 ### ✅ Succes Scenario
 ```bash
@@ -138,7 +278,7 @@ tests/
 
 ### Alle Kwaliteitscontroles (zoals bij push)
 ```bash
-# Alle checks zoals pre-commit hooks
+# Alle checks zoals bij git push
 python scripts/run_ruff_check.py    # Code style + auto-fix
 python scripts/run_ruff_format.py   # Code formatting + auto-commit
 python scripts/run_mypy.py          # Type checking
@@ -259,7 +399,7 @@ AI kan helpen met:
 - Test edge cases: lege input, None waarden, extreme getallen
 - Update tests bij functionaliteit wijzigingen
 - Update seed files bij parameter wijzigingen
-- Laat de enhanced pre-commit hooks hun werk doen (auto-formatting, auto-fixing)
+- Laat de automatische quality checks hun werk doen (auto-formatting, auto-fixing)
 - Vraag AI om hulp wanneer je vastzit
 
 **NIET DOEN:**
@@ -268,7 +408,7 @@ AI kan helpen met:
 - Complexe logica in tests gebruiken
 - Echte files/databases gebruiken in tests
 - Seed files vergeten bij parametrization wijzigingen
-- Pre-commit hooks uitschakelen om "sneller" te pushen
+- Quality checks omzeilen om "sneller" te pushen
 
 ## 🆘 Hulp Nodig?
 
