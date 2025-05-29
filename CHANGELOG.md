@@ -7,22 +7,45 @@ Semantic versioning is used to denote different versions of this project.
 ## [`v0.0.6`] - 2025-xx-xx
 
 ### Added
+#### User-Facing
 - Horizontal spawn arrow to the topview
+
+#### Developer-Facing
+- Comprehensive Phase 2 VIKTOR view testing infrastructure:
+  - Full view execution tests for all BridgeController and OverviewBridgesController views
+  - Advanced VIKTOR result object handling (DataResult, PlotlyResult, MapResult, GeometryResult, PDFResult)
+  - Decorator bypassing technique for authentic view method testing
+  - Enhanced test coverage reaching 188 total tests across core logic and VIKTOR interface
+- Dutch testing documentation (`docs/testing_uitleg.md`) with practical workflows, AI assistance guidance, and seed file maintenance procedures
+
 ### Changed
+#### User-Facing
 - Split the concrete cover input into separate fields for top and bottom cover values, allowing for different cover specifications for the top and bottom of the plate.
 - Split the shear reinforcement input fields into separate fields for top and bottom.
+
+#### Developer-Facing
+- Enhanced development workflow with improved pre-commit hooks:
+  - Auto-commit functionality for code formatting changes
+  - Improved error reporting and user guidance
+  - Consistent tooling across all quality checks (ruff, mypy, tests)
+
 ### Fixed
+#### User-Facing
+- 
+
+#### Developer-Facing
+- 
 
 ## [`v0.0.5`] - 2025-05-22
 
 ### Added
+#### User-Facing
 - Enhanced reinforcement visualization in all three bridge zones:
   - Added support for shear reinforcement bars in all zones
   - Proper handling of both reinforcement configurations (longitudinal/shear inside/outside)
   - Extension of reinforcement system to dynamically added zones
   - Correct positioning of reinforcement in additional segments based on cumulative distances
   - Accurate height calculations for shear reinforcement in the middle zone (bz2)
-- Added `wapening_buigstraal.csv` containing minimum bending radii specifications for different reinforcement bar diameters (6mm to 40mm) according to Eurocode 2.
 - Added "Info" page to the `Bridge` entity, displaying a map view of the specific bridge.
 - Implemented parametrization for "Belastingzones" (Load Zones) within the `Bridge` entity:
     - Added a "Belastingzones" tab to the "Invoer" page.
@@ -52,7 +75,17 @@ Semantic versioning is used to denote different versions of this project.
   - Options list updates automatically when segments are added/removed
   - Proper zone labeling helps users identify reinforcement locations
 
+#### Developer-Facing
+- Added `wapening_buigstraal.csv` containing minimum bending radii specifications for different reinforcement bar diameters (6mm to 40mm) according to Eurocode 2.
+
 ### Changed
+#### User-Facing
+- Renamed map view from "Kaart Huidige Brug" to "Locatie Brug" in bridge entity
+- Updated bridge deck parametrization for zone 2 thickness:
+  - Replaced "Extra dikte zone 2" (`dze`) with "Dikte zone 2 (`dz_2`)" to directly input total thickness.
+  - Updated `model_creator.py` to use the new `dz_2` parameter for 3D model generation.
+
+#### Developer-Facing
 - Refactored reinforcement creation code in `model_creator.py`:
   - Split into modular, single-responsibility functions
   - Added helper functions for zone parameter extraction
@@ -70,10 +103,6 @@ Semantic versioning is used to denote different versions of this project.
   - Moved GIS files to `resources/gis/`
   - Moved document templates to `resources/templates/`
   - Moved style files to `resources/styles/`
-- Renamed map view from "Kaart Huidige Brug" to "Locatie Brug" in bridge entity
-- Updated bridge deck parametrization for zone 2 thickness:
-  - Replaced "Extra dikte zone 2" (`dze`) with "Dikte zone 2 (`dz_2`)" to directly input total thickness.
-  - Updated `model_creator.py` to use the new `dz_2` parameter for 3D model generation.
 - Refactored map and geometry processing logic from `BridgeController` and `OverviewBridgesController` into a new shared utility module: `app/common/map_utils.py`.
 - Updated `BridgeController` and `OverviewBridgesController` to utilize the new shared map utilities.
 - Modified `BridgeController`'s `get_bridge_map_view` method to fetch `last_saved_params` using `viktor.api_v1` for improved robustness in retrieving entity parameters.
@@ -82,12 +111,16 @@ Semantic versioning is used to denote different versions of this project.
 - Centralized individual bridge shapefile loading and filtering by moving logic from `BridgeController`._load_and_filter_geodataframe` to a new `load_and_filter_bridge_shapefile` function in `app/common/map_utils.py`.
 
 ### Fixed
+#### User-Facing
 - Resolved issues where `OBJECTNUMM` was not found in `Bridge` entity parameters by:
     - Moving hidden `TextField` parameters (`bridge_objectnumm`, `bridge_name`) into the newly created "Info" page.
     - Updating parameter access in `BridgeController` to `params.info.bridge_objectnumm`.
 - Addressed `AttributeError: info` for older `Bridge` entities by:
     - Making parameter access in `BridgeController` more robust using `params.get("info")`.
     - Updating `OverviewBridgesController` (`_create_missing_children` method) to correctly structure parameters under an "info" key when creating new bridge entities.
+
+#### Developer-Facing
+- 
 
 ## [`v0.0.4`] - 2025-05-08
 

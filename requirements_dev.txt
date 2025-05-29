@@ -1,8 +1,11 @@
-mypy
-ruff
+# Development dependencies
+# Versions pinned to ensure CI/local environment consistency
+mypy==1.15.0
+ruff==0.11.7
 pre-commit
 pytest
 
 #mypy type libs
 types-shapely
 types-Markdown
+types-psutil

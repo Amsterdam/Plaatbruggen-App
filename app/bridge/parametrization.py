@@ -3,6 +3,7 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -20,8 +21,6 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
-
-from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 
 from .geometry_functions import get_steel_qualities
 
@@ -51,30 +50,26 @@ def _create_default_load_zone_row(zone_type: str, default_width: float) -> dict[
 
 
 # --- Helper functions for Parametrization Logic (e.g., visibility callbacks) ---
-def _get_current_num_load_zones(params_obj: "BridgeParametrization") -> int:
+def _get_current_num_load_zones(params_obj: Mapping) -> int:
     """Helper to get the current number of load zones from params.load_zones_data_array."""
     try:
-        if params_obj is None or not hasattr(params_obj, "load_zones_data_array"):
-            return 0
         load_zones_array = params_obj.load_zones_data_array
         if load_zones_array is None or not isinstance(load_zones_array, list | tuple):
             return 0
         return len(load_zones_array)
-    except (AttributeError, TypeError):
+    except AttributeError:
         # Parameters not yet fully defined during app initialization or update – treat as "0" zones
         return 0
 
 
-def _get_current_num_segments(params_obj: "BridgeParametrization") -> int:
+def _get_current_num_segments(params_obj: Mapping) -> int:
     """Helper to get the current number of segments from params.bridge_segments_array."""
     try:
-        if params_obj is None or not hasattr(params_obj, "bridge_segments_array"):
-            return 0
         dimension_array = params_obj.bridge_segments_array
         if dimension_array is None or not isinstance(dimension_array, list | tuple):
             return 0
         return len(dimension_array)
-    except (AttributeError, TypeError):
+    except AttributeError:
         # Parameters not yet fully defined during app initialization or update – treat as "0" segments
         return 0
 
