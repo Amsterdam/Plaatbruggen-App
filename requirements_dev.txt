@@ -8,3 +8,4 @@ pytest
 #mypy type libs
 types-shapely
 types-Markdown
+types-psutil
