@@ -21,6 +21,7 @@ Semantic versioning is used to denote different versions of this project.
 ### Changed
 #### User-Facing
 - Split the concrete cover input into separate fields for top and bottom cover values, allowing for different cover specifications for the top and bottom of the plate.
+- Split the shear reinforcement input fields into separate fields for top and bottom.
 
 #### Developer-Facing
 - Enhanced development workflow with improved pre-commit hooks:
