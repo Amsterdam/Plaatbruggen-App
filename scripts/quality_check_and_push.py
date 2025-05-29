@@ -267,9 +267,9 @@ def main() -> int:
             response = input(f"{Colors.CYAN}Commit all changes before quality checks? (y/N): {Colors.RESET}").strip().lower()
             if response in ("y", "yes"):
                 commit_message = input(f"{Colors.CYAN}Enter commit message: {Colors.RESET}").strip()
+                print(f"{Colors.YELLOW}[*] Processing commit...{Colors.RESET}", flush=True)
                 if not commit_message:
                     commit_message = "Manual changes before quality checks"
-                print(f"{Colors.YELLOW}[*] Processing commit...{Colors.RESET}")
                 if not commit_changes(commit_message):
                     return 1
             else:
