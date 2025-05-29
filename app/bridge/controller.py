@@ -37,7 +37,6 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
-from src.report.report_functions import create_export_report  # Import the report creation function
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
 from viktor.views import (
@@ -372,7 +371,7 @@ class BridgeController(ViktorController):
         bridge_geom_arg: BridgeBaseGeometry = {
             "x_coords_d_points": bridge_geom_data.x_coords_d_points,
             "y_coords_bridge_top_edge": bridge_geom_data.y_top_structural_edge_at_d_points,
-            "y_coords_bridge_bottom_edge": bridge_geom_data.y_bridge_bottom_at_d_points,
+            "y_coords_bridge_bottom_edge": [[y_bottom, y_bottom] for y_bottom in bridge_geom_data.y_bridge_bottom_at_d_points],
             "num_defined_d_points": bridge_geom_data.num_defined_d_points,
         }
         styling_defaults_arg: ZoneStylingDefaults = {
@@ -412,7 +411,5 @@ class BridgeController(ViktorController):
             File: A PDF file containing the report.
 
         """
-        # using File object
-        pdf = create_export_report(params)
-
-        return PDFResult(file=pdf)
+        # TEMPORARILY DISABLED - docxtpl network issue
+        raise UserError("Report generation is temporarily disabled due to network connectivity issues with required dependencies.")
