@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from app.bridge.parametrization import BridgeParametrization
 
 
+
+
+
 def create_longitudinal_section(params: "BridgeParametrization", section_loc: float) -> go.Figure:
     """
     Creates a 2D longitudinal section view of the bridge using Plotly.
