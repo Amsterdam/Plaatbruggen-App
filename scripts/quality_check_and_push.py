@@ -87,9 +87,24 @@ def commit_changes(message: str) -> bool:
         print(f"{Colors.RED}[X] Failed to stage changes{Colors.RESET}")
         return False
 
-    # Commit changes - escape quotes and use simple message format
-    safe_message = message.replace('"', "'").replace(":", "-")
-    exit_code, output = run_command(f"git commit -m \"{safe_message}\"")
+    # Commit changes - use subprocess list to avoid shell quote issues
+    try:
+        result = subprocess.run(
+            ["git", "commit", "-m", message],
+            cwd=Path.cwd(),
+            capture_output=True,
+            text=True,
+            check=False,
+            encoding="utf-8",
+            errors="replace",
+        )
+        exit_code = result.returncode
+        output = result.stdout + result.stderr
+    except Exception as e:
+        print(f"{Colors.RED}[X] Failed to commit changes{Colors.RESET}")
+        print(f"{Colors.RED}    Error: {e}{Colors.RESET}")
+        return False
+
     if exit_code != 0:
         print(f"{Colors.RED}[X] Failed to commit changes{Colors.RESET}")
         print(f"{Colors.RED}    Error: {output.strip()}{Colors.RESET}")
@@ -164,7 +179,7 @@ def main() -> int:
             made_fixes = True
 
             if not args.dry_run:
-                if not commit_changes(f"Auto-fix Ruff style and formatting iter-{iteration}"):
+                if not commit_changes(f"Auto-fix: Ruff style and formatting (iteration {iteration})"):
                     return 1
             else:
                 print(f"{Colors.YELLOW}[DRY RUN] Would commit Ruff auto-fixes{Colors.RESET}")
