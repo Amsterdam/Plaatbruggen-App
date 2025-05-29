@@ -22,42 +22,5 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements_dev.txt
     
-    - name: Run Ruff code style check (direct)
-      id: ruff-check
-      continue-on-error: true
-      run: |
-        echo "=== RUFF CHECK DETAILS ==="
-        python -m ruff check --config=.ruff.toml --output-format=full .
-    
-    - name: Run Ruff code formatter check (direct)
-      id: ruff-format
-      continue-on-error: true
-      run: |
-        echo "=== RUFF FORMAT DETAILS ==="
-        python -m ruff format --config=.ruff.toml --check --diff .
-    
-    - name: Run MyPy type checking (direct)
-      id: mypy
-      continue-on-error: true
-      run: |
-        echo "=== MYPY DETAILS ==="
-        python -m mypy . --config-file=pyproject.toml
-    
-    - name: Run unit tests
-      id: tests
-      continue-on-error: true
-      run: python scripts/run_enhanced_tests.py
-    
-    - name: Check if any step failed
-      if: steps.ruff-check.outcome == 'failure' || steps.ruff-format.outcome == 'failure' || steps.mypy.outcome == 'failure' || steps.tests.outcome == 'failure'
-      run: |
-        echo -e "\033[1;31m❌ One or more quality checks failed:\033[0m"
-        echo -e "- Ruff style check: $(if [ '${{ steps.ruff-check.outcome }}' = 'success' ]; then echo '\033[1;32msuccess\033[0m'; else echo '\033[1;31mfailure\033[0m'; fi)"
-        echo -e "- Ruff formatter: $(if [ '${{ steps.ruff-format.outcome }}' = 'success' ]; then echo '\033[1;32msuccess\033[0m'; else echo '\033[1;31mfailure\033[0m'; fi)"
-        echo -e "- MyPy type check: $(if [ '${{ steps.mypy.outcome }}' = 'success' ]; then echo '\033[1;32msuccess\033[0m'; else echo '\033[1;31mfailure\033[0m'; fi)"
-        echo -e "- Unit tests: $(if [ '${{ steps.tests.outcome }}' = 'success' ]; then echo '\033[1;32msuccess\033[0m'; else echo '\033[1;31mfailure\033[0m'; fi)"
-        echo ""
-        echo -e "\033[1;33mDETAILED ERROR INFORMATION ABOVE ⬆️\033[0m"
-        echo ""
-        echo -e "\033[1;33mPlease review the detailed logs above and fix all issues before merging.\033[0m"
-        exit 1 
+    - name: Run quality checks
+      run: python scripts/quality_check_and_push.py --dry-run 
