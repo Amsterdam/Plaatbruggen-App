@@ -59,24 +59,37 @@ def parse_error_details(name: str, output: str) -> tuple[int, str]:
 
     if "Ruff" in name:
         # Parse Ruff output for error count
-        # Look for patterns like "Found X errors" or count individual error lines
-        error_lines = [
-            line
-            for line in output.split("\n")
-            if line.strip() and ".py:" in line and ("error" in line.lower() or "E" in line or "F" in line or "I" in line)
-        ]
-        error_count = len(error_lines)
-
-        # Look for "Found X errors" pattern
+        # Look for "Found X errors" pattern first (most reliable)
         found_match = re.search(r"Found (\d+) errors?", output)
         if found_match:
             error_count = int(found_match.group(1))
+        else:
+            # Fallback: count individual error lines
+            error_lines = [
+                line
+                for line in output.split("\n")
+                if line.strip() and ".py:" in line and ("error" in line.lower() or "E" in line or "F" in line or "I" in line or "W" in line)
+            ]
+            error_count = len(error_lines)
 
-        # Look for "X fixable" pattern
-        fixable_match = re.search(r"(\d+) fixable", output)
-        if fixable_match:
-            fixable_count = int(fixable_match.group(1))
-            error_details = f"{fixable_count} auto-fixable" if fixable_count > 0 else ""
+        # Look for additional info about fixable errors
+        if error_count > 0:
+            # Look for patterns like "Found 5 errors (3 fixed, 2 remaining)" or "Found 10 errors"
+            fixed_remaining_match = re.search(r"Found \d+ errors \((\d+) fixed, (\d+) remaining\)", output)
+            if fixed_remaining_match:
+                fixed_count = int(fixed_remaining_match.group(1))
+                remaining_count = int(fixed_remaining_match.group(2))
+                error_details = f"{fixed_count} auto-fixed, {remaining_count} remaining"
+            else:
+                # Look for "X fixable with ruff check --fix" pattern
+                fixable_match = re.search(r"(\d+) fixable", output)
+                if fixable_match:
+                    fixable_count = int(fixable_match.group(1))
+                    if fixable_count > 0:
+                        if fixable_count == error_count:
+                            error_details = "all auto-fixable"
+                        else:
+                            error_details = f"{fixable_count} auto-fixable"
 
     elif "MyPy" in name:
         # Parse MyPy output for error count
@@ -89,8 +102,13 @@ def parse_error_details(name: str, output: str) -> tuple[int, str]:
             for line in error_lines[:3]:  # Show up to 3 different error types
                 if "error:" in line:
                     error_part = line.split("error:")[1].strip()
-                    # Take first part of error message
-                    error_type = error_part.split(".")[0].split("(")[0].strip()
+                    # Extract error type in brackets [error-type] or first meaningful words
+                    bracket_match = re.search(r"\[([^\]]+)\]", error_part)
+                    if bracket_match:
+                        error_type = bracket_match.group(1)
+                    else:
+                        # Take first part of error message
+                        error_type = error_part.split(".")[0].split("(")[0].strip()
                     error_types.add(error_type)
             error_details = ", ".join(list(error_types)[:2])  # Show up to 2 error types
 
