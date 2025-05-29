@@ -87,10 +87,12 @@ def commit_changes(message: str) -> bool:
         print(f"{Colors.RED}[X] Failed to stage changes{Colors.RESET}")
         return False
 
-    # Commit changes
-    exit_code, _ = run_command(f'git commit -m "{message}"')
+    # Commit changes - escape quotes and use simple message format
+    safe_message = message.replace('"', "'").replace(":", "-")
+    exit_code, output = run_command(f"git commit -m \"{safe_message}\"")
     if exit_code != 0:
         print(f"{Colors.RED}[X] Failed to commit changes{Colors.RESET}")
+        print(f"{Colors.RED}    Error: {output.strip()}{Colors.RESET}")
         return False
 
     print(f"{Colors.GREEN}[+] Changes committed successfully{Colors.RESET}")
@@ -162,7 +164,7 @@ def main() -> int:
             made_fixes = True
 
             if not args.dry_run:
-                if not commit_changes(f"Auto-fix: Ruff style and formatting (iteration {iteration})"):
+                if not commit_changes(f"Auto-fix Ruff style and formatting iter-{iteration}"):
                     return 1
             else:
                 print(f"{Colors.YELLOW}[DRY RUN] Would commit Ruff auto-fixes{Colors.RESET}")
