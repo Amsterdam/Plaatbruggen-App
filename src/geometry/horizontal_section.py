@@ -12,8 +12,6 @@ if TYPE_CHECKING:
     pass
 
 
-
-
 def create_horizontal_section_annotations(params: dict | Munch, all_y: list[float]) -> list[go.layout.Annotation]:
     """
     Create Plotly annotation objects for the horizontal section view.
