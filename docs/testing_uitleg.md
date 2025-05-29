@@ -9,7 +9,6 @@ Dit project gebruikt specifieke versies om consistentie tussen lokale en CI omge
 
 - **Ruff** `0.11.7` (code style & formatting)
 - **MyPy** `1.15.0` (type checking)
-- **Pre-commit** (git hooks)
 - **Python** `3.12+`
 
 ### 1️⃣ Initiële Setup (eenmalig)
@@ -20,29 +19,20 @@ Dit project gebruikt specifieke versies om consistentie tussen lokale en CI omge
 git clone <repository-url>
 cd automatisch-toetsmodel-plaatbruggen
 
-# 2. Maak virtual environment
-python -m venv venv
+# 2. Install dependencies
+viktor-cli install                    # Main VIKTOR dependencies
+pip install -r requirements_dev.txt  # Development tools (Ruff, MyPy, etc.)
 
-# 3. Activeer virtual environment
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
-
-# 4. Automated setup (installeert alles)
+# 3. Automated setup verification
 python setup_dev.py
 ```
 
 **🔧 Manual Setup (Step-by-step):**
 ```bash
-# 1-3: Same as above
+# 1-2: Same as above
 
-# 4. Installeer alle dependencies (inclusief dev tools)
-pip install -r requirements.txt
-pip install -r requirements_dev.txt
-
-# 5. Installeer pre-commit hooks
-pre-commit install
+# 3. Verify installation manually
+python ruft.py --dry-run
 ```
 
 ### 2️⃣ Verificatie van Setup
@@ -111,10 +101,12 @@ git push origin feature/nieuwe-functionaliteit
 pip install -r requirements_dev.txt
 ```
 
-**❌ `pre-commit command not found`**
+**❌ `viktor-cli command not found`**
 ```bash
-pip install pre-commit
-pre-commit install
+# Install Viktor CLI first
+pip install viktor-cli
+# Then install dependencies
+viktor-cli install
 ```
 
 **❌ `python scripts/... not found`**
@@ -174,7 +166,7 @@ Ons project heeft **4 automatische kwaliteitscontroles** bij elke push:
 - **VIKTOR interface functioneert**: Views, controllers, en parametrization  
 - **Geen regressies**: Vangt kapotte functionaliteit op voordat het productie bereikt
 
-## 🔄 Push Workflow
+## 🎯 Push Workflow
 
 ### ✅ Succes Scenario
 ```bash
@@ -286,7 +278,7 @@ tests/
 
 ### Alle Kwaliteitscontroles (zoals bij push)
 ```bash
-# Alle checks zoals pre-commit hooks
+# Alle checks zoals bij git push
 python scripts/run_ruff_check.py    # Code style + auto-fix
 python scripts/run_ruff_format.py   # Code formatting + auto-commit
 python scripts/run_mypy.py          # Type checking
@@ -407,7 +399,7 @@ AI kan helpen met:
 - Test edge cases: lege input, None waarden, extreme getallen
 - Update tests bij functionaliteit wijzigingen
 - Update seed files bij parameter wijzigingen
-- Laat de enhanced pre-commit hooks hun werk doen (auto-formatting, auto-fixing)
+- Laat de automatische quality checks hun werk doen (auto-formatting, auto-fixing)
 - Vraag AI om hulp wanneer je vastzit
 
 **NIET DOEN:**
@@ -416,7 +408,7 @@ AI kan helpen met:
 - Complexe logica in tests gebruiken
 - Echte files/databases gebruiken in tests
 - Seed files vergeten bij parametrization wijzigingen
-- Pre-commit hooks uitschakelen om "sneller" te pushen
+- Quality checks omzeilen om "sneller" te pushen
 
 ## 🆘 Hulp Nodig?
 
