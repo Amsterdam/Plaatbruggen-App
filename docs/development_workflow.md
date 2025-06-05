@@ -90,7 +90,8 @@ git commit -m "Beschrijvende commit message"
 Het ruft script (ruft.py) voert een aantal acties uit om de code kwaliteit te waarborgen:
 - Voert een commit uit (mocht dit nog niet zijn gedaan)
 - Voert de ruff formating, ruff checks en mypy checks uit
-- Voert de unit tests uit: 
+- Voert de unit tests uit
+- Voert viktor tests uit 
 - Pushed de code naar de feature branch
 
 Indien een check faalt krijg je dit te zien en kun je het oplossen. Run het ruft script vervolgens opnieuw.
