@@ -7,3 +7,5 @@ geopandas
 plotly
 shapely
 trimesh
+networkx
+docxtpl

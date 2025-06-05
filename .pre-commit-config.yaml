@@ -13,26 +13,39 @@
 # 4. If a hook fails and you see errors, fix them and try to commit again.
 #    The hooks will run again and the commit will only be made if they all pass.
 # 5. If you want to manually run all hooks on all files, run `pre-commit run --all-files`.
-# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.
+# 6. To update to the latest versions of the hooks, run `pre-commit autoupdate`.3
 
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.7
+  - repo: local
     hooks:
-      # Run the linter.
-      - id: ruff
-        args: [ --fix ]
-      # Run the formatter.
-      - id: ruff-format
+      - id: ruff-check
+        name: Ruff code style check
+        entry: python scripts/run_ruff_check.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true
 
-  -   repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.15.0
-      hooks:
+      - id: ruff-format
+        name: Ruff code formatter
+        entry: python scripts/run_ruff_format.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true
+
       - id: mypy
-        language_version: python3.12
-        # Add dependencies needed by mypy that are not mypy itself
-        additional_dependencies: [
-            "types-Markdown",
-            "types-shapely",
-            # Add other types-* packages from requirements_dev.txt if needed
-        ]
+        name: MyPy type checking
+        entry: python scripts/run_mypy.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true
+
+      - id: run-unit-tests
+        name: Unit tests
+        entry: python scripts/run_enhanced_tests.py
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        verbose: true

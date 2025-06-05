@@ -12,7 +12,7 @@ valid value.
 """
 
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import RegularGridInterpolator  # type: ignore[import-untyped]
 
 """"tedstandard: psi_factor.py"""
 
@@ -111,8 +111,9 @@ PSI_FACTORS: dict[float, dict[int, float]] = {
     30: {20: 0.99, 50: 0.99, 100: 0.98, 200: 0.97},
     15: {20: 0.98, 50: 0.98, 100: 0.96, 200: 0.96},
     1: {20: 0.95, 50: 0.94, 100: 0.89, 200: 0.88},
-    1/12: {20: 0.91, 50: 0.91, 100: 0.81, 200: 0.81}
+    1 / 12: {20: 0.91, 50: 0.91, 100: 0.81, 200: 0.81},
 }
+
 
 def _clamp(value: float, min_value: float, max_value: float) -> float:
     """
@@ -128,6 +129,7 @@ def _clamp(value: float, min_value: float, max_value: float) -> float:
 
     """
     return max(min_value, min(value, max_value))
+
 
 def validate_input(span: float, reference_period: float) -> tuple[float, float]:
     """
@@ -163,6 +165,7 @@ def validate_input(span: float, reference_period: float) -> tuple[float, float]:
 
     return clamped_span, reference_period
 
+
 def get_interpolation_data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Prepare data for 2D interpolation from PSI_FACTORS table.
@@ -180,6 +183,7 @@ def get_interpolation_data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
             values[i, j] = PSI_FACTORS[period][span]
 
     return np.array(spans), np.array(periods), values
+
 
 def get_psi_factor(span: float, reference_period: float) -> float:
     """
@@ -199,13 +203,7 @@ def get_psi_factor(span: float, reference_period: float) -> float:
     clamped_span, ref_period = validate_input(span, reference_period)
 
     spans, periods, values = get_interpolation_data()
-    interpolator = RegularGridInterpolator(
-        (periods, spans),
-        values,
-        method="linear",
-        bounds_error=False,
-        fill_value=None
-    )
+    interpolator = RegularGridInterpolator((periods, spans), values, method="linear", bounds_error=False, fill_value=None)
 
     result = interpolator(np.array([ref_period, clamped_span]))
 
@@ -213,4 +211,3 @@ def get_psi_factor(span: float, reference_period: float) -> float:
         raise ValueError("Interpolation failed. Input values may be outside valid range.")
 
     return float(result[0])
-

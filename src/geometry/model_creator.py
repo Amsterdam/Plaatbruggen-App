@@ -4,6 +4,9 @@ and cross-sections, using the `trimesh` library. It also includes functionality 
 generating a 3D representation of a bridge deck based on input parameters.
 """
 
+from collections.abc import Sequence
+from dataclasses import dataclass
+
 import numpy as np
 import trimesh
 from munch import Munch  # type: ignore[import-untyped]
@@ -51,6 +54,284 @@ def create_box(vertices: np.ndarray, color: list) -> trimesh.Trimesh:
     # Assign the same color to all faces
     box_mesh.visual.face_colors = np.array([color] * len(box_mesh.faces))
     return box_mesh
+
+
+def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, PLR0915
+    """
+    Create a mesh representing rebars based on specified parameters.
+
+    Args:
+        params (Munch): Parameters for the rebars, including positions and dimensions.
+        color (list): RGBA color for the rebars, format [R, G, B, A].
+
+    Returns:
+        trimesh.Scene: A trimesh object representing the rebars.
+
+    """
+
+    def get_cumulative_distance(segment_idx: int) -> float:
+        """Calculate the cumulative distance to the start of a segment."""
+        total_distance = 0.0
+        for i in range(segment_idx):
+            # The l parameter in each segment defines the distance to the next segment
+            total_distance += bridge_segments_array[i + 1].l
+        return total_distance
+
+    def get_zone_parameters(zone_entry: Munch) -> dict:
+        """Get all parameters for a specific zone."""
+        return {
+            "zone_number": zone_entry.zone_number,
+            "diam_long_bottom": zone_entry.hoofdwapening_langs_onder_diameter / 1000,
+            "hoh_long_bottom": zone_entry.hoofdwapening_langs_onder_hart_op_hart / 1000,
+            "diam_long_top": zone_entry.hoofdwapening_langs_boven_diameter / 1000,
+            "hoh_long_top": zone_entry.hoofdwapening_langs_boven_hart_op_hart / 1000,
+            "diam_shear": zone_entry.hoofdwapening_dwars_diameter / 1000,
+            "hoh_shear": zone_entry.hoofdwapening_dwars_hart_op_hart / 1000,
+        }
+
+    def parse_zone_number(zone_number: str) -> tuple[int, int]:
+        """Parse zone number 'X-Y' into position (1,2,3) and segment index (1,2,...)."""
+        position, segment = map(int, zone_number.split("-"))
+        return position, segment - 1  # Convert to 0-based segment index
+
+    def get_zone_dimensions(position: int, segment_idx: int) -> dict:
+        """Get geometric dimensions for a zone based on its position and segment."""
+        segment_data = bridge_segments_array[segment_idx]
+        next_segment_data = bridge_segments_array[segment_idx + 1]
+
+        # Get the zone widths at the start and end of the segment
+        bz = getattr(segment_data, f"bz{position}")
+        bz_next = getattr(next_segment_data, f"bz{position}")
+
+        # For position 2 (middle zone), use bz2 for both height and width
+        if position == 2:
+            height_start = segment_data.bz2
+            height_end = next_segment_data.bz2
+        else:
+            height_start = bz
+            height_end = bz_next
+
+        return {"bz": bz, "bz_next": bz_next, "height_start": height_start, "height_end": height_end, "length": next_segment_data.l}
+
+    def calculate_effective_widths(zone_params: dict, zone_dims: dict) -> dict:
+        """Calculate effective widths for rebar placement."""
+        return {
+            "long_bottom": float(zone_dims["bz"]) - 2 * dekking_onder - zone_params["diam_long_bottom"],
+            "long_top": float(zone_dims["bz"]) - 2 * dekking_boven - zone_params["diam_long_top"],
+            "shear": zone_dims["length"] - 2 * min(dekking_onder, dekking_boven) - zone_params["diam_shear"],
+        }
+
+    def calculate_z_positions(is_middle_zone: bool, zone_params: dict) -> dict:
+        """Calculate z positions for reinforcement based on configuration."""
+        pos = {}
+        if langswapening_buiten:
+            # Bottom configuration - longitudinal outside, shear inside
+            pos["long_bottom"] = z_position_bottom + dekking_onder + 0.5 * zone_params["diam_long_bottom"]
+            pos["shear_bottom"] = pos["long_bottom"] + 0.5 * (zone_params["diam_long_bottom"] + zone_params["diam_shear"])
+
+            # Top configuration - longitudinal outside, shear inside
+            if is_middle_zone:
+                pos["long_top"] = z_position_top - (dekking_boven + 0.5 * zone_params["diam_long_top"])
+            else:
+                pos["long_top"] = -(dekking_boven + 0.5 * zone_params["diam_long_top"])
+            pos["shear_top"] = pos["long_top"] - 0.5 * (zone_params["diam_long_top"] + zone_params["diam_shear"])
+        else:
+            # Bottom configuration - shear outside, longitudinal inside
+            pos["shear_bottom"] = z_position_bottom + dekking_onder + 0.5 * zone_params["diam_shear"]
+            pos["long_bottom"] = pos["shear_bottom"] + 0.5 * (zone_params["diam_shear"] + zone_params["diam_long_bottom"])
+
+            # Top configuration - shear outside, longitudinal inside
+            if is_middle_zone:
+                pos["shear_top"] = z_position_top - (dekking_boven + 0.5 * zone_params["diam_shear"])
+            else:
+                pos["shear_top"] = -(dekking_boven + 0.5 * zone_params["diam_shear"])
+            pos["long_top"] = pos["shear_top"] - 0.5 * (zone_params["diam_shear"] + zone_params["diam_long_top"])
+        return pos
+
+    def calculate_y_offset(position: int, segment_idx: int) -> float:
+        """Calculate y offset for a zone."""
+        bz2 = bridge_segments_array[segment_idx].bz2
+        zone_dim = get_zone_dimensions(position, segment_idx)
+
+        if position == 1:  # Left zone
+            return bz2 / 2 + zone_dim["bz"] / 2
+        if position == 3:  # Right zone
+            return -(bz2 / 2 + zone_dim["bz"] / 2)
+        return 0  # Middle zone
+
+    def calculate_rebar_positions(width: float, hoh: float, y_offset: float = 0) -> list[float]:
+        """Calculate positions for longitudinal reinforcement."""
+        n_rebars = int(width / hoh)  # Round down to ensure minimum hoh is maintained
+        if n_rebars < 1:
+            return []
+
+        actual_hoh = width / n_rebars
+        positions = []
+
+        if n_rebars % 2 == 0:  # Even number of rebars
+            for i in range(n_rebars // 2):
+                offset = (i + 0.5) * actual_hoh
+                positions.extend([-offset, offset])
+        else:  # Odd number of rebars
+            positions = [0]  # Center rebar
+            for i in range(1, (n_rebars + 1) // 2):
+                offset = i * actual_hoh
+                positions.extend([-offset, offset])
+
+        positions.sort()
+        return [pos + y_offset for pos in positions]
+
+    def get_shear_positions(width_eff: float, hoh: float, zone_params: dict) -> list[float]:
+        """Calculate positions for shear reinforcement."""
+        n_rebars = int(width_eff / hoh)
+        if n_rebars < 1:
+            return []
+
+        actual_hoh = width_eff / n_rebars
+        start_offset = min(dekking_boven, dekking_onder) + 0.5 * zone_params["diam_shear"]
+        mid_x = width_eff / 2 + start_offset
+        positions = []
+
+        if n_rebars % 2 == 0:
+            for i in range(n_rebars // 2):
+                x_offset = (i + 0.5) * actual_hoh
+                positions.extend([mid_x - x_offset, mid_x + x_offset])
+        else:
+            positions = [mid_x]
+            for i in range(1, (n_rebars + 1) // 2):
+                x_offset = i * actual_hoh
+                positions.extend([mid_x - x_offset, mid_x + x_offset])
+
+        positions.sort()
+        return positions
+
+    def create_rebar_meshes(  # noqa: PLR0913
+        positions: list[float],
+        z_position: float,
+        diameter: float,
+        segment_length: float,
+        x_offset: float,
+        height_start: float | None = None,
+        height_end: float | None = None,
+    ) -> None:
+        """Create and position longitudinal rebar meshes."""
+        if height_start is None:
+            height_start = diameter
+        if height_end is None:
+            height_end = diameter
+
+        for y_pos in positions:
+            # Create a cylinder that spans the segment length
+            rebar = trimesh.creation.cylinder(radius=diameter / 2, height=segment_length, sections=16)
+
+            # Rotate to align with X axis
+            rebar.apply_transform(trimesh.transformations.rotation_matrix(angle=np.pi / 2, direction=[0, 1, 0]))
+
+            # Position the rebar with the cumulative x_offset
+            rebar_copy = rebar.copy()
+            rebar_copy.apply_translation([x_offset + segment_length / 2, y_pos, z_position])
+            rebar_copy.visual.face_colors = color
+            rebar_scene.add_geometry(rebar_copy)
+
+    def create_shear_rebars(  # noqa: PLR0913
+        x_positions: list[float],
+        y_offset: float,
+        height: float,
+        zone_params: dict,
+        z_positions: dict,
+        x_offset: float,
+        height_start: float | None = None,
+        height_end: float | None = None,
+    ) -> None:
+        """Create and position shear rebars for a zone."""
+        if height_start is None:
+            height_start = height
+        if height_end is None:
+            height_end = height
+
+        for i, relative_x_pos in enumerate(x_positions):
+            # Add the cumulative x_offset to position the rebar in the correct segment
+            x_pos = x_offset + relative_x_pos
+
+            # Calculate height at this x position
+            interpolation_factor = i / (len(x_positions) - 1) if len(x_positions) > 1 else 0.5
+            height_at_x = height_start + (height_end - height_start) * interpolation_factor
+
+            # Create bottom and top shear rebars
+            bottom_shear = trimesh.creation.cylinder(radius=zone_params["diam_shear"] / 2, height=height_at_x, sections=16)
+            top_shear = trimesh.creation.cylinder(radius=zone_params["diam_shear"] / 2, height=height_at_x, sections=16)
+
+            rotation_matrix = trimesh.transformations.rotation_matrix(angle=np.pi / 2, direction=[1, 0, 0])
+            bottom_shear.apply_transform(rotation_matrix)
+            top_shear.apply_transform(rotation_matrix)
+
+            # Position the rebars with the cumulative x_offset
+            bottom_shear.apply_translation([x_pos, y_offset, z_positions["shear_bottom"]])
+            top_shear.apply_translation([x_pos, y_offset, z_positions["shear_top"]])
+
+            # Set colors and add to scene
+            bottom_shear.visual.face_colors = color
+            top_shear.visual.face_colors = color
+            rebar_scene.add_geometry(bottom_shear)
+            rebar_scene.add_geometry(top_shear)
+
+    # Initialize parameters
+    bridge_segments_array = params.bridge_segments_array
+    reinforcement_zones_array = params.reinforcement_zones_array
+    langswapening_buiten = params.input.geometrie_wapening.langswapening_buiten
+    dekking_onder = params.input.geometrie_wapening.dekking_onder / 1000
+    dekking_boven = params.input.geometrie_wapening.dekking_boven / 1000
+    z_position_bottom = -params.bridge_segments_array[0].dz
+    z_position_top = params.bridge_segments_array[0].dz_2 - params.bridge_segments_array[0].dz
+    rebar_scene = trimesh.Scene()
+
+    # Process each reinforcement zone
+    for zone_entry in reinforcement_zones_array:
+        # Parse zone number to get position and segment
+        position, segment_idx = parse_zone_number(zone_entry.zone_number)
+
+        # Get parameters and dimensions for this zone
+        zone_params = get_zone_parameters(zone_entry)
+        zone_dims = get_zone_dimensions(position, segment_idx)
+
+        # Calculate the cumulative distance to this segment
+        x_offset = get_cumulative_distance(segment_idx)
+
+        # Calculate widths, positions and offsets
+        effective_widths = calculate_effective_widths(zone_params, zone_dims)
+        z_positions = calculate_z_positions(position == 2, zone_params)
+        y_offset = calculate_y_offset(position, segment_idx)
+
+        # Create longitudinal reinforcement
+        bottom_positions = calculate_rebar_positions(effective_widths["long_bottom"], zone_params["hoh_long_bottom"], y_offset)
+        create_rebar_meshes(
+            bottom_positions,
+            z_positions["long_bottom"],
+            zone_params["diam_long_bottom"],
+            zone_dims["length"],
+            x_offset,
+            zone_dims["height_start"],
+            zone_dims["height_end"],
+        )
+
+        top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
+        create_rebar_meshes(
+            top_positions,
+            z_positions["long_top"],
+            zone_params["diam_long_top"],
+            zone_dims["length"],
+            x_offset,
+            zone_dims["height_start"],
+            zone_dims["height_end"],
+        )
+
+        # Create shear reinforcement
+        shear_positions = get_shear_positions(effective_widths["shear"], zone_params["hoh_shear"], zone_params)
+        create_shear_rebars(
+            shear_positions, y_offset, zone_dims["bz"], zone_params, z_positions, x_offset, zone_dims["height_start"], zone_dims["height_end"]
+        )
+
+    return rebar_scene  # type: ignore[return-value]  # Scene is functionally compatible with Trimesh in this context
 
 
 # Function to create the X, Y, and Z axes
@@ -115,7 +396,7 @@ def create_black_dot(radius: float = 0.2) -> trimesh.Trimesh:
     return dot
 
 
-def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray, plane_normal: list | np.ndarray) -> trimesh.Scene:
+def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray, plane_normal: list | np.ndarray, axes: bool = True) -> trimesh.Scene:
     """
     Create a cross-section of a 3D mesh by slicing it with a plane.
 
@@ -123,6 +404,7 @@ def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray,
         mesh (trimesh.Trimesh): The 3D mesh to slice.
         plane_origin (list or np.ndarray): A point on the slicing plane [x, y, z].
         plane_normal (list or np.ndarray): The normal vector of the slicing plane [nx, ny, nz].
+        axes (bool, optional): Whether to include coordinate axes and origin point in the scene. Defaults to True.
 
     Returns:
         trimesh.path.Path3D: A 3D path representing the cross-section.
@@ -137,18 +419,81 @@ def create_cross_section(mesh: trimesh.Trimesh, plane_origin: list | np.ndarray,
 
     combined_scene_2d = trimesh.Scene(cross_section)
 
-    # Add the X, Y, Z axes to the scene
-    axes_scene = create_axes()
-    combined_scene_2d.add_geometry(axes_scene)
+    if axes:
+        # Add the X, Y, Z axes to the scene
+        axes_scene = create_axes()
+        combined_scene_2d.add_geometry(axes_scene)
 
-    # Add the black dot at the origin to the scene
-    black_dot = create_black_dot(radius=0.1)
-    combined_scene_2d.add_geometry(black_dot)
+        # Add the black dot at the origin to the scene
+        black_dot = create_black_dot(radius=0.1)
+        combined_scene_2d.add_geometry(black_dot)
 
     return combined_scene_2d
 
 
-def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
+def create_section_planes(params: dict | Munch) -> trimesh.Scene:
+    """
+    Creates transparent grey planes representing the horizontal, longitudinal and cross sections.
+
+    Args:
+        params (dict | Munch): Input parameters containing section locations and bridge dimensions.
+
+    Returns:
+        trimesh.Scene: Scene containing the three section planes.
+
+    """
+    # Get section locations from params
+    h_loc = params.input.dimensions.horizontal_section_loc
+    l_loc = params.input.dimensions.longitudinal_section_loc
+    c_loc = params.input.dimensions.cross_section_loc
+
+    # Calculate model bounds based on bridge dimensions
+    original_length = sum(segment.l for segment in params.bridge_segments_array)
+
+    max_width_z1 = max(segment.bz1 for segment in params.bridge_segments_array)
+    max_width_z2 = max(segment.bz2 for segment in params.bridge_segments_array)
+    max_width_z3 = max(segment.bz3 for segment in params.bridge_segments_array)
+
+    original_width = max_width_z1 + max_width_z2 + max_width_z3
+
+    max_hight_dz_2 = max(segment.dz_2 for segment in params.bridge_segments_array)
+
+    # Add some padding to bounds
+    padding = 5
+    length = original_length + padding
+    max_width = original_width + padding
+    max_height = max_hight_dz_2 + padding
+
+    # Create planes with appropriate dimensions and positions
+    # Planes start at -padding/2 and extend to original_length + padding/2
+    horizontal_plane = trimesh.creation.box(extents=[length, max_width, 0.01])
+    horizontal_plane.apply_translation([original_length / 2, -padding / 2, h_loc])
+
+    longitudinal_plane = trimesh.creation.box(extents=[length, 0.01, max_height])
+    longitudinal_plane.apply_translation([original_length / 2, l_loc, -padding / 2])
+
+    cross_plane = trimesh.creation.box(extents=[0.01, max_width, max_height])
+    cross_plane.apply_translation([c_loc, -padding / 2, -padding / 2])
+
+    # Set transparent grey color for all planes and use PBRMaterial with alphaMode='BLEND'
+    grey_color = [128, 128, 128, 150]  # RGBA with alpha=30 for higher transparency (less visible)
+    from trimesh.visual.material import PBRMaterial
+
+    material = PBRMaterial(baseColorFactor=[128 / 255, 128 / 255, 128 / 255, 150 / 255], alphaMode="BLEND")
+    for plane in [horizontal_plane, longitudinal_plane, cross_plane]:
+        plane.visual.face_colors = grey_color
+        plane.visual.material = material
+
+    # Add planes to scene
+    scene = trimesh.Scene()
+    scene.add_geometry(horizontal_plane)
+    scene.add_geometry(longitudinal_plane)
+    scene.add_geometry(cross_plane)
+
+    return scene
+
+
+def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: bool = False) -> trimesh.Scene:
     """
     Generates a 3D representation of a bridge deck based on input parameters.
 
@@ -157,10 +502,12 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
             - params.bridge_segments_array: A list of dictionaries, where each dictionary
               defines the dimensions and properties of a sub-zone. Each dictionary should
               include keys such as 'l', 'bz1', 'bz2', 'bz3', 'dz', and 'dze'.
+        axes (bool, optional): Whether to include coordinate axes and origin point in the scene. Defaults to True.
+        section_planes (bool, optional): Whether to include transparent section planes in the scene. Defaults to False.
 
     Returns:
         trimesh.Scene: A 3D scene containing the bridge deck model, including sub-zone boxes,
-        axes, and a black dot at the origin.
+        axes, a black dot at the origin, and optionally section planes.
 
     """
     # Determine the number of sub-zones based on input dimensions
@@ -190,7 +537,7 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
         # Zone 2
         z2d0l = params.bridge_segments_array[dynamic_array - 1].bz2 / 2
         z2d0r = -params.bridge_segments_array[dynamic_array - 1].bz2 / 2
-        z2d0t = params.bridge_segments_array[dynamic_array - 1].dze
+        z2d0t = params.bridge_segments_array[dynamic_array - 1].dz_2 - params.bridge_segments_array[dynamic_array - 1].dz
         z2d0b = -params.bridge_segments_array[dynamic_array - 1].dz
         # Zone 3
         z3d0l = -params.bridge_segments_array[dynamic_array - 1].bz2 / 2
@@ -208,7 +555,7 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
         # Zone 2
         z2d1l = params.bridge_segments_array[dynamic_array].bz2 / 2
         z2d1r = -params.bridge_segments_array[dynamic_array].bz2 / 2
-        z2d1t = params.bridge_segments_array[dynamic_array].dze
+        z2d1t = params.bridge_segments_array[dynamic_array].dz_2 - params.bridge_segments_array[dynamic_array].dz
         z2d1b = -params.bridge_segments_array[dynamic_array].dz
         # Zone 3
         z3d1l = -params.bridge_segments_array[dynamic_array].bz2 / 2
@@ -261,46 +608,78 @@ def create_3d_model(params: (dict | Munch)) -> trimesh.Scene:
 
         # Define colors for each box in RGBA format
         box_colors = [
-            [255, clist[dynamic_array], clist[dynamic_array], 255],  # Box 1: Red
-            [clist[dynamic_array], clist[dynamic_array], 255, 255],  # Box 2: Blue
-            [clist[dynamic_array], 255, clist[dynamic_array], 255],  # Box 3: Green
+            [255, clist[dynamic_array], clist[dynamic_array], 255],  # Box 1: Red with varying intensity
+            [clist[dynamic_array], clist[dynamic_array], 255, 255],  # Box 2: Blue with varying intensity
+            [clist[dynamic_array], 255, clist[dynamic_array], 255],  # Box 3: Green with varying intensity
         ]
 
         # Create individual box meshes with assigned colors
         box_meshes = []
         for vertices, color in zip(boxes_vertices, box_colors):
-            box_mesh = create_box(vertices, color)  # Use updated create_box
+            box_mesh = create_box(vertices, color)
+            # Ensure the mesh is solid
+            box_mesh.visual.face_colors = np.tile(color, (len(box_mesh.faces), 1))
+            box_mesh.visual.vertex_colors = np.tile(color, (len(box_mesh.vertices), 1))
             box_meshes.append(box_mesh)
 
         # Combine all box meshes into a single mesh
-        combined_vertices = []
-        combined_faces = []
-        vertex_offset = 0
+        all_segment_vertices = []
+        all_segment_faces = []
+        current_face_offset = 0
 
-        for mesh in box_meshes:
+        if not params.bridge_segments_array:
+            # If there are no segments, return an empty scenes
+            # NOTE: Empty scene is the expected behavior for no segments
+            return trimesh.Scene()
+
+        for i, segment_params in enumerate(params.bridge_segments_array):
+            # Process mesh before combining
+            box_meshes[i].process()  # Merges duplicate vertices
+            box_meshes[i].fix_normals()  # Ensures consistent face orientation
             # Append vertices
-            combined_vertices.append(mesh.vertices)
+            all_segment_vertices.append(box_meshes[i].vertices)
             # Append faces, adjusting indices by the current vertex offset
-            combined_faces.append(mesh.faces + vertex_offset)
+            all_segment_faces.append(box_meshes[i].faces + current_face_offset)
             # Update vertex offset for the next mesh
-            vertex_offset += len(mesh.vertices)
+            current_face_offset += len(box_meshes[i].vertices)
 
-        # Stack all vertices and faces into single arrays
-        final_vertices = np.vstack(combined_vertices)
-        final_faces = np.vstack(combined_faces)
+        # Combine all meshes
+        if not all_segment_vertices or not all_segment_faces:
+            # This case should ideally be caught by the check for empty bridge_segments_array,
+            # but as a safeguard if segments somehow produce no vertices/faces:
+            # Log this? Or handle as error?
+            return trimesh.Scene()  # Return an empty scene
 
-        # Create the final combined mesh
+        final_vertices = np.vstack(all_segment_vertices)
+        final_faces = np.vstack(all_segment_faces)
+
+        if final_vertices.shape[0] == 0 or final_vertices.shape[1] != 3:
+            # If vstack results in no vertices or incorrect dimensions, something is wrong
+            # Log this? Or handle as error?
+            # This could happen if all_segment_vertices contained only empty arrays or arrays with wrong shape
+            return trimesh.Scene()
+
         combined_mesh = trimesh.Trimesh(vertices=final_vertices, faces=final_faces)
-
         combined_scene.add_geometry(combined_mesh)
 
-    # Add the X, Y, Z axes to the scene
-    axes_scene = create_axes()
-    combined_scene.add_geometry(axes_scene)
+    if axes:
+        # Add the X, Y, Z axes to the scene
+        axes_scene = create_axes()
+        combined_scene.add_geometry(axes_scene)
 
-    # Add the black dot at the origin to the scene
-    black_dot = create_black_dot(radius=0.1)
-    combined_scene.add_geometry(black_dot)
+        # Add the black dot at the origin to the scene
+        black_dot = create_black_dot(radius=0.1)
+        combined_scene.add_geometry(black_dot)
+
+    rebars_scene = create_rebars(params, color=[0, 0, 0, 255])  # Call the function to create rebars
+
+    combined_scene.add_geometry(rebars_scene)  # Add the rebars to the scene
+
+    # Add transparent section planes to visualize where the 2D sections will be taken
+    # These planes help users understand the location of horizontal, longitudinal, and cross sections
+    if params.input.dimensions.toggle_sections and section_planes:
+        section_planes_scene = create_section_planes(params)
+        combined_scene.add_geometry(section_planes_scene)
 
     return combined_scene
 
@@ -532,3 +911,112 @@ def create_2d_top_view(viktor_params: Munch) -> dict:  # noqa: C901, PLR0912, PL
         "cross_section_labels": cross_section_labels_data,
         "zone_polygons": zone_polygons_data,
     }
+
+
+# Define dataclasses for structured data
+@dataclass
+class BridgeSegmentDimensions:
+    """Represents the dimensions of a single bridge segment cross-section."""
+
+    bz1: float
+    bz2: float
+    bz3: float
+    segment_length: float  # Length to previous segment (0 for the first segment)
+    # Add is_first_segment if it becomes necessary for validation logic here
+
+
+@dataclass
+class DPointLabel:
+    """Represents the data for a D-point label."""
+
+    text: str
+    x: float
+    y: float
+
+
+@dataclass
+class LoadZoneGeometryData:
+    """Holds calculated geometric data for load zone visualization."""
+
+    x_coords_d_points: list[float]
+    y_top_structural_edge_at_d_points: list[float]
+    total_widths_at_d_points: list[float]
+    y_bridge_bottom_at_d_points: list[float]
+    num_defined_d_points: int
+    d_point_label_data: list[DPointLabel]
+
+
+def prepare_load_zone_geometry_data(
+    bridge_dimensions_array: Sequence[BridgeSegmentDimensions],
+    label_y_offset: float = 1.5,  # Exposed parameter with default
+) -> LoadZoneGeometryData:
+    """
+    Calculates geometric data needed for load zone visualization based on bridge segments.
+
+    Args:
+        bridge_dimensions_array: A sequence of BridgeSegmentDimensions objects.
+        label_y_offset: Vertical offset for D-point labels from the top structural edge.
+
+    Returns:
+        A LoadZoneGeometryData object containing calculated lists and counts.
+
+    Raises:
+        ValueError: If segment dimensions (bz1, bz2, bz3, l) are invalid.
+
+    """
+    num_defined_d_points = len(bridge_dimensions_array)
+
+    if num_defined_d_points == 0:
+        return LoadZoneGeometryData([], [], [], [], 0, [])
+
+    # Input Validation
+    for i, segment_data in enumerate(bridge_dimensions_array):
+        if not (segment_data.bz1 >= 0 and segment_data.bz2 >= 0 and segment_data.bz3 >= 0):
+            raise ValueError(
+                f"Bridge segment {i + 1} (D{i + 1}) dimensions (bz1, bz2, bz3) must be non-negative. "
+                f"Got bz1={segment_data.bz1}, bz2={segment_data.bz2}, bz3={segment_data.bz3}"
+            )
+        # Length 'l' must be positive for segments after the first one.
+        # For the first segment (i=0), 'l' is often 0 or not used for positioning based on previous.
+        if i > 0 and not (segment_data.segment_length > 0):
+            raise ValueError(f"Length 'l' for bridge segment {i + 1} (D{i + 1}) must be positive. Got l={segment_data.segment_length}")
+
+    x_coords_d_points = []
+    y_top_structural_edge_at_d_points = []
+    total_widths_at_d_points = []
+    d_point_label_data: list[DPointLabel] = []  # Explicitly typed list
+    current_x = 0.0
+    # label_y_offset is now a parameter
+
+    for i in range(num_defined_d_points):
+        segment_params = bridge_dimensions_array[i]
+        if i == 0:
+            x_coords_d_points.append(current_x)  # D1 is at x = 0
+        else:
+            # Subsequent D-points are positioned by adding the length 'l' of the *current* segment,
+            # which represents the length *from the previous* D-point to this one.
+            current_x += segment_params.segment_length
+            x_coords_d_points.append(current_x)
+
+        # Guarding for bz2 < 0 is implicitly handled by the validation above (bz2 >= 0).
+        # If bz2 is 0, y_top calculation is still valid.
+        y_top = segment_params.bz1 + (segment_params.bz2 / 2.0)
+        y_top_structural_edge_at_d_points.append(y_top)
+
+        current_total_width_at_di = segment_params.bz1 + segment_params.bz2 + segment_params.bz3
+        total_widths_at_d_points.append(current_total_width_at_di)
+
+        d_point_label_data.append(DPointLabel(text=f"D{i + 1}", x=x_coords_d_points[i], y=y_top + label_y_offset))
+
+    y_bridge_bottom_at_d_points = [
+        y_top_structural_edge_at_d_points[d_idx] - total_widths_at_d_points[d_idx] for d_idx in range(num_defined_d_points)
+    ]
+
+    return LoadZoneGeometryData(
+        x_coords_d_points=x_coords_d_points,
+        y_top_structural_edge_at_d_points=y_top_structural_edge_at_d_points,
+        total_widths_at_d_points=total_widths_at_d_points,
+        y_bridge_bottom_at_d_points=y_bridge_bottom_at_d_points,
+        num_defined_d_points=num_defined_d_points,
+        d_point_label_data=d_point_label_data,
+    )

@@ -12,8 +12,9 @@ from pathlib import Path
 PROJECT_PATH = Path(__file__).parent.parent
 README_PATH = PROJECT_PATH / "README.md"
 CHANGELOG_PATH = PROJECT_PATH / "CHANGELOG.md"
-CSS_PATH = PROJECT_PATH / "resources" / "style.css"
-OUTPUT_REPORT_PATH = PROJECT_PATH / "resources" / "template_eindrapport.docx"
+CSS_PATH = PROJECT_PATH / "resources" / "styles" / "style.css"
+OUTPUT_REPORT_PATH = PROJECT_PATH / "resources" / "templates" / "template_eindrapport.docx"
+REINFORCEMENT_PATH = PROJECT_PATH / "resources" / "data" / "materials" / "betonstaalkwaliteit.csv"
 
 # ===================================================================================================================
 # Docs - Readme
@@ -50,3 +51,9 @@ README_CONTENT = """
         <div class="iframe-wrapper">
 """
 
+# ===================================================================================================================
+# Parametrization Constants
+# ===================================================================================================================
+
+MAX_LOAD_ZONE_SEGMENT_FIELDS = 15  # Define how many D-fields (D1 to D15) we'll support for load zones
+LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto", "Berm"]
