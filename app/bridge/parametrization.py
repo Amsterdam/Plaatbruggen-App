@@ -1,6 +1,8 @@
 """Module for the Bridge entity parametrization."""
 
+import json
 from collections.abc import Callable, Mapping
+from pathlib import Path
 from typing import Any
 
 from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
@@ -8,12 +10,14 @@ from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
     DynamicArrayConstraint,
+    FunctionLookup,
     IsFalse,
     LineBreak,
     Lookup,
     MultiSelectField,
     NumberField,
     OptionField,
+    OutputField,
     Page,
     Parametrization,
     Tab,
@@ -23,6 +27,67 @@ from viktor.parametrization import (
 )
 
 from .geometry_functions import get_steel_qualities
+
+# --- Helper functions for Bridge Data Loading ---
+
+def _load_bridge_data() -> list[dict[str, Any]]:
+    """Load bridge data from the filtered_bridges.json file."""
+    bridge_data_path = Path(__file__).parent.parent.parent / "resources" / "data" / "bridges" / "filtered_bridges.json"
+    try:
+        with bridge_data_path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def _get_bridge_by_objectnumm(objectnumm: str) -> dict[str, Any] | None:
+    """Get bridge data by OBJECTNUMM."""
+    if not objectnumm:
+        return None
+        
+    bridge_data = _load_bridge_data()
+    for bridge in bridge_data:
+        if bridge.get("OBJECTNUMM") == objectnumm:
+            return bridge
+    return None
+
+
+def _get_bridge_field_value(objectnumm: str, field_name: str, default: str = "") -> str:
+    """Get a text field value from bridge data."""
+    bridge = _get_bridge_by_objectnumm(objectnumm)
+    if bridge and field_name in bridge:
+        value = bridge[field_name]
+        if value is not None and value != "":
+            return str(value)
+    return default
+
+
+def _get_bridge_numeric_field_value(objectnumm: str, field_name: str, default: float = 0.0) -> float:
+    """Get a numeric field value from bridge data."""
+    bridge = _get_bridge_by_objectnumm(objectnumm)
+    if bridge and field_name in bridge:
+        value = bridge[field_name]
+        if value is not None:
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                pass
+    return default
+
+
+def _bridge_field_has_value(objectnumm: str, field_name: str) -> bool:
+    """Check if a bridge field has a meaningful value."""
+    bridge = _get_bridge_by_objectnumm(objectnumm)
+    if bridge and field_name in bridge:
+        value = bridge[field_name]
+        return value is not None and value != ""
+    return False
+
+
+def _bridge_field_is_empty(objectnumm: str, field_name: str) -> bool:
+    """Check if a bridge field is empty or missing."""
+    return not _bridge_field_has_value(objectnumm, field_name)
+
 
 # --- Helper functions for DynamicArray Default Rows ---
 
@@ -206,7 +271,12 @@ Below you'll find key information about this bridge structure."""
 
     # Saved bridge identifiers (now visible and with better labels)
     info.bridge_objectnumm = TextField("Bridge ID (OBJECTNUMM)", default="", description="Unique identifier for this bridge in the system")
-    info.bridge_name = TextField("Bridge Name", default="", description="Official name of this bridge structure")
+    
+    # Bridge name - show output if available, input if not
+    info.bridge_name_output = OutputField("Bridge Name", value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "kw_naam"), 
+                                         visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "kw_naam"))
+    info.bridge_name_input = TextField("Bridge Name", default="", description="Official name of this bridge structure",
+                                      visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "kw_naam"))
 
     # Additional bridge information fields
     info.bridge_description = Text(
@@ -219,33 +289,94 @@ Use the tabs below to view geometric properties, load configurations, and analys
     info.lb1 = LineBreak()
 
     info.bridge_location_header = Text("## Location Information")
-    info.location_description = TextField(
-        "Location Description", default="", description="Descriptive location of the bridge (e.g., 'Crossing River A at Highway B')"
-    )
-    info.city = TextField("City/Municipality", default="", description="Municipality where the bridge is located")
+    
+    # District - show output if available, input if not
+    info.stadsdeel_output = OutputField("District (Stadsdeel)", value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "stadsdeel"),
+                                       visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "stadsdeel"))
+    info.stadsdeel_input = TextField("District (Stadsdeel)", default="", description="District where the bridge is located (e.g., Centrum, Noord)",
+                                    visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "stadsdeel"))
+    
+    # Street - show output if available, input if not
+    info.straat_output = OutputField("Street", value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "straat"),
+                                    visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "straat"))
+    info.straat_input = TextField("Street", default="", description="Street or waterway where the bridge is located",
+                                 visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "straat"))
+    
+    info.waterway = TextField("Waterway/Crossing", default="", description="Waterway or obstacle that the bridge crosses")
 
     info.lb2 = LineBreak()
 
     info.bridge_properties_header = Text("## Bridge Properties")
-    info.construction_year = NumberField("Construction Year", default=2000, min=1900, max=2100, description="Year when the bridge was constructed")
-    info.total_length = NumberField(
-        "Total Length", default=0.0, suffix="m", description="Total length of the bridge structure (calculated from segments)"
-    )
-    info.total_width = NumberField(
-        "Total Width", default=0.0, suffix="m", description="Maximum width of the bridge structure (calculated from segments)"
-    )
+    
+    # Bridge type - show output if available, input if not
+    info.bridge_type_output = OutputField("Bridge Type", value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "type"),
+                                         visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "type"))
+    info.bridge_type_input = TextField("Bridge Type", default="", description="Structural type classification of the bridge",
+                                      visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "type"))
+    
+    # Construction year - show output if available, input if not
+    info.construction_year_output = OutputField("Construction Year", value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "stichtingsjaar"),
+                                               visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "stichtingsjaar"))
+    info.construction_year_input = TextField("Construction Year", default="", description="Year when the bridge was constructed",
+                                            visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "stichtingsjaar"))
+    
+    # Usage - show output if available, input if not
+    info.usage_output = OutputField("Usage", value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "gebruik"),
+                                   visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "gebruik"))
+    info.usage_input = TextField("Usage", default="", description="Primary function of the bridge (e.g., road traffic, pedestrian)",
+                                visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "gebruik"))
+    
+    info.concrete_strength_class = TextField("Concrete Strength Class", default="", description="Concrete strength classification (e.g., B25, B45)")
+    info.steel_quality_reinforcement = TextField("Steel Quality (Reinforcement)", default="", description="Quality grade of reinforcement steel (e.g., B500)")
+    info.deck_layer = TextField("Deck Layer", default="", description="Type of deck surface layer (e.g., Asphalt, Concrete)")
+    
+    info.lb2a = LineBreak()
+    
+    info.geometric_properties_header = Text("### Geometric Properties")
+    info.number_of_spans = NumberField("Number of Spans", default=1, min=1, description="Number of structural spans in the bridge")
+    info.static_system = TextField("Static System", default="", description="Structural system type (e.g., statically determinate/indeterminate)")
+    info.crossing_angle = NumberField("Crossing Angle", default=90.0, suffix="°", description="Angle at which the bridge crosses the obstacle")
+    info.theoretical_length = TextField("Theoretical Length", default="", suffix="m", description="Theoretical span lengths")
+    info.deck_width = TextField("Deck Width", default="", suffix="m", description="Total width of the bridge deck")
+    info.construction_height = NumberField("Construction Height", default=0.0, suffix="mm", description="Height of the deck construction")
+    info.slenderness = TextField("Slenderness Ratio", default="", description="Slenderness ratio of the deck spans")
+    
+    info.lb2b = LineBreak()
+    
+    info.width_properties_header = Text("### Width Distribution")
+    info.roadway_width = TextField("Roadway Width", default="", suffix="m", description="Width allocated to vehicle traffic")
+    info.bicycle_path_width = TextField("Bicycle Path Width", default="", suffix="m", description="Width of bicycle lanes")
+    info.sidewalk_north_east_width = TextField("Sidewalk Width (North/East)", default="", suffix="m", description="Width of sidewalk on north/east side")
+    info.sidewalk_south_west_width = TextField("Sidewalk Width (South/West)", default="", suffix="m", description="Width of sidewalk on south/west side")
 
     info.lb3 = LineBreak()
 
     info.bridge_status_header = Text("## Assessment Status")
-    info.assessment_date = TextField("Last Assessment", default="", description="Date of the last assessment")
-    info.assessment_status = OptionField(
-        "Assessment Status",
-        default="Not started",
-        options=["Not started", "In progress", "Completed", "Requires attention"],
-        description="Current status of the bridge assessment",
+    
+    # ARB Flag - show output if available, input if not
+    info.arb_flag_output = OutputField("ARB Assessment Flag", value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "vlag_arb"),
+                                      visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "vlag_arb"))
+    info.arb_flag_input = OptionField(
+        "ARB Assessment Flag",
+        default="Not set",
+        options=["Not set", "puur groen", "groen/oranje", "oranje/groen", "puur oranje", "oranje/rood", "puur rood"],
+        description="Current ARB (Assessment of Reliability of Bridges) status flag",
+        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "vlag_arb"),
     )
-    info.assessment_notes = TextAreaField("Assessment Notes", default="", description="Notes about the assessment process or findings")
+    
+    # Basic Test GHPO - show output if available, input if not
+    info.basic_test_ghpo_output = OutputField("Basic Test GHPO", value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "basale_toets_ghpo"),
+                                             visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "basale_toets_ghpo"))
+    info.basic_test_ghpo_input = OptionField(
+        "Basic Test GHPO",
+        default="Not set",
+        options=["Not set", "groen", "oranje", "rood"],
+        description="Basic test result for GHPO (Guideline for Assessment of Existing Structures)",
+        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "basale_toets_ghpo"),
+    )
+    
+    info.contractor_iha = TextField("Contractor IHA", default="", description="Contractor responsible for individual health assessment")
+    info.assessment_notes = TextAreaField("Assessment Notes", default="", description="Additional notes about the bridge assessment")
 
     # ----------------------------------
     # --- Invoer Page ---
