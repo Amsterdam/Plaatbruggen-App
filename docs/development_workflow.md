@@ -19,9 +19,19 @@ We gebruiken de volgende branches:
   - Aangemaakt *vanuit* `development`
   - Gemerged *terug naar* `development` via Pull Request
 
-## 2. Workflow
 
-### 2.1 Issues aanmaken
+## 2. Installeren van alle requirements
+
+Run setup_dev.py, dit script checkt of de juiste Python versie is gestalleerd en installeerd alle requirements. 
+
+```bash
+# In IDE terminal
+python setup-dev.py
+```
+
+## 3. Workflow
+
+### 3.1 Issues aanmaken
 
 - Issues worden aangemaakt voor elke nieuwe taak, bug of feature request
 - Issues kunnen voortkomen uit:
@@ -32,11 +42,11 @@ We gebruiken de volgende branches:
   - Een duidelijke titel en beschrijving
   - Relevante labels (e.g., `task`, `bug`, `feature`)
 
-### 2.2 Starten met een Issue
+### 3.2 Starten met een Issue
 
 - Wijs de issue toe aan een persoon die het oppakt
 
-### 2.3 Feature Branch aanmaken
+### 3.3 Feature Branch aanmaken
 
 > **Note:** Dit kan alleen door @amsterdam.nl accounts
 
@@ -47,9 +57,9 @@ We gebruiken de volgende branches:
 4. Zorg dat de branch wordt aangemaakt vanuit de `development` branch
 5. Kies "Create Branch"
 
-### 2.4 Werken in de Feature Branch
+### 3.4 Werken in de Feature Branch
 
-#### 2.4.1 Branch lokaal ophalen
+#### 3.4.1 Branch lokaal ophalen
 
 Om in de feature branch te kunnen werken:
 
@@ -75,25 +85,19 @@ git add .
 git commit -m "Beschrijvende commit message"
 ```
 
-2. **Merge met Development en check conflicten:**
-```bash
-git fetch origin
-git merge development
-```
-- Los eventuele conflicten op en commit deze
+#### 2.4.3 Run het ruft script
 
-#### 2.4.3 Code kwaliteit waarborgen
+Het ruft script (ruft.py) voert een aantal acties uit om de code kwaliteit te waarborgen:
+- Voert een commit uit (mocht dit nog niet zijn gedaan)
+- Voert de ruff formating, ruff checks en mypy checks uit
+- Voert de unit tests uit: 
+- Pushed de code naar de feature branch
 
-1. **Voer code checks en unit tests uit:**
-- Volg de instructies in [testing_uitleg.md](testing_uitleg.md)
-- Los eventuele problemen op en commit de fixes
-
-2. **Push wijzigingen:**
-```bash
-git push
-```
+Indien een check faalt krijg je dit te zien en kun je het oplossen. Run het ruft script vervolgens opnieuw.
 
 #### 2.4.4 Pull Request aanmaken
+
+Als alle wijzigingen uitgewerkt zijn, kan de feature branch samengevoegd worden in de development branch. Hiervoor moet een Pull Request (PR) aangemaakt worden.
 
 1. Ga naar de repository op GitHub
 2. Klik op "Pull requests" → "New Pull request"
@@ -105,7 +109,7 @@ git push
    - Link naar de issue
 5. Maak de Pull Request aan
 
-### 2.5 Code Review en Merge
+### 3.5 Code Review en Merge
 
 1. Een beheerder controleert de Pull Request
 2. Bij akkoord:
@@ -113,7 +117,7 @@ git push
    - Issue wordt gesloten
    - Feature branch wordt automatisch verwijderd
 
-### 2.6 Nieuwe Release
+### 3.6 Nieuwe Release
 
 1. Beheerder:
    - Merged `development` naar `main`
