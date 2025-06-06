@@ -3,7 +3,6 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -21,6 +20,8 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
+
+from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 
 from .geometry_functions import get_steel_qualities
 
@@ -118,6 +119,7 @@ DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for 
 
 
 # --- Functions for dynamic reinforcement zones ---
+
 
 def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     """
@@ -348,8 +350,8 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
 
 Zorg ervoor dat elke zone altijd precies 1 keer is aangevinkt, anders kan het model niet correct worden gegenereerd.
 Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningsconfiguraties worden gedefinieerd."""
-    )  
-    
+    )
+
     # General reinforcement parameters
     input.geometrie_wapening.staalsoort = OptionField(
         "Staalsoort",
@@ -393,7 +395,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
                 "hoofdwapening_langs_boven_diameter": 12.0,
                 "hoofdwapening_langs_boven_hart_op_hart": 150.0,
                 "hoofdwapening_langs_onder_diameter": 12.0,
-                "hoofdwapening_langs_onder_hart_op_hart": 150.0,                
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
                 "hoofdwapening_dwars_boven_diameter": 12.0,
                 "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
                 "hoofdwapening_dwars_onder_diameter": 12.0,
@@ -405,9 +407,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
 
     # Zone number selection
     input.geometrie_wapening.zones.zone_number = MultiSelectField(
-        "Zones", 
-        options=define_options_numbering,
-        description="Selecteer de zones waar deze wapeningsconfiguratie moet worden toegepast."
+        "Zones", options=define_options_numbering, description="Selecteer de zones waar deze wapeningsconfiguratie moet worden toegepast."
     )
 
     input.geometrie_wapening.zones.lb2 = LineBreak()
@@ -428,7 +428,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_hart_op_hart = NumberField(
         "H.o.h. afstand hoofdwapening langsrichting onder", default=150.0, suffix="mm", flex=53
     )
-    input.geometrie_wapening.zones.lb4 = LineBreak()    
+    input.geometrie_wapening.zones.lb4 = LineBreak()
     # Main reinforcement - Transverse Top
     input.geometrie_wapening.zones.hoofdwapening_dwars_boven_diameter = NumberField(
         "Diameter hoofdwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47
@@ -453,7 +453,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.geometrie_wapening.zones.lb5 = LineBreak()
 
     # Additional reinforcement toggle
-    input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)    
+    input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)
 
     # Additional reinforcement fields - only visible when heeft_bijlegwapening is True
     _bijleg_visibility = DynamicArrayConstraint(
