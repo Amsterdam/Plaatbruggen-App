@@ -176,8 +176,7 @@ def _get_model_zmax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
     max_value = dz_max
     return max_value - 0.01
     
-def get_value(params, **kwargs) -> list[int]:
-    return [13 for zone in params.input.geometrie_wapening.zones]
+
 # ----------------------------------
 # --- Main Parametrization Class ---
 # ----------------------------------
@@ -476,41 +475,55 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(
         "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
     )      
-    # input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = OutputField(
-    #     "H.o.h. afstand bijlegwapening langsrichting boven",
-    #     value=get_value,
-    #     visible=RowLookup("heeft_bijlegwapening"),
-    #     suffix="mm",
-    #     flex=53,
-    # )
+    input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = OutputField(
+        "H.o.h. afstand bijlegwapening langsrichting boven",
+        value=RowLookup("hoofdwapening_langs_boven_hart_op_hart"),
+        visible=RowLookup("heeft_bijlegwapening"),
+        suffix="mm",
+        flex=53,
+    )
 
-    # input.geometrie_wapening.zones.lb8 = LineBreak()
+    input.geometrie_wapening.zones.lb8 = LineBreak()
 
-    # # Additional reinforcement - Longitudinal bottom
-    # input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
-    #     "Diameter bijlegwapening langsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
-    # )
-    # input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = OutputField(
-    #     "H.o.h. afstand bijlegwapening langsrichting onder", value=RowLookup("hoofdwapening_langs_onder_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
-    # )
+    # Additional reinforcement - Longitudinal bottom
+    input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
+        "Diameter bijlegwapening langsrichting onder", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
+    )
+    input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = OutputField(
+        "H.o.h. afstand bijlegwapening langsrichting onder", 
+        value=RowLookup("hoofdwapening_langs_onder_hart_op_hart"), 
+        visible=RowLookup("heeft_bijlegwapening"),
+        suffix="mm", 
+        flex=53
+    )
 
-    # input.geometrie_wapening.zones.lb9 = LineBreak()
+    input.geometrie_wapening.zones.lb9 = LineBreak()
 
-    # # Additional reinforcement - Transverse top
-    # input.geometrie_wapening.zones.bijlegwapening_dwars_boven_diameter = NumberField(
-    #     "Diameter bijlegwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
-    # )
-    # input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = OutputField(
-    #     "H.o.h. afstand bijlegwapening dwarsrichting boven", value=RowLookup("hoofdwapening_dwars_boven_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
-    # )
-    # input.geometrie_wapening.zones.lb10 = LineBreak()
-    # # Additional reinforcement - Transverse bottom
-    # input.geometrie_wapening.zones.bijlegwapening_dwars_onder_diameter = NumberField(
-    #     "Diameter bijlegwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
-    # )
-    # input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = OutputField(
-    #     "H.o.h. afstand bijlegwapening dwarsrichting onder", value=RowLookup("hoofdwapening_dwars_onder_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
-    # )
+    # Additional reinforcement - Transverse top
+    input.geometrie_wapening.zones.bijlegwapening_dwars_boven_diameter = NumberField(
+        "Diameter bijlegwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
+    )
+    input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = OutputField(
+        "H.o.h. afstand bijlegwapening dwarsrichting boven", 
+        value=RowLookup("hoofdwapening_dwars_boven_hart_op_hart"), 
+        visible=RowLookup("heeft_bijlegwapening"),
+        suffix="mm", 
+        flex=53
+    )
+    
+    input.geometrie_wapening.zones.lb10 = LineBreak()
+    
+    # Additional reinforcement - Transverse bottom
+    input.geometrie_wapening.zones.bijlegwapening_dwars_onder_diameter = NumberField(
+        "Diameter bijlegwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
+    )
+    input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = OutputField(
+        "H.o.h. afstand bijlegwapening dwarsrichting onder", 
+        value=RowLookup("hoofdwapening_dwars_onder_hart_op_hart"), 
+        visible=RowLookup("heeft_bijlegwapening"),
+        suffix="mm", 
+        flex=53
+    )
 
     # ----------------------------------------
     # --- Invoer Page -> loadzones tab ---
