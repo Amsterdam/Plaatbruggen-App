@@ -3,7 +3,6 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -21,6 +20,8 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
+
+from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 
 from .geometry_functions import get_steel_qualities
 
@@ -403,7 +404,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
                 "hoofdwapening_langs_boven_diameter": 12.0,
                 "hoofdwapening_langs_boven_hart_op_hart": 150.0,
                 "hoofdwapening_langs_onder_diameter": 12.0,
-                "hoofdwapening_langs_onder_hart_op_hart": 150.0,                
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
                 "hoofdwapening_dwars_boven_diameter": 12.0,
                 "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
                 "hoofdwapening_dwars_onder_diameter": 12.0,
@@ -427,7 +428,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
                 "hoofdwapening_langs_boven_diameter": 12.0,
                 "hoofdwapening_langs_boven_hart_op_hart": 150.0,
                 "hoofdwapening_langs_onder_diameter": 12.0,
-                "hoofdwapening_langs_onder_hart_op_hart": 150.0,                
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
                 "hoofdwapening_dwars_boven_diameter": 12.0,
                 "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
                 "hoofdwapening_dwars_onder_diameter": 12.0,
@@ -461,7 +462,7 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
         "H.o.h. afstand hoofdwapening langsrichting onder", default=150.0, suffix="mm", flex=53
     )
 
-    input.geometrie_wapening.zones.lb4 = LineBreak()    
+    input.geometrie_wapening.zones.lb4 = LineBreak()
     # Main reinforcement - Transverse Top
     input.geometrie_wapening.zones.hoofdwapening_dwars_boven_diameter = NumberField(
         "Diameter hoofdwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47

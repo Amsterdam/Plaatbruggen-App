@@ -241,13 +241,14 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
         y_offset: float,
         height: float,
         rebar_diameter: float,  # New parameter for single diameter
-        z_position: float,      # New parameter for single z-position
+        z_position: float,  # New parameter for single z-position
         x_offset: float,
         height_start: float | None = None,
         height_end: float | None = None,
     ) -> None:
-        """Create and position shear rebars for a zone at specified height.
-        
+        """
+        Create and position shear rebars for a zone at specified height.
+
         Args:
             x_positions: List of x-coordinates for rebar placement
             y_offset: Offset in y direction for the rebars
@@ -257,6 +258,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
             x_offset: Global x-offset for segment positioning
             height_start: Starting height for variable height rebars (optional)
             height_end: Ending height for variable height rebars (optional)
+
         """
         if height_start is None:
             height_start = height
@@ -333,19 +335,37 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
             x_offset,
             zone_dims["height_start"],
             zone_dims["height_end"],
-        )        
+        )
         # Create bottom shear reinforcement
         if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
-            shear_positions_bottom = get_shear_positions(effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"], zone_params)
+            shear_positions_bottom = get_shear_positions(
+                effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"], zone_params
+            )
             create_shear_rebars(
-                shear_positions_bottom, y_offset, zone_dims["bz"], zone_params["diam_shear_bottom"], z_positions["shear_bottom"], x_offset, zone_dims["height_start"], zone_dims["height_end"]
+                shear_positions_bottom,
+                y_offset,
+                zone_dims["bz"],
+                zone_params["diam_shear_bottom"],
+                z_positions["shear_bottom"],
+                x_offset,
+                zone_dims["height_start"],
+                zone_dims["height_end"],
             )
 
         # Create top shear reinforcement
         if zone_params.get("hoh_shear_top") and zone_params.get("diam_shear_top"):
-            shear_positions_top = get_shear_positions(effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"], zone_params)
+            shear_positions_top = get_shear_positions(
+                effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"], zone_params
+            )
             create_shear_rebars(
-                shear_positions_top, y_offset, zone_dims["bz"], zone_params["diam_shear_top"], z_positions["shear_top"], x_offset, zone_dims["height_start"], zone_dims["height_end"]
+                shear_positions_top,
+                y_offset,
+                zone_dims["bz"],
+                zone_params["diam_shear_top"],
+                z_positions["shear_top"],
+                x_offset,
+                zone_dims["height_start"],
+                zone_dims["height_end"],
             )
 
     return rebar_scene  # type: ignore[return-value]  # Scene is functionally compatible with Trimesh in this context
