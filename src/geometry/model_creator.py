@@ -184,7 +184,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
         positions.sort()
         return [pos + y_offset for pos in positions]
 
-    def get_shear_positions(width_eff: float, hoh: float, diameter_shear: float, zone_params: dict) -> list[float]:
+    def get_shear_positions(width_eff: float, hoh: float, diameter_shear: float) -> list[float]:
         """Calculate positions for shear reinforcement."""
         n_rebars = int(width_eff / hoh)
         if n_rebars < 1:
@@ -339,7 +339,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
         # Create bottom shear reinforcement
         if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
             shear_positions_bottom = get_shear_positions(
-                effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"], zone_params
+                effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"]
             )
             create_shear_rebars(
                 shear_positions_bottom,
@@ -354,9 +354,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
 
         # Create top shear reinforcement
         if zone_params.get("hoh_shear_top") and zone_params.get("diam_shear_top"):
-            shear_positions_top = get_shear_positions(
-                effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"], zone_params
-            )
+            shear_positions_top = get_shear_positions(effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"])
             create_shear_rebars(
                 shear_positions_top,
                 y_offset,
