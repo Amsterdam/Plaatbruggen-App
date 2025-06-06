@@ -266,172 +266,130 @@ class BridgeParametrization(Parametrization):
 
     # Bridge identification section
     info.bridge_info_section = Text(
-        """# Bridge Details
-Below you'll find key information about this bridge structure."""
+        """# Brugdetails
+Hieronder vindt u belangrijke informatie over deze brugconstructie."""
     )
 
-    # Saved bridge identifiers (now visible and with better labels)
-    info.bridge_objectnumm = TextField("Bridge ID (OBJECTNUMM)", default="", description="Unique identifier for this bridge in the system")
+        # Saved bridge identifiers (now visible and with better labels)
+    info.bridge_objectnumm = TextField("Brug ID (OBJECTNUMM)", default="", description="Unieke identificatie voor deze brug in het systeem")
+    info.bridge_name = TextField("Brugnaam", default="", description="Officiële naam van deze brug")
 
-    # Bridge name - show output if available, input if not
-    info.bridge_name_output = OutputField(
-        "Bridge Name",
-        value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "kw_naam"),
-        visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "kw_naam"),
-    )
-    info.bridge_name_input = TextField(
-        "Bridge Name",
-        default="",
-        description="Official name of this bridge structure",
-        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "kw_naam"),
-    )
-
-    # Additional bridge information fields
-    info.bridge_description = Text(
-        """## Bridge Overview
-This bridge model represents a plate bridge structure as part of the automatic assessment model for plate bridges.
-Use the tabs below to view geometric properties, load configurations, and analysis results.
-        """
-    )
+        # Additional bridge information fields
 
     info.lb1 = LineBreak()
 
-    info.bridge_location_header = Text("## Location Information")
+    info.bridge_location_header = Text("## Locatie Informatie")
 
-    # District - show output if available, input if not
-    info.stadsdeel_output = OutputField(
-        "District (Stadsdeel)",
-        value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "stadsdeel"),
-        visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "stadsdeel"),
-    )
-    info.stadsdeel_input = TextField(
-        "District (Stadsdeel)",
+    info.stadsdeel = TextField(
+        "Stadsdeel",
         default="",
-        description="District where the bridge is located (e.g., Centrum, Noord)",
-        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "stadsdeel"),
+        description="Stadsdeel waar de brug zich bevindt (bijv. Centrum, Noord)",
     )
 
-    # Street - show output if available, input if not
-    info.straat_output = OutputField(
-        "Street",
-        value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "straat"),
-        visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "straat"),
-    )
-    info.straat_input = TextField(
-        "Street",
+    info.straat = TextField(
+        "Straat",
         default="",
-        description="Street or waterway where the bridge is located",
-        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "straat"),
+        description="Straat of waterweg waar de brug zich bevindt",
     )
-
-    info.waterway = TextField("Waterway/Crossing", default="", description="Waterway or obstacle that the bridge crosses")
+    
+    info.waterway = TextField("Waterweg/Kruising", default="", description="Waterweg of obstakel dat de brug kruist")
 
     info.lb2 = LineBreak()
 
-    info.bridge_properties_header = Text("## Bridge Properties")
+    info.bridge_properties_header = Text("## Brugeigenschappen")
 
-    # Bridge type - show output if available, input if not
-    info.bridge_type_output = OutputField(
-        "Bridge Type",
-        value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "type"),
-        visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "type"),
-    )
-    info.bridge_type_input = TextField(
-        "Bridge Type",
+    info.bridge_type = TextField(
+        "Brugtype",
         default="",
-        description="Structural type classification of the bridge",
-        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "type"),
+        description="Structurele type classificatie van de brug",
     )
 
-    # Construction year - show output if available, input if not
-    info.construction_year_output = OutputField(
-        "Construction Year",
-        value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "stichtingsjaar"),
-        visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "stichtingsjaar"),
-    )
-    info.construction_year_input = TextField(
-        "Construction Year",
+    info.construction_year = TextField(
+        "Stichtingsjaar",
         default="",
-        description="Year when the bridge was constructed",
-        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "stichtingsjaar"),
+        description="Jaar waarin de brug is gebouwd",
     )
 
-    # Usage - show output if available, input if not
-    info.usage_output = OutputField(
-        "Usage",
-        value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "gebruik"),
-        visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "gebruik"),
-    )
-    info.usage_input = TextField(
-        "Usage",
+    info.usage = TextField(
+        "Gebruik",
         default="",
-        description="Primary function of the bridge (e.g., road traffic, pedestrian)",
-        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "gebruik"),
+        description="Primaire functie van de brug (bijv. wegverkeer, voetgangers)",
     )
 
-    info.concrete_strength_class = TextField("Concrete Strength Class", default="", description="Concrete strength classification (e.g., B25, B45)")
+    info.concrete_strength_class = TextField("Betonsterkteklasse", default="", description="Beton sterkte classificatie (bijv. B25, B45)")
     info.steel_quality_reinforcement = TextField(
-        "Steel Quality (Reinforcement)", default="", description="Quality grade of reinforcement steel (e.g., B500)"
+        "Staalkwaliteit (Wapening)", default="", description="Kwaliteitsklasse van betonstaal (bijv. B500)"
     )
-    info.deck_layer = TextField("Deck Layer", default="", description="Type of deck surface layer (e.g., Asphalt, Concrete)")
+    info.deck_layer = TextField("Deklaag", default="", description="Type van het dekoppervlak (bijv. Asfalt, Beton)")
 
     info.lb2a = LineBreak()
 
-    info.geometric_properties_header = Text("### Geometric Properties")
-    info.number_of_spans = NumberField("Number of Spans", default=1, min=1, description="Number of structural spans in the bridge")
-    info.static_system = TextField("Static System", default="", description="Structural system type (e.g., statically determinate/indeterminate)")
-    info.crossing_angle = NumberField("Crossing Angle", default=90.0, suffix="°", description="Angle at which the bridge crosses the obstacle")
-    info.theoretical_length = TextField("Theoretical Length", default="", suffix="m", description="Theoretical span lengths")
-    info.deck_width = TextField("Deck Width", default="", suffix="m", description="Total width of the bridge deck")
-    info.construction_height = NumberField("Construction Height", default=0.0, suffix="mm", description="Height of the deck construction")
-    info.slenderness = TextField("Slenderness Ratio", default="", description="Slenderness ratio of the deck spans")
+    info.geometric_properties_header = Text("### Geometrische Eigenschappen")
+    info.number_of_spans = NumberField("Aantal Velden", default=1, min=1, description="Aantal structurele overspanningen in de brug")
+    info.static_system = TextField("Statisch Systeem", default="", description="Statisch systeemtype (bijv. statisch bepaald/onbepaald)")
+    info.crossing_angle = NumberField("Kruisingshoek", default=90.0, suffix="°", description="Hoek waaronder de brug het obstakel kruist")
+    info.theoretical_length = TextField("Theoretische Lengte", default="", suffix="m", description="Theoretische overspanningslengte")
+    info.deck_width = TextField("Brugdekbreedte", default="", suffix="m", description="Totale breedte van het brugdek")
+    info.construction_height = NumberField("Constructiehoogte", default=0.0, suffix="mm", description="Hoogte van de dekconstuctie")
+    info.slenderness = TextField("Slankheidsverhouding", default="", description="Slankheidsverhouding van de dekoverspanningen")
+    info.daily_length = TextField("Ldag", default="", suffix="m", description="Dagelijkse lengte van de brug")
+    
+    info.lb2c = LineBreak()
+    
+    info.structural_properties_header = Text("### Structurele Eigenschappen")
+    info.bearing_type = TextField("Opleggingen", default="", description="Type van de opleggingen/lagers")
+    info.orthotropy = TextField("Orthotropie/Isotropie", default="", description="Orthotropisch of isotropisch gedrag van het dek")
+    info.beams_in_slab = OptionField("Liggers in plaat", default="Onbekend", options=["Onbekend", "Ja", "Nee"], description="Aanwezigheid van liggers in de plaat")
 
     info.lb2b = LineBreak()
 
-    info.width_properties_header = Text("### Width Distribution")
-    info.roadway_width = TextField("Roadway Width", default="", suffix="m", description="Width allocated to vehicle traffic")
-    info.bicycle_path_width = TextField("Bicycle Path Width", default="", suffix="m", description="Width of bicycle lanes")
+    info.width_properties_header = Text("### Breedteverdeling")
+    info.roadway_width = TextField("Rijwaybreedte", default="", suffix="m", description="Breedte toegewezen aan voertuigverkeer")
+    info.tram_width = TextField("Breedte trambaan", default="", suffix="m", description="Breedte van de trambaan")
+    info.bicycle_path_width = TextField("Fietspaadbreedte", default="", suffix="m", description="Breedte van fietspaden")
     info.sidewalk_north_east_width = TextField(
-        "Sidewalk Width (North/East)", default="", suffix="m", description="Width of sidewalk on north/east side"
+        "Trottoirbreedte (Noord/Oost)", default="", suffix="m", description="Breedte van trottoir aan noord/oost zijde"
     )
     info.sidewalk_south_west_width = TextField(
-        "Sidewalk Width (South/West)", default="", suffix="m", description="Width of sidewalk on south/west side"
+        "Trottoirbreedte (Zuid/West)", default="", suffix="m", description="Breedte van trottoir aan zuid/west zijde"
     )
+    info.edge_beam_thickness = TextField("Dikte schampkant", default="", suffix="mm", description="Dikte van de schampkant/randdrager")
+    info.edge_loading = OptionField("Randbelasting", default="Onbekend", options=["Onbekend", "Ja", "Nee"], description="Aanwezigheid van randbelasting op de brug")
 
     info.lb3 = LineBreak()
 
-    info.bridge_status_header = Text("## Assessment Status")
+    info.bridge_status_header = Text("## Beoordelingsstatus")
 
-    # ARB Flag - show output if available, input if not
-    info.arb_flag_output = OutputField(
-        "ARB Assessment Flag",
-        value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "vlag_arb"),
-        visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "vlag_arb"),
-    )
-    info.arb_flag_input = OptionField(
-        "ARB Assessment Flag",
-        default="Not set",
-        options=["Not set", "puur groen", "groen/oranje", "oranje/groen", "puur oranje", "oranje/rood", "puur rood"],
-        description="Current ARB (Assessment of Reliability of Bridges) status flag",
-        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "vlag_arb"),
+    info.arb_flag = OptionField(
+        "ARB Beoordelingsvlag",
+        default="Niet ingesteld",
+        options=["Niet ingesteld", "puur groen", "groen/oranje", "oranje/groen", "puur oranje", "oranje/rood", "puur rood"],
+        description="Huidige ARB (Assessment of Reliability of Bridges) statusvlag",
     )
 
-    # Basic Test GHPO - show output if available, input if not
-    info.basic_test_ghpo_output = OutputField(
-        "Basic Test GHPO",
-        value=FunctionLookup(_get_bridge_field_value, Lookup("info.bridge_objectnumm"), "basale_toets_ghpo"),
-        visible=FunctionLookup(_bridge_field_has_value, Lookup("info.bridge_objectnumm"), "basale_toets_ghpo"),
-    )
-    info.basic_test_ghpo_input = OptionField(
-        "Basic Test GHPO",
-        default="Not set",
-        options=["Not set", "groen", "oranje", "rood"],
-        description="Basic test result for GHPO (Guideline for Assessment of Existing Structures)",
-        visible=FunctionLookup(_bridge_field_is_empty, Lookup("info.bridge_objectnumm"), "basale_toets_ghpo"),
+    info.basic_test_ghpo = OptionField(
+        "Basale Toets GHPO",
+        default="Niet ingesteld",
+        options=["Niet ingesteld", "groen", "oranje", "rood", "nvt", "Wel"],
+        description="Basale toetsresultaat voor GHPO (Richtlijn voor Beoordeling van Bestaande Constructies)",
     )
 
-    info.contractor_iha = TextField("Contractor IHA", default="", description="Contractor responsible for individual health assessment")
-    info.assessment_notes = TextAreaField("Assessment Notes", default="", description="Additional notes about the bridge assessment")
+    info.contractor_iha = TextField("Opdrachtnemer IHA", default="", description="Opdrachtnemer verantwoordelijk voor individuele gezondheidsbeoordeling")
+    info.assessment_notes = TextAreaField("Beoordelingsnotities", default="", description="Aanvullende opmerkingen over de brugbeoordeling")
+    
+    info.lb4 = LineBreak()
+    
+    info.reinforcement_header = Text("## Wapeningsgegevens")
+    info.support_reinforcement_diameter = TextField("Steunpuntswapening diameter", default="", suffix="mm", description="Diameter van steunpuntswapening in langsrichting")
+    info.support_reinforcement_spacing = TextField("Steunpuntswapening h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van steunpuntswapening")
+    info.support_reinforcement_layer = TextField("Steunpuntswapening laag", default="", description="Laag nummer van steunpuntswapening")
+    info.field_reinforcement_diameter = TextField("Veldwapening diameter", default="", suffix="mm", description="Diameter van veldwapening in langsrichting")
+    info.field_reinforcement_spacing = TextField("Veldwapening h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van veldwapening")
+    info.field_reinforcement_layer = TextField("Veldwapening laag", default="", description="Laag nummer van veldwapening")
+    info.field_reinforcement_transverse_diameter = TextField("Veldwapening dwarsrichting diameter", default="", suffix="mm", description="Diameter van veldwapening in dwarsrichting")
+    info.field_reinforcement_transverse_spacing = TextField("Veldwapening dwarsrichting h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van veldwapening dwarsrichting")
+    info.field_reinforcement_transverse_layer = TextField("Veldwapening dwarsrichting laag", default="", description="Laag nummer van veldwapening dwarsrichting")
+    info.concrete_cover = TextField("Dekking buitenkant wapening", default="", suffix="mm", description="Betondekking aan de buitenkant van de wapening")
 
     # ----------------------------------
     # --- Invoer Page ---
