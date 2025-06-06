@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Development Environment Setup Script.
 
