@@ -29,7 +29,6 @@ from .geometry_functions import get_steel_qualities
 
 # --- Helper functions for DynamicArray Default Rows ---
 
-
 def _create_default_dimension_segment_row(l_value: int, is_first: bool) -> dict[str, Any]:
     """Creates a dictionary for a default bridge dimension segment row."""
     return {
@@ -123,7 +122,6 @@ def _create_dx_width_visibility_callback(required_segment_count: int) -> Callabl
 # Generate the visibility callbacks using a dictionary comprehension
 DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for i in range(1, MAX_LOAD_ZONE_SEGMENT_FIELDS + 1)}
 
-
 # --- Functions for dynamic reinforcement zones ---
 
 def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
@@ -177,8 +175,9 @@ def _get_model_zmax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
     dz_max = max(segment.dz_2 - segment.dz for segment in params.bridge_segments_array)
     max_value = dz_max
     return max_value - 0.01
-
-
+    
+def get_value(params, **kwargs) -> list[int]:
+    return [13 for zone in params.input.geometrie_wapening.zones]
 # ----------------------------------
 # --- Main Parametrization Class ---
 # ----------------------------------
@@ -394,18 +393,21 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
         "Wapeningsconfiguraties",
         min=1,  # Always require at least one configuration
         name="reinforcement_zones_array",
+        row_label="Wapeningsconfiguratie",
         default=[
             {
-                "zone_number": ["1-1"],  # Default to first zone, but can select multiple
+                "zone_number": ["1-1", "2-1", "3-1"],  # Default to all zones for the first configuration
                 "hoofdwapening_langs_boven_diameter": 12.0,
                 "hoofdwapening_langs_boven_hart_op_hart": 150.0,
                 "hoofdwapening_langs_onder_diameter": 12.0,
-                "hoofdwapening_langs_onder_hart_op_hart": 150.0,                
+                "hoofdwapening_langs_onder_hart_op_hart": 150.0,
                 "hoofdwapening_dwars_boven_diameter": 12.0,
                 "hoofdwapening_dwars_boven_hart_op_hart": 150.0,
                 "hoofdwapening_dwars_onder_diameter": 12.0,
                 "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
                 "heeft_bijlegwapening": False,
+                "bijlegwapening_langs_boven_diameter": 12.0,
+                #"bijlegwapening_langs_boven_hart_op_hart": 13.0,
             },
         ],
     )
@@ -413,7 +415,8 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     # Zone number selection
     input.geometrie_wapening.zones.zone_number = MultiSelectField(
         "Zones", 
-        options=define_options_numbering,
+        options=["1-1", "2-1", "3-1"],  # Default options for zones
+        default=["1-1"],  # Default to all zones for the first configuration
         description="Selecteer de zones waar deze wapeningsconfiguratie moet worden toegepast."
     )
 
@@ -463,47 +466,51 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)    
 
     # Additional reinforcement fields - only visible when heeft_bijlegwapening is True
-    _bijleg_visibility = DynamicArrayConstraint(
-        dynamic_array_name="reinforcement_zones_array",
-        operand=Lookup("$row.heeft_bijlegwapening"),
-    )
+    # _bijleg_visibility = DynamicArrayConstraint(
+    #     dynamic_array_name="reinforcement_zones_array",
+    #     operand=IsTrue(Lookup("$row.heeft_bijlegwapening")),
+    # )
 
     input.geometrie_wapening.zones.lb7 = LineBreak()
 
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(
-        "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
-    )
-    input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = OutputField(
-        "H.o.h. afstand bijlegwapening langsrichting boven", value=Lookup("$row.hoofdwapening_langs_boven_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
-    )
+        "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
+    )      
+    # input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = OutputField(
+    #     "H.o.h. afstand bijlegwapening langsrichting boven",
+    #     value=get_value,
+    #     visible=RowLookup("heeft_bijlegwapening"),
+    #     suffix="mm",
+    #     flex=53,
+    # )
 
-    input.geometrie_wapening.zones.lb8 = LineBreak()
+    # input.geometrie_wapening.zones.lb8 = LineBreak()
 
-    # Additional reinforcement - Longitudinal bottom
-    input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
-        "Diameter bijlegwapening langsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
-    )
-    input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = OutputField(
-        "H.o.h. afstand bijlegwapening langsrichting onder", value=Lookup("$row.hoofdwapening_langs_onder_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
-    )
+    # # Additional reinforcement - Longitudinal bottom
+    # input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
+    #     "Diameter bijlegwapening langsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
+    # )
+    # input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = OutputField(
+    #     "H.o.h. afstand bijlegwapening langsrichting onder", value=RowLookup("hoofdwapening_langs_onder_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
+    # )
 
-    input.geometrie_wapening.zones.lb9 = LineBreak()
+    # input.geometrie_wapening.zones.lb9 = LineBreak()
 
-    # Additional reinforcement - Transverse top
-    input.geometrie_wapening.zones.bijlegwapening_dwars_boven_diameter = NumberField(
-        "Diameter bijlegwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
-    )
-    input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = OutputField(
-        "H.o.h. afstand bijlegwapening dwarsrichting boven", value=Lookup("$row.hoofdwapening_dwars_boven_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
-    )
-    input.geometrie_wapening.zones.lb10 = LineBreak()
-    # Additional reinforcement - Transverse bottom
-    input.geometrie_wapening.zones.bijlegwapening_dwars_onder_diameter = NumberField(
-        "Diameter bijlegwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
-    )
-    input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = OutputField(
-        "H.o.h. afstand bijlegwapening dwarsrichting onder", value=Lookup("$row.hoofdwapening_dwars_onder_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
-    )
+    # # Additional reinforcement - Transverse top
+    # input.geometrie_wapening.zones.bijlegwapening_dwars_boven_diameter = NumberField(
+    #     "Diameter bijlegwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
+    # )
+    # input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = OutputField(
+    #     "H.o.h. afstand bijlegwapening dwarsrichting boven", value=RowLookup("hoofdwapening_dwars_boven_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
+    # )
+    # input.geometrie_wapening.zones.lb10 = LineBreak()
+    # # Additional reinforcement - Transverse bottom
+    # input.geometrie_wapening.zones.bijlegwapening_dwars_onder_diameter = NumberField(
+    #     "Diameter bijlegwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47, visible=_bijleg_visibility
+    # )
+    # input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = OutputField(
+    #     "H.o.h. afstand bijlegwapening dwarsrichting onder", value=RowLookup("hoofdwapening_dwars_onder_hart_op_hart"), suffix="mm", flex=53, visible=_bijleg_visibility
+    # )
 
     # ----------------------------------------
     # --- Invoer Page -> loadzones tab ---

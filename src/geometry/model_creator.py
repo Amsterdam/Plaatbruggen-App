@@ -337,7 +337,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
     z_position_bottom = -params.bridge_segments_array[0].dz
     z_position_top = params.bridge_segments_array[0].dz_2 - params.bridge_segments_array[0].dz
     rebar_scene = trimesh.Scene()
-
+    
     # Process each reinforcement configuration
     for config_entry in reinforcement_zones_array:
         # Get all zones where this configuration should be applied
