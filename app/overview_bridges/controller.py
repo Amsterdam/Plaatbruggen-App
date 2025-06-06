@@ -12,12 +12,8 @@ from io import StringIO
 # Add GeoPandas import (ensure it's installed in your venv)
 import geopandas as gpd
 import markdown
-import viktor.api_v1 as api  # Import VIKTOR API
-from viktor.core import ViktorController  # Import Color, ViktorController
-from viktor.errors import UserError  # Import UserError
-from viktor.parametrization import Parametrization  # Import for type hint
-from viktor.views import MapPoint, MapResult, MapView, WebResult, WebView  # Use MapPolygon instead of MapPolyline
 
+import viktor.api_v1 as api  # Import VIKTOR API
 from app.common.map_utils import (  # Import shared utilities
     get_default_shapefile_path,
     get_filtered_bridges_json_path,
@@ -31,6 +27,10 @@ from app.constants import (  # Replace relative imports with absolute imports
     CSS_PATH,
     README_PATH,
 )
+from viktor.core import ViktorController  # Import Color, ViktorController
+from viktor.errors import UserError  # Import UserError
+from viktor.parametrization import Parametrization  # Import for type hint
+from viktor.views import MapPoint, MapResult, MapView, WebResult, WebView  # Use MapPolygon instead of MapPolyline
 
 # Import the parametrization from the separate file
 from .parametrization import OverviewBridgesParametrization
@@ -339,9 +339,7 @@ class OverviewBridgesController(ViktorController):
                 if arb_flag in ["puur groen", "groen/oranje", "oranje/groen", "puur oranje", "oranje/rood", "puur rood"]
                 else "Niet ingesteld"
             ),
-            "basic_test_ghpo": (
-                basic_test_ghpo if basic_test_ghpo in ["groen", "oranje", "rood", "nvt", "Wel"] else "Niet ingesteld"
-            ),
+            "basic_test_ghpo": (basic_test_ghpo if basic_test_ghpo in ["groen", "oranje", "rood", "nvt", "Wel"] else "Niet ingesteld"),
             "concrete_strength_class": bridge_data.get("betonsterkteklasse", ""),
             "steel_quality_reinforcement": bridge_data.get("staalkwaliteit_wapening", ""),
             "deck_layer": bridge_data.get("deklaag", ""),
