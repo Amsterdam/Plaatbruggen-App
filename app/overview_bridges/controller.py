@@ -309,12 +309,12 @@ class OverviewBridgesController(ViktorController):
                 usage = bridge_data.get("gebruik", "")
                 arb_flag = bridge_data.get("vlag_arb", "Niet ingesteld")
                 basic_test_ghpo = bridge_data.get("basale_toets_ghpo", "Niet ingesteld")
-                
+
                 # Additional bridge properties
                 concrete_strength_class = bridge_data.get("betonsterkteklasse", "")
                 steel_quality_reinforcement = bridge_data.get("staalkwaliteit_wapening", "")
                 deck_layer = bridge_data.get("deklaag", "")
-                
+
                 # Geometric properties
                 number_of_spans = bridge_data.get("aantal_velden", 1)
                 static_system = bridge_data.get("statisch_systeem", "")
@@ -325,30 +325,30 @@ class OverviewBridgesController(ViktorController):
                 construction_height = bridge_data.get("constructiehoogte_dek", 0.0)
                 slenderness = bridge_data.get("slankheid_dek", "")  # May contain: "10.44; 5.06; 16.46; 18.99; 18.99; 18.99"
                 daily_length = bridge_data.get("ldag", "")
-                
+
                 # Structural properties
                 bearing_type = bridge_data.get("opleggingen", "")
                 orthotropy = bridge_data.get("orthotropie_isotropie", "")
                 beams_in_slab = bridge_data.get("liggers_in_plaat", "")
-                
-                # Width distribution properties  
+
+                # Width distribution properties
                 roadway_width = bridge_data.get("breedte_rijwegen", "")  # May contain: "15490-31236" (ranges)
                 tram_width = bridge_data.get("breedte_trambaan", "")  # Tram track width
                 bicycle_path_width = bridge_data.get("breedte_fietspad", "")
-                
+
                 # Width properties - convert from mm to m if needed
                 # TODO: Multi-span bridges - sidewalk widths may contain ranges like "1418-1724"
                 sidewalk_north_east_width = bridge_data.get("breedte_voetpad_noord_oost", "")  # May contain: "1418-1724"
                 sidewalk_south_west_width = bridge_data.get("breedte_voetpad_zuid_west", "")  # May contain: "1418-1650"
                 edge_beam_thickness = bridge_data.get("dikte_schampkant", "")
                 edge_loading = bridge_data.get("randbelasting", "")
-                
+
                 # Convert widths from mm to m if they are numeric strings
                 if sidewalk_north_east_width and str(sidewalk_north_east_width).isdigit():
                     sidewalk_north_east_width = str(float(sidewalk_north_east_width) / 1000)  # Convert mm to m
                 if sidewalk_south_west_width and str(sidewalk_south_west_width).isdigit():
                     sidewalk_south_west_width = str(float(sidewalk_south_west_width) / 1000)  # Convert mm to m
-                    
+
                 # Convert other width fields from mm to m if they are numeric strings
                 if theoretical_length and str(theoretical_length).isdigit():
                     theoretical_length = str(float(theoretical_length) / 1000)  # Convert mm to m
@@ -360,10 +360,10 @@ class OverviewBridgesController(ViktorController):
                     tram_width = str(float(tram_width) / 1000)  # Convert mm to m
                 if bicycle_path_width and str(bicycle_path_width).isdigit():
                     bicycle_path_width = str(float(bicycle_path_width) / 1000)  # Convert mm to m
-                
+
                 # Assessment properties
                 contractor_iha = bridge_data.get("opdrachtnemer_iha", "")
-                
+
                 # Reinforcement data
                 support_reinforcement_diameter = bridge_data.get("steunpuntswapening_langsrichting_diameter", "")
                 support_reinforcement_spacing = bridge_data.get("steunpuntswapening_langsrichting_hoh_afstand", "")
@@ -386,8 +386,12 @@ class OverviewBridgesController(ViktorController):
                         "bridge_type": bridge_type if bridge_type else "",
                         "construction_year": str(construction_year) if construction_year else "",
                         "usage": usage if usage else "",
-                        "arb_flag": arb_flag if arb_flag and arb_flag in ["puur groen", "groen/oranje", "oranje/groen", "puur oranje", "oranje/rood", "puur rood"] else "Niet ingesteld",
-                        "basic_test_ghpo": basic_test_ghpo if basic_test_ghpo and basic_test_ghpo in ["groen", "oranje", "rood", "nvt", "Wel"] else "Niet ingesteld",
+                        "arb_flag": arb_flag
+                        if arb_flag and arb_flag in ["puur groen", "groen/oranje", "oranje/groen", "puur oranje", "oranje/rood", "puur rood"]
+                        else "Niet ingesteld",
+                        "basic_test_ghpo": basic_test_ghpo
+                        if basic_test_ghpo and basic_test_ghpo in ["groen", "oranje", "rood", "nvt", "Wel"]
+                        else "Niet ingesteld",
                         "concrete_strength_class": concrete_strength_class if concrete_strength_class else "",
                         "steel_quality_reinforcement": steel_quality_reinforcement if steel_quality_reinforcement else "",
                         "deck_layer": deck_layer if deck_layer else "",
@@ -401,14 +405,18 @@ class OverviewBridgesController(ViktorController):
                         "daily_length": daily_length if daily_length else "",
                         "bearing_type": bearing_type if bearing_type else "",
                         "orthotropy": orthotropy if orthotropy else "",
-                        "beams_in_slab": "Ja" if beams_in_slab and str(beams_in_slab).lower() in ["ja", "yes", "true"] else ("Nee" if beams_in_slab and str(beams_in_slab).lower() in ["nee", "no", "false"] else "Onbekend"),
+                        "beams_in_slab": "Ja"
+                        if beams_in_slab and str(beams_in_slab).lower() in ["ja", "yes", "true"]
+                        else ("Nee" if beams_in_slab and str(beams_in_slab).lower() in ["nee", "no", "false"] else "Onbekend"),
                         "roadway_width": roadway_width if roadway_width else "",
                         "tram_width": tram_width if tram_width else "",
                         "bicycle_path_width": bicycle_path_width if bicycle_path_width else "",
                         "sidewalk_north_east_width": sidewalk_north_east_width if sidewalk_north_east_width else "",
                         "sidewalk_south_west_width": sidewalk_south_west_width if sidewalk_south_west_width else "",
                         "edge_beam_thickness": edge_beam_thickness if edge_beam_thickness else "",
-                        "edge_loading": "Ja" if edge_loading and str(edge_loading).lower() in ["ja", "true", "1"] else ("Nee" if edge_loading and str(edge_loading).lower() in ["nee", "false", "0"] else "Onbekend"),
+                        "edge_loading": "Ja"
+                        if edge_loading and str(edge_loading).lower() in ["ja", "true", "1"]
+                        else ("Nee" if edge_loading and str(edge_loading).lower() in ["nee", "false", "0"] else "Onbekend"),
                         "contractor_iha": contractor_iha if contractor_iha else "",
                         "support_reinforcement_diameter": support_reinforcement_diameter if support_reinforcement_diameter else "",
                         "support_reinforcement_spacing": support_reinforcement_spacing if support_reinforcement_spacing else "",
@@ -416,8 +424,12 @@ class OverviewBridgesController(ViktorController):
                         "field_reinforcement_diameter": field_reinforcement_diameter if field_reinforcement_diameter else "",
                         "field_reinforcement_spacing": field_reinforcement_spacing if field_reinforcement_spacing else "",
                         "field_reinforcement_layer": field_reinforcement_layer if field_reinforcement_layer else "",
-                        "field_reinforcement_transverse_diameter": field_reinforcement_transverse_diameter if field_reinforcement_transverse_diameter else "",
-                        "field_reinforcement_transverse_spacing": field_reinforcement_transverse_spacing if field_reinforcement_transverse_spacing else "",
+                        "field_reinforcement_transverse_diameter": field_reinforcement_transverse_diameter
+                        if field_reinforcement_transverse_diameter
+                        else "",
+                        "field_reinforcement_transverse_spacing": field_reinforcement_transverse_spacing
+                        if field_reinforcement_transverse_spacing
+                        else "",
                         "field_reinforcement_transverse_layer": field_reinforcement_transverse_layer if field_reinforcement_transverse_layer else "",
                         "concrete_cover": concrete_cover if concrete_cover else "",
                     }

@@ -10,14 +10,12 @@ from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
     DynamicArrayConstraint,
-    FunctionLookup,
     IsFalse,
     LineBreak,
     Lookup,
     MultiSelectField,
     NumberField,
     OptionField,
-    OutputField,
     Page,
     Parametrization,
     Tab,
@@ -270,11 +268,11 @@ class BridgeParametrization(Parametrization):
 Hieronder vindt u belangrijke informatie over deze brugconstructie."""
     )
 
-        # Saved bridge identifiers (now visible and with better labels)
+    # Saved bridge identifiers (now visible and with better labels)
     info.bridge_objectnumm = TextField("Brug ID (OBJECTNUMM)", default="", description="Unieke identificatie voor deze brug in het systeem")
     info.bridge_name = TextField("Brugnaam", default="", description="Officiële naam van deze brug")
 
-        # Additional bridge information fields
+    # Additional bridge information fields
 
     info.lb1 = LineBreak()
 
@@ -291,7 +289,7 @@ Hieronder vindt u belangrijke informatie over deze brugconstructie."""
         default="",
         description="Straat of waterweg waar de brug zich bevindt",
     )
-    
+
     info.waterway = TextField("Waterweg/Kruising", default="", description="Waterweg of obstakel dat de brug kruist")
 
     info.lb2 = LineBreak()
@@ -317,9 +315,7 @@ Hieronder vindt u belangrijke informatie over deze brugconstructie."""
     )
 
     info.concrete_strength_class = TextField("Betonsterkteklasse", default="", description="Beton sterkte classificatie (bijv. B25, B45)")
-    info.steel_quality_reinforcement = TextField(
-        "Staalkwaliteit (Wapening)", default="", description="Kwaliteitsklasse van betonstaal (bijv. B500)"
-    )
+    info.steel_quality_reinforcement = TextField("Staalkwaliteit (Wapening)", default="", description="Kwaliteitsklasse van betonstaal (bijv. B500)")
     info.deck_layer = TextField("Deklaag", default="", description="Type van het dekoppervlak (bijv. Asfalt, Beton)")
 
     info.lb2a = LineBreak()
@@ -333,13 +329,15 @@ Hieronder vindt u belangrijke informatie over deze brugconstructie."""
     info.construction_height = NumberField("Constructiehoogte", default=0.0, suffix="mm", description="Hoogte van de dekconstuctie")
     info.slenderness = TextField("Slankheidsverhouding", default="", description="Slankheidsverhouding van de dekoverspanningen")
     info.daily_length = TextField("Ldag", default="", suffix="m", description="Dagelijkse lengte van de brug")
-    
+
     info.lb2c = LineBreak()
-    
+
     info.structural_properties_header = Text("### Structurele Eigenschappen")
     info.bearing_type = TextField("Opleggingen", default="", description="Type van de opleggingen/lagers")
     info.orthotropy = TextField("Orthotropie/Isotropie", default="", description="Orthotropisch of isotropisch gedrag van het dek")
-    info.beams_in_slab = OptionField("Liggers in plaat", default="Onbekend", options=["Onbekend", "Ja", "Nee"], description="Aanwezigheid van liggers in de plaat")
+    info.beams_in_slab = OptionField(
+        "Liggers in plaat", default="Onbekend", options=["Onbekend", "Ja", "Nee"], description="Aanwezigheid van liggers in de plaat"
+    )
 
     info.lb2b = LineBreak()
 
@@ -354,7 +352,9 @@ Hieronder vindt u belangrijke informatie over deze brugconstructie."""
         "Trottoirbreedte (Zuid/West)", default="", suffix="m", description="Breedte van trottoir aan zuid/west zijde"
     )
     info.edge_beam_thickness = TextField("Dikte schampkant", default="", suffix="mm", description="Dikte van de schampkant/randdrager")
-    info.edge_loading = OptionField("Randbelasting", default="Onbekend", options=["Onbekend", "Ja", "Nee"], description="Aanwezigheid van randbelasting op de brug")
+    info.edge_loading = OptionField(
+        "Randbelasting", default="Onbekend", options=["Onbekend", "Ja", "Nee"], description="Aanwezigheid van randbelasting op de brug"
+    )
 
     info.lb3 = LineBreak()
 
@@ -374,22 +374,40 @@ Hieronder vindt u belangrijke informatie over deze brugconstructie."""
         description="Basale toetsresultaat voor GHPO (Richtlijn voor Beoordeling van Bestaande Constructies)",
     )
 
-    info.contractor_iha = TextField("Opdrachtnemer IHA", default="", description="Opdrachtnemer verantwoordelijk voor individuele gezondheidsbeoordeling")
+    info.contractor_iha = TextField(
+        "Opdrachtnemer IHA", default="", description="Opdrachtnemer verantwoordelijk voor individuele gezondheidsbeoordeling"
+    )
     info.assessment_notes = TextAreaField("Beoordelingsnotities", default="", description="Aanvullende opmerkingen over de brugbeoordeling")
-    
+
     info.lb4 = LineBreak()
-    
+
     info.reinforcement_header = Text("## Wapeningsgegevens")
-    info.support_reinforcement_diameter = TextField("Steunpuntswapening diameter", default="", suffix="mm", description="Diameter van steunpuntswapening in langsrichting")
-    info.support_reinforcement_spacing = TextField("Steunpuntswapening h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van steunpuntswapening")
+    info.support_reinforcement_diameter = TextField(
+        "Steunpuntswapening diameter", default="", suffix="mm", description="Diameter van steunpuntswapening in langsrichting"
+    )
+    info.support_reinforcement_spacing = TextField(
+        "Steunpuntswapening h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van steunpuntswapening"
+    )
     info.support_reinforcement_layer = TextField("Steunpuntswapening laag", default="", description="Laag nummer van steunpuntswapening")
-    info.field_reinforcement_diameter = TextField("Veldwapening diameter", default="", suffix="mm", description="Diameter van veldwapening in langsrichting")
-    info.field_reinforcement_spacing = TextField("Veldwapening h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van veldwapening")
+    info.field_reinforcement_diameter = TextField(
+        "Veldwapening diameter", default="", suffix="mm", description="Diameter van veldwapening in langsrichting"
+    )
+    info.field_reinforcement_spacing = TextField(
+        "Veldwapening h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van veldwapening"
+    )
     info.field_reinforcement_layer = TextField("Veldwapening laag", default="", description="Laag nummer van veldwapening")
-    info.field_reinforcement_transverse_diameter = TextField("Veldwapening dwarsrichting diameter", default="", suffix="mm", description="Diameter van veldwapening in dwarsrichting")
-    info.field_reinforcement_transverse_spacing = TextField("Veldwapening dwarsrichting h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van veldwapening dwarsrichting")
-    info.field_reinforcement_transverse_layer = TextField("Veldwapening dwarsrichting laag", default="", description="Laag nummer van veldwapening dwarsrichting")
-    info.concrete_cover = TextField("Dekking buitenkant wapening", default="", suffix="mm", description="Betondekking aan de buitenkant van de wapening")
+    info.field_reinforcement_transverse_diameter = TextField(
+        "Veldwapening dwarsrichting diameter", default="", suffix="mm", description="Diameter van veldwapening in dwarsrichting"
+    )
+    info.field_reinforcement_transverse_spacing = TextField(
+        "Veldwapening dwarsrichting h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van veldwapening dwarsrichting"
+    )
+    info.field_reinforcement_transverse_layer = TextField(
+        "Veldwapening dwarsrichting laag", default="", description="Laag nummer van veldwapening dwarsrichting"
+    )
+    info.concrete_cover = TextField(
+        "Dekking buitenkant wapening", default="", suffix="mm", description="Betondekking aan de buitenkant van de wapening"
+    )
 
     # ----------------------------------
     # --- Invoer Page ---
