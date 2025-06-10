@@ -1,40 +1,39 @@
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-Semantic versioning is used to denote different versions of this project.
-
 ## [`v0.0.6`] - 2025-xx-xx
 
 ### Added
+
 #### User-Facing
 - Horizontal spawn arrow to the topview
 
 #### Developer-Facing
 - Comprehensive Phase 2 VIKTOR view testing infrastructure:
-  - Full view execution tests for all BridgeController and OverviewBridgesController views
-  - Advanced VIKTOR result object handling (DataResult, PlotlyResult, MapResult, GeometryResult, PDFResult)
-  - Decorator bypassing technique for authentic view method testing
-  - Enhanced test coverage reaching 188 total tests across core logic and VIKTOR interface
-- Dutch testing documentation (`docs/testing_uitleg.md`) with practical workflows, AI assistance guidance, and seed file maintenance procedures
+  - Full view execution tests for all `BridgeController` and `OverviewBridgesController` views
+  - Advanced VIKTOR result object handling (`DataResult`, `PlotlyResult`, `MapResult`, `GeometryResult`, `PDFResult`)
+  - Decorator bypassing for authentic view method testing
+  - 188 total tests across core logic and interface
+- Dutch testing documentation (`docs/testing_uitleg.md`) with workflows, AI assistance guidance, and seed file maintenance procedures
 
 ### Changed
+
 #### User-Facing
-- Split the concrete cover input into separate fields for top and bottom cover values, allowing for different cover specifications for the top and bottom of the plate.
-- Split the shear reinforcement input fields into separate fields for top and bottom.
+- Split concrete cover input into separate fields for top and bottom cover
+- Split shear reinforcement input into separate fields for top and bottom
+- Reinforcement input reworked to apply configurations to multiple zones, with updated explanatory text
 
 #### Developer-Facing
 - Enhanced development workflow with improved pre-commit hooks:
-  - Auto-commit functionality for code formatting changes
-  - Improved error reporting and user guidance
-  - Consistent tooling across all quality checks (ruff, mypy, tests)
+  - Auto-commit formatting changes
+  - Better error reporting and guidance
+  - Consistent tooling for `ruff`, `mypy`, and tests
 
 ### Fixed
+
 #### User-Facing
 - 
 
 #### Developer-Facing
 - 
+
 
 ## [`v0.0.5`] - 2025-05-22
 
