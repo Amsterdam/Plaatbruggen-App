@@ -427,6 +427,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_hart_op_hart = NumberField(
         "H.o.h. afstand hoofdwapening langsrichting onder", default=150.0, suffix="mm", flex=53
     )
+
     input.geometrie_wapening.zones.lb4 = LineBreak()
     # Main reinforcement - Transverse Top
     input.geometrie_wapening.zones.hoofdwapening_dwars_boven_diameter = NumberField(
