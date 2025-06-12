@@ -80,7 +80,6 @@ def parse_zone_number(zone_numbers: list[str] | str) -> list[tuple[int, int]]:
             result.append((pos, seg - 1))  # Convert to 0-based segment index
     return result
 
-
 def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901, PLR0915
     """Create a mesh representing rebars based on specified parameters."""
 
@@ -384,6 +383,35 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901,
                 zone_dims["height_start"],
                 zone_dims["height_end"],
             )
+            # Create bottom shear reinforcement
+            if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
+                shear_positions_bottom = get_shear_positions(
+                    effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"]
+                )
+                create_shear_rebars(
+                    shear_positions_bottom,
+                    y_offset,
+                    zone_dims["bz"],
+                    zone_params["diam_shear_bottom"],
+                    z_positions["shear_bottom"],
+                    x_offset,
+                    zone_dims["height_start"],
+                    zone_dims["height_end"],
+                )
+
+            # Create top shear reinforcement
+            if zone_params.get("hoh_shear_top") and zone_params.get("diam_shear_top"):
+                shear_positions_top = get_shear_positions(effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"])
+                create_shear_rebars(
+                    shear_positions_top,
+                    y_offset,
+                    zone_dims["bz"],
+                    zone_params["diam_shear_top"],
+                    z_positions["shear_top"],
+                    x_offset,
+                    zone_dims["height_start"],
+                    zone_dims["height_end"],
+                )
 
             # Create bottom shear reinforcement
             if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
