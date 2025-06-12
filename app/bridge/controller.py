@@ -1,10 +1,14 @@
 """Module for the Bridge entity controller."""
 
 from pathlib import Path  # Add Path import for SCIA template
+import zipfile
+from pathlib import Path  # Add Path import for SCIA template
+from pathlib import Path  # Add Path import for SCIA template
 from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
+
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
@@ -61,9 +65,25 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
-
-# Import SCIA integration from src layer
-from src.integrations.scia_interface import create_bridge_scia_model
+from src.integrations.idea_interface import create_bridge_idea_model, run_idea_analysis
+from viktor.core import File, ViktorController
+from viktor.errors import UserError  # Add UserError
+from viktor.result import DownloadResult
+from viktor.views import (
+    DataGroup,  # Add DataGroup
+    DataItem,  # Add DataItem
+    DataResult,  # Add DataResult
+    DataView,  # Add DataView
+    GeometryResult,
+    GeometryView,
+    MapPoint,  # Add MapPoint
+    MapResult,  # Add MapResult
+    MapView,  # Add MapView
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
+)
 
 # Import parametrization from the separate file
 from .parametrization import (
@@ -703,3 +723,258 @@ class BridgeController(ViktorController):
         """
         # TEMPORARILY DISABLED - docxtpl network issue
         raise UserError("Report generation is temporarily disabled due to network connectivity issues with required dependencies.")
+
+    # ============================================================================================================
+    # IDEA StatiCa Integration
+    # ============================================================================================================
+
+    @GeometryView("IDEA RCS Dwarsdoorsnede", duration_guess=3, x_axis_to_right=True)
+    def get_idea_model_preview(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+        """
+        Generate 3D preview of IDEA StatiCa RCS cross-section model.
+        
+        Shows the cross-section as viewed from the front, with:
+        - Concrete section as gray rectangular block
+        - Reinforcement bars as detailed cylinders
+        - Proper proportions for cross-section analysis
+
+        :param params: Bridge parametrization
+        :type params: BridgeParametrization
+        :returns: 3D visualization of the cross-section for RCS analysis
+        :rtype: GeometryResult
+        """
+        try:
+            # Extract bridge segments for cross-section analysis
+            bridge_segments_list = []
+            if hasattr(params, "bridge_segments_array") and params.bridge_segments_array:
+                for segment in params.bridge_segments_array:
+                    segment_dict = {
+                        "bz1": getattr(segment, "bz1", 0),
+                        "bz2": getattr(segment, "bz2", 0),
+                        "bz3": getattr(segment, "bz3", 0),
+                        "dz": getattr(segment, "dz", 0.5),
+                        "dz_2": getattr(segment, "dz_2", 0.5),
+                        "l": getattr(segment, "l", 0),
+                    }
+                    bridge_segments_list.append(segment_dict)
+
+            if not bridge_segments_list:
+                raise UserError("Geen brugsegmenten gevonden voor IDEA RCS model")
+
+            # Extract cross-section from first segment
+            from src.integrations.idea_interface import extract_cross_section_from_params
+
+            cross_section_data = extract_cross_section_from_params(bridge_segments_list)
+
+            # Create scene
+            scene = trimesh.Scene()
+
+            # Create concrete cross-section - thicker for better visualization
+            section_depth = max(0.5, cross_section_data.height * 0.1)  # 10% of height, min 0.5m
+            concrete_section = trimesh.creation.box(
+                extents=[cross_section_data.width, section_depth, cross_section_data.height]
+            )
+            # Light concrete gray with slight transparency for better visualization  
+            concrete_section.visual.face_colors = [180, 180, 180, 200]
+            scene.add_geometry(concrete_section, node_name="ConcreteSection")
+
+            # Create reinforcement visualization
+            from src.integrations.idea_interface import create_reinforcement_layout
+
+            reinforcement = create_reinforcement_layout(cross_section_data)
+
+            # Add reinforcement bars as cylinders (more realistic than spheres)
+            bar_length = section_depth * 1.2  # Slightly longer than concrete for visibility
+
+            # Top reinforcement bars
+            for i, (x, y, diameter) in enumerate(reinforcement.main_bars_top):
+                # Create cylinder for reinforcement bar
+                bar_cylinder = trimesh.creation.cylinder(
+                    radius=diameter/2, 
+                    height=bar_length,
+                    sections=8  # 8-sided for performance
+                )
+                # Rotate to align with Y-axis (depth direction)
+                bar_cylinder.apply_transform(trimesh.transformations.rotation_matrix(
+                    angle=3.14159/2, direction=[1, 0, 0]
+                ))
+                # Position the bar
+                bar_cylinder.apply_translation([x, 0, y])
+                # Dark steel color
+                bar_cylinder.visual.face_colors = [101, 67, 33, 255]  # Dark brown steel
+                scene.add_geometry(bar_cylinder, node_name=f"TopReinforcement_{i}")
+
+            # Bottom reinforcement bars
+            for i, (x, y, diameter) in enumerate(reinforcement.main_bars_bottom):
+                # Create cylinder for reinforcement bar
+                bar_cylinder = trimesh.creation.cylinder(
+                    radius=diameter/2, 
+                    height=bar_length,
+                    sections=8
+                )
+                # Rotate to align with Y-axis (depth direction)
+                bar_cylinder.apply_transform(trimesh.transformations.rotation_matrix(
+                    angle=3.14159/2, direction=[1, 0, 0]
+                ))
+                # Position the bar
+                bar_cylinder.apply_translation([x, 0, y])
+                # Dark steel color
+                bar_cylinder.visual.face_colors = [101, 67, 33, 255]  # Dark brown steel
+                scene.add_geometry(bar_cylinder, node_name=f"BottomReinforcement_{i}")
+
+            # Add coordinate system indicator for orientation
+            # Small coordinate arrows to show X (width) and Z (height) directions
+            arrow_scale = min(cross_section_data.width, cross_section_data.height) * 0.1
+            
+            # X-axis arrow (red)
+            x_arrow = trimesh.creation.cylinder(radius=0.01, height=arrow_scale)
+            x_arrow.apply_transform(trimesh.transformations.rotation_matrix(
+                angle=3.14159/2, direction=[0, 0, 1]
+            ))
+            x_arrow.apply_translation([cross_section_data.width/2 + arrow_scale/2, -section_depth/2 - 0.1, -cross_section_data.height/2 - 0.1])
+            x_arrow.visual.face_colors = [255, 0, 0, 255]  # Red for X
+            scene.add_geometry(x_arrow, node_name="X_Axis")
+            
+            # Z-axis arrow (blue)  
+            z_arrow = trimesh.creation.cylinder(radius=0.01, height=arrow_scale)
+            z_arrow.apply_translation([cross_section_data.width/2 + 0.1, -section_depth/2 - 0.1, -cross_section_data.height/2 + arrow_scale/2])
+            z_arrow.visual.face_colors = [0, 0, 255, 255]  # Blue for Z
+            scene.add_geometry(z_arrow, node_name="Z_Axis")
+
+            # Export as GLTF
+            geometry_file = File()
+            with geometry_file.open_binary() as w:
+                w.write(trimesh.exchange.gltf.export_glb(scene))
+
+            return GeometryResult(geometry_file, geometry_type="gltf")
+
+        except Exception as e:
+            raise UserError(f"IDEA RCS dwarsdoorsnede preview gefaald: {e!s}")
+
+    def download_idea_xml_file(self, params: BridgeParametrization, **kwargs) -> DownloadResult:  # noqa: ARG002
+        """
+        Download IDEA StatiCa RCS XML input file for cross-section analysis.
+
+        Creates a rectangular beam cross-section model from the first bridge segment
+        with automatic reinforcement layout and sample loads.
+
+        :param params: Bridge parametrization
+        :type params: BridgeParametrization
+        :returns: XML file download for IDEA RCS
+        :rtype: DownloadResult
+        """
+        try:
+            # Extract bridge segments for cross-section analysis
+            bridge_segments_list = []
+            if hasattr(params, "bridge_segments_array") and params.bridge_segments_array:
+                for segment in params.bridge_segments_array:
+                    segment_dict = {
+                        "bz1": getattr(segment, "bz1", 0),
+                        "bz2": getattr(segment, "bz2", 0),
+                        "bz3": getattr(segment, "bz3", 0),
+                        "dz": getattr(segment, "dz", 0.5),
+                        "dz_2": getattr(segment, "dz_2", 0.5),
+                        "l": getattr(segment, "l", 0),
+                    }
+                    bridge_segments_list.append(segment_dict)
+
+            if not bridge_segments_list:
+                raise UserError("Geen brugsegmenten gevonden voor IDEA RCS analyse")
+
+            # Create IDEA RCS cross-section model
+            model = create_bridge_idea_model(bridge_segments_list)
+
+            # Generate XML input file
+            xml_file = model.generate_xml_input()
+
+            # Validate content
+            if hasattr(xml_file, "getvalue"):
+                xml_content = xml_file.getvalue()
+            else:
+                xml_content = xml_file.read() if hasattr(xml_file, "read") else b""
+
+            if not xml_content:
+                raise UserError("XML bestand is leeg - IDEA RCS model generatie gefaald")
+
+            # Convert to string if bytes
+            if isinstance(xml_content, bytes):
+                xml_content = xml_content.decode("utf-8")
+
+            return DownloadResult(xml_content, "idea_rcs_cross_section.xml")
+
+        except Exception as e:
+            raise UserError(f"IDEA RCS XML generatie gefaald: {e!s}")
+
+    def download_idea_analysis_results(self, params: BridgeParametrization, **kwargs) -> DownloadResult:  # noqa: ARG002
+        """
+        Download IDEA StatiCa RCS analysis results for cross-section capacity assessment.
+
+        Executes the cross-section analysis and returns:
+        - Input XML model file
+        - Analysis results with capacity calculations
+        - Interaction diagrams and stress distributions
+
+        :param params: Bridge parametrization
+        :type params: BridgeParametrization
+        :returns: ZIP with analysis input and results
+        :rtype: DownloadResult
+        """
+        try:
+            # Extract bridge segments for cross-section analysis
+            bridge_segments_list = []
+            if hasattr(params, "bridge_segments_array") and params.bridge_segments_array:
+                for segment in params.bridge_segments_array:
+                    segment_dict = {
+                        "bz1": getattr(segment, "bz1", 0),
+                        "bz2": getattr(segment, "bz2", 0),
+                        "bz3": getattr(segment, "bz3", 0),
+                        "dz": getattr(segment, "dz", 0.5),
+                        "dz_2": getattr(segment, "dz_2", 0.5),
+                        "l": getattr(segment, "l", 0),
+                    }
+                    bridge_segments_list.append(segment_dict)
+
+            if not bridge_segments_list:
+                raise UserError("Geen brugsegmenten gevonden voor IDEA RCS analyse")
+
+            # Create IDEA RCS cross-section model
+            model = create_bridge_idea_model(bridge_segments_list)
+
+            # Run cross-section analysis
+            output_file = run_idea_analysis(model, timeout=120)
+
+            # Create ZIP with XML input and analysis results
+            zip_file_obj = File()
+            with zipfile.ZipFile(zip_file_obj.source, "w", zipfile.ZIP_DEFLATED) as z:
+                # Add input XML model
+                xml_file = model.generate_xml_input()
+                if hasattr(xml_file, "getvalue"):
+                    xml_content = xml_file.getvalue()
+                    z.writestr("rcs_input_model.xml", xml_content)
+
+                # Add analysis output results
+                if hasattr(output_file, "getvalue"):
+                    output_content = output_file.getvalue()
+                    z.writestr("rcs_analysis_results.xml", output_content)
+                elif hasattr(output_file, "source"):
+                    # If it's a File object
+                    with output_file.open_binary() as f:
+                        z.writestr("rcs_analysis_results.xml", f.read())
+
+            return DownloadResult(zip_file_obj, "idea_rcs_analysis_complete.zip")
+
+        except Exception as e:
+            error_msg = (
+                f"IDEA RCS analyse uitvoering gefaald: {e!s}\n\n"
+                "Mogelijke oorzaken:\n"
+                "- IDEA RCS worker niet beschikbaar of niet correct geïnstalleerd\n"
+                "- IDEA StatiCa licentie problemen of expired\n"
+                "- Cross-section model configuratie ongeldig\n"
+                "- Timeout tijdens capaciteitsberekeningen\n\n"
+                "💡 Suggesties:\n"
+                "- Controleer IDEA StatiCa installatie en licentie\n"
+                "- Probeer in plaats daarvan alleen de XML input te downloaden\n"
+                "- Verhoog timeout voor complexe doorsneden\n"
+                "- Verificeer brugsegment dimensies (bz1, bz2, bz3, dz, dz_2)"
+            )
+            raise UserError(error_msg)

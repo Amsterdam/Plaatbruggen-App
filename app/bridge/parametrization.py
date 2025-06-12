@@ -4,9 +4,11 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
+    DownloadButton,
     DownloadButton,
     DynamicArrayConstraint,
     IsFalse,
@@ -25,6 +27,8 @@ from viktor.parametrization import (
 
 from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT
 
+=========
+>>>>>>>>> Temporary merge branch 2
 from .geometry_functions import get_steel_qualities
 
 # --- Helper functions for Bridge Data Loading ---
@@ -715,6 +719,54 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     scia.download_xml_button = DownloadButton("Download XML Files", method="download_scia_xml_files")
 
     scia.download_esa_button = DownloadButton("Download ESA Model", method="download_scia_esa_model")
+
+    # ----------------------------------
+    # --- IDEA StatiCa Page ---
+    # ----------------------------------
+
+    idea = Page("IDEA StatiCa", views=["get_idea_model_preview"])
+
+    # Add download buttons as page attributes
+    idea.download_xml = DownloadButton("📄 Download RCS Model (XML)", method="download_idea_xml_file")
+    idea.download_results = DownloadButton("📊 Download Capacity Analysis", method="download_idea_analysis_results")
+
+    idea.explanation = Text(
+        """
+        # IDEA StatiCa RCS - Dwarsdoorsnede Analyse
+
+        **IDEA StatiCa RCS** is gespecialiseerd in gedetailleerde analyse van gewapend beton dwarsdoorsneden.
+        
+        ## 🎯 Functionaliteit
+        - **Capaciteitsberekeningen**: Moment-, normaalkracht- en schuifcapaciteit
+        - **Interactiediagrammen**: M-N interactie voor belastingscombinaties  
+        - **Spanningsverdelingen**: Gedetailleerde spanning in beton en wapening
+        - **Scheurwijdte controle**: SLS controles volgens Eurocode
+
+        ## 🔧 Huidig Model
+        - **Geometrie**: Rechthoekige doorsnede uit eerste segment (bz1+bz2+bz3 × max(dz,dz_2))
+        - **Materialen**: C30/37 beton, B500B betonstaal
+        - **Wapening**: ⌀12mm @ 150mm h.o.h. boven/onder, 55mm dekking
+        - **Belastingen**: ULS (N=-99.9kN, My=200kNm), SLS (N=-100kN, My=210kNm)
+
+        ## 📊 3D Preview
+        - **Grijze blok**: Betonvolume doorsnede
+        - **Bruine cylinders**: Wapeningsstaven met realistische afmetingen
+        - **Coördinaten**: X (breedte), Z (hoogte) assen zichtbaar
+
+        ## 📥 Downloads
+        - **📄 RCS Model (XML)**: Input bestand voor handmatige controle
+        - **📊 Capacity Analysis**: Volledig analyserapport met capaciteiten
+
+        ## ⚠️ Beperkingen
+        - Alleen rechthoekige doorsneden (T-balken/kokers gepland)
+        - Vaste materialen (Info-pagina integratie komend)
+        - Standaard wapening (zone-specifieke configuratie gepland)
+        - Voorbeeld belastingen (verkeerslast integratie komend)
+
+        ---
+        💡 **Tip**: Gebruik RCS voor kritieke doorsneden na globale SCIA analyse
+        """
+    )
 
     # ----------------------------------
     # --- Calculations Page ---
