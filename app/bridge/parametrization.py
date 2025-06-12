@@ -3,7 +3,6 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -21,6 +20,8 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
+
+from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 
 from .geometry_functions import get_steel_qualities
 
@@ -260,6 +261,7 @@ Use the tabs below to view geometric properties, load configurations, and analys
             "get_2d_longitudinal_section",
             "get_2d_cross_section",
             "get_load_zones_view",
+            "get_load_combinations_view",
         ],
     )
 
@@ -270,8 +272,8 @@ Use the tabs below to view geometric properties, load configurations, and analys
     input.belastingcombinaties = Tab("Belastingcombinaties")
 
     # --- Load Combinations (in belastingcombinaties tab) ---
-    input.belastingcombinaties.cc_class = MultiSelectField("Gevolgklasse", options=["CC1a/b", "CC2", "CC3"])
-    input.belastingcombinaties.uls_comb_factor = MultiSelectField("Belastingscombinaties", options=["ULS", "SLS", "FAT"])
+    input.belastingcombinaties.cc_class = OptionField("Gevolgklasse", options=["CC1a/b", "CC2", "CC3"], variant="radio")
+    input.belastingcombinaties.comb_types = MultiSelectField("Belastingscombinaties", options=["ULS", "SLS", "FAT"])
 
     # ----------------------------------------
     # --- Invoer Page -> Dimensions tab ---

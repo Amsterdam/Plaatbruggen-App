@@ -2,10 +2,29 @@
 
 from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
+import pandas as pd  # Import pandas for DataFrame handling
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
-
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
+from viktor.core import File, ViktorController
+from viktor.errors import UserError  # Add UserError
+from viktor.views import (
+    DataGroup,  # Add DataGroup
+    DataItem,  # Add DataItem
+    DataResult,  # Add DataResult
+    DataView,  # Add DataView
+    GeometryResult,
+    GeometryView,
+    MapPoint,  # Add MapPoint
+    MapResult,  # Add MapResult
+    MapView,  # Add MapView
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
+    TableResult,  # Import TableResult
+    TableView,  # Import TableView
+)
 
 # ParamsForLoadZones protocol and validate_load_zone_widths are in app.bridge.utils
 from app.bridge.utils import validate_load_zone_widths
@@ -14,6 +33,9 @@ from app.common.map_utils import (
     process_bridge_geometries,
     validate_shapefile_exists,
 )
+
+# Params for load combinations are in app.constants
+from app.constants import COMBINATION_TABLE
 from src.common.plot_utils import (
     create_bridge_outline_traces,
 )
@@ -37,23 +59,6 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
-from viktor.core import File, ViktorController
-from viktor.errors import UserError  # Add UserError
-from viktor.views import (
-    DataGroup,  # Add DataGroup
-    DataItem,  # Add DataItem
-    DataResult,  # Add DataResult
-    DataView,  # Add DataView
-    GeometryResult,
-    GeometryView,
-    MapPoint,  # Add MapPoint
-    MapResult,  # Add MapResult
-    MapView,  # Add MapView
-    PDFResult,
-    PDFView,
-    PlotlyResult,  # Import PlotlyResult
-    PlotlyView,  # Import PlotlyView
-)
 
 # Import parametrization from the separate file
 from .parametrization import (
@@ -393,6 +398,35 @@ class BridgeController(ViktorController):
         )
 
         return PlotlyResult(fig.to_json())
+
+    @TableView("Belastingscombinaties")
+    def get_load_combinations_view(self, params: BridgeParametrization, **kwargs) -> TableResult:  # noqa: ARG002
+        """
+        Generates a table view of load combinations based on the COMBINATION_TABLE constant.
+
+        Args:
+            params: Bridge parametrization data.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TableResult: Table showing load combinations and their active loads.
+
+        """
+        # Get all unique loads (rows) from the first combination
+        loads = list(next(iter(COMBINATION_TABLE.values())).keys())
+
+        # Create DataFrame with loads as index and combinations as columns
+        data = []
+        for load in loads:
+            row = [COMBINATION_TABLE[combination][load] for combination in COMBINATION_TABLE]
+            data.append(row)
+
+        df_combination_table = pd.DataFrame(data=data, columns=list(COMBINATION_TABLE.keys()), index=loads)
+
+        # Replace empty values with '-' for better readability
+        df_combination_table = df_combination_table.fillna("-")
+
+        return TableResult(df_combination_table)
 
     # ============================================================================================================
     # output - Rapport
