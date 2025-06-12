@@ -4,7 +4,7 @@ SCIA Engineer integration module for bridge analysis.
 This module provides functionality to create SCIA models from bridge parameters.
 Currently implements a simple rectangular plate model as a starting point.
 
-TODO: Future enhancements needed:
+Future enhancements needed:
 - Support for complex bridge geometry matching the actual bridge shape (1:1 with bridge segments)
 - Variable thickness across zones (zone 1, 2, 3 have different thickness values)
 - Load cases and combinations
@@ -12,6 +12,7 @@ TODO: Future enhancements needed:
 - Material property customization
 """
 
+import io
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -69,7 +70,7 @@ def extract_bridge_geometry_from_params(bridge_segments_params: list[dict[str, A
         raise ValueError("Bridge total length must be positive")
 
     # Use width of first segment as approximation
-    # TODO: This should be enhanced to handle variable width along bridge length
+    # This should be enhanced to handle variable width along bridge length
     first_segment = bridge_segments_params[0]
     bz1 = float(first_segment.get("bz1", 0))
     bz2 = float(first_segment.get("bz2", 0))
@@ -79,7 +80,7 @@ def extract_bridge_geometry_from_params(bridge_segments_params: list[dict[str, A
     if total_width <= 0:
         raise ValueError("Bridge total width must be positive")
 
-    # TODO: Variable thickness support - NO AVERAGING, SEPARATE ZONES REQUIRED
+    # Variable thickness support - NO AVERAGING, SEPARATE ZONES REQUIRED
     # Currently using hardcoded thickness, but should use actual bridge dimensions:
     #
     # CORRECT THICKNESS IMPLEMENTATION (3 SEPARATE ZONES):
@@ -89,15 +90,10 @@ def extract_bridge_geometry_from_params(bridge_segments_params: list[dict[str, A
     #
     # NOTE: Do NOT use average thickness - create 3 separate plate elements with their own thicknesses
     # The simplified rectangular model should be replaced with proper multi-zone implementation
-    #
-    # Example for extracting thickness values:
-    # first_dz = float(first_segment.get("dz", 0.5))      # Zones 1 & 3 thickness
-    # first_dz_2 = float(first_segment.get("dz_2", 0.5))  # Zone 2 thickness
     thickness = 0.5  # Hardcoded for now - will be replaced by 3-zone implementation
 
-    # TODO: Material selection from INFO page parameters
+    # Material selection from INFO page parameters
     # Material should come from params.info.material_grade (incoming feature)
-    # Example: material_name = bridge_segments_params.get("material_grade", "C30/37")
     material_name = "C30/37"  # Standard concrete grade - will be replaced by INFO page parameter
 
     return BridgeGeometryData(total_length=total_length, total_width=total_width, thickness=thickness, material_name=material_name)
@@ -307,7 +303,7 @@ def create_simple_scia_plate_model(bridge_geometry: BridgeGeometryData) -> tuple
     # Create rectangular plane (plate) element using correct API from tutorial
     # From tutorial: model.create_plane(corner_nodes, thickness, name='...', material=material)
     corner_nodes = [node1, node2, node3, node4]
-    slab = model.create_plane(corner_nodes, bridge_geometry.thickness, name="BridgePlate", material=material)
+    model.create_plane(corner_nodes, bridge_geometry.thickness, name="BridgePlate", material=material)
 
     # Skip mesh setup for now - can be added later if needed
     # Basic mesh will be handled by SCIA automatically
@@ -318,18 +314,18 @@ def create_simple_scia_plate_model(bridge_geometry: BridgeGeometryData) -> tuple
     return xml_file, def_file
 
 
-def create_scia_analysis_from_template(xml_file: Any, def_file: Any, template_path: Path) -> Any:
+def create_scia_analysis_from_template(xml_file: io.BytesIO, def_file: io.BytesIO, template_path: Path) -> Any:
     """
     Create SCIA analysis using template file and generated XML input.
 
     :param xml_file: Generated XML input file
-    :type xml_file: Any
+    :type xml_file: io.BytesIO
     :param def_file: Generated definition file
-    :type def_file: Any
+    :type def_file: io.BytesIO
     :param template_path: Path to the ESA template file
     :type template_path: Path
     :returns: SCIA analysis object ready for execution
-    :rtype: Any
+    :rtype: Any (SCIA analysis object)
     :raises ImportError: If VIKTOR SCIA module is not available
     :raises FileNotFoundError: If template file doesn't exist
     """
@@ -346,9 +342,7 @@ def create_scia_analysis_from_template(xml_file: Any, def_file: Any, template_pa
     esa_template = File.from_path(template_path)
 
     # Create SCIA analysis using tutorial format: SciaAnalysis(input_xml, input_def, input_esa)
-    scia_analysis = scia.SciaAnalysis(xml_file, def_file, esa_template)
-
-    return scia_analysis
+    return scia.SciaAnalysis(xml_file, def_file, esa_template)
 
 
 def create_bridge_scia_model(bridge_segments_params: list[dict[str, Any]], template_path: Path) -> tuple[Any, Any, Any]:

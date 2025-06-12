@@ -597,7 +597,6 @@ Generated from VIKTOR Bridge Assessment Tool
             filename_parts.append("XML_Files.zip")
 
             filename = "_".join(filename_parts)
-            print(f"DEBUG: Download filename: {filename}")
 
             # Return File object directly as shown in VIKTOR documentation
             return DownloadResult(zip_file_obj, filename)
@@ -641,8 +640,6 @@ Generated from VIKTOR Bridge Assessment Tool
                 if not esa_model_file:
                     raise UserError("ESA model bestand is leeg - SCIA analyse gefaald")
 
-                print(f"DEBUG: ESA model file type: {type(esa_model_file)}")
-
                 # Generate filename
                 bridge_name = getattr(params.info, "bridge_name", "UnknownBridge") or "UnknownBridge"
                 bridge_id = getattr(params.info, "bridge_objectnumm", "") or ""
@@ -655,7 +652,6 @@ Generated from VIKTOR Bridge Assessment Tool
                 filename_parts.append("Model.esa")
 
                 filename = "_".join(filename_parts)
-                print(f"DEBUG: ESA download filename: {filename}")
 
                 return DownloadResult(esa_model_file, filename)
 

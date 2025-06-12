@@ -554,7 +554,7 @@ Deze pagina toont een preview van het SCIA model en biedt download opties voor S
 ### Model Informatie
 Het huidige model is een **vereenvoudigde rechthoekige plaat** gebaseerd op:
 - **Lengte**: Som van alle segment lengtes (Afstand tot vorige snede)
-- **Breedte**: Breedte van het eerste segment (bz1 + bz2 + bz3)  
+- **Breedte**: Breedte van het eerste segment (bz1 + bz2 + bz3)
 - **Dikte**: Vast op 0.5m (moet nog uitgebreid worden met variabele dikte per zone)
 - **Materiaal**: Standaard beton C30/37
 
@@ -563,7 +563,7 @@ Gebruik de onderstaande knoppen om SCIA bestanden te downloaden:
 
 ### Toekomstige Uitbreidingen
 - Complexe bruggeometrie (1:1 met werkelijke brugvorm)
-- Variabele dikte per zone (dz, dz_2 parameters)  
+- Variabele dikte per zone (dz, dz_2 parameters)
 - Belastinggevallen en combinaties
 - Geavanceerde materiaal eigenschappen
         """
