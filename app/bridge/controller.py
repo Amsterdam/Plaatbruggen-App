@@ -1,5 +1,6 @@
 """Module for the Bridge entity controller."""
 
+import zipfile
 from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
 import plotly.graph_objects as go  # Import Plotly graph objects
@@ -7,6 +8,8 @@ import trimesh
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
+from viktor.parametrization import DownloadButton
+from viktor.result import DownloadResult
 from viktor.views import (
     DataGroup,  # Add DataGroup
     DataItem,  # Add DataItem
@@ -53,6 +56,7 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
+from src.integrations.idea_interface import create_bridge_idea_model, run_idea_analysis
 
 # Import parametrization from the separate file
 from .parametrization import (
@@ -412,3 +416,191 @@ class BridgeController(ViktorController):
         """
         # TEMPORARILY DISABLED - docxtpl network issue
         raise UserError("Report generation is temporarily disabled due to network connectivity issues with required dependencies.")
+
+    # ============================================================================================================
+    # IDEA StatiCa Integration
+    # ============================================================================================================
+
+    @GeometryView("IDEA Model Preview", duration_guess=5, x_axis_to_right=True)
+    def get_idea_model_preview(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+        """
+        Generate 3D preview of IDEA StatiCa cross-section model.
+
+        :param params: Bridge parametrization
+        :type params: BridgeParametrization
+        :returns: 3D visualization of the cross-section
+        :rtype: GeometryResult
+        """
+        try:
+            # Extract bridge segments for cross-section analysis
+            bridge_segments_list = []
+            if hasattr(params, "bridge_segments_array") and params.bridge_segments_array:
+                for segment in params.bridge_segments_array:
+                    segment_dict = {
+                        "bz1": getattr(segment, "bz1", 0),
+                        "bz2": getattr(segment, "bz2", 0),
+                        "bz3": getattr(segment, "bz3", 0),
+                        "dz": getattr(segment, "dz", 0.5),
+                        "dz_2": getattr(segment, "dz_2", 0.5),
+                        "l": getattr(segment, "l", 0),
+                    }
+                    bridge_segments_list.append(segment_dict)
+
+            if not bridge_segments_list:
+                raise UserError("Geen brugsegmenten gevonden voor IDEA model")
+
+            # Extract cross-section from first segment
+            from src.integrations.idea_interface import extract_cross_section_from_params
+            cross_section_data = extract_cross_section_from_params(bridge_segments_list)
+
+            # Create trimesh box representing the cross-section
+            cross_section_box = trimesh.creation.box(
+                extents=[cross_section_data.width, 0.1, cross_section_data.height]  # Thin slice for cross-section view
+            )
+            cross_section_box.visual.face_colors = [200, 200, 200, 255]  # Light gray concrete
+
+            # Create reinforcement visualization
+            from src.integrations.idea_interface import create_reinforcement_layout
+            reinforcement = create_reinforcement_layout(cross_section_data)
+
+            # Create scene and add cross-section
+            scene = trimesh.Scene()
+            scene.add_geometry(cross_section_box, node_name="CrossSection")
+
+            # Add reinforcement bars as small spheres
+            for i, (x, y, diameter) in enumerate(reinforcement.main_bars_top):
+                bar_sphere = trimesh.creation.icosphere(subdivisions=1, radius=diameter/2)
+                bar_sphere.apply_translation([x, 0, y])
+                bar_sphere.visual.face_colors = [139, 69, 19, 255]  # Brown for rebar
+                scene.add_geometry(bar_sphere, node_name=f"TopBar_{i}")
+
+            for i, (x, y, diameter) in enumerate(reinforcement.main_bars_bottom):
+                bar_sphere = trimesh.creation.icosphere(subdivisions=1, radius=diameter/2)
+                bar_sphere.apply_translation([x, 0, y])
+                bar_sphere.visual.face_colors = [139, 69, 19, 255]  # Brown for rebar
+                scene.add_geometry(bar_sphere, node_name=f"BottomBar_{i}")
+
+            # Export as GLTF
+            geometry_file = File()
+            with geometry_file.open_binary() as w:
+                w.write(trimesh.exchange.gltf.export_glb(scene))
+
+            return GeometryResult(geometry_file, geometry_type="gltf")
+
+        except Exception as e:
+            raise UserError(f"IDEA model preview generatie gefaald: {str(e)}")
+
+    def download_idea_xml_file(self, params: BridgeParametrization, **kwargs) -> DownloadResult:  # noqa: ARG002
+        """
+        Download IDEA StatiCa XML input file.
+
+        :param params: Bridge parametrization  
+        :type params: BridgeParametrization
+        :returns: XML file download
+        :rtype: DownloadResult
+        """
+        try:
+            # Extract bridge segments
+            bridge_segments_list = []
+            if hasattr(params, "bridge_segments_array") and params.bridge_segments_array:
+                for segment in params.bridge_segments_array:
+                    segment_dict = {
+                        "bz1": getattr(segment, "bz1", 0),
+                        "bz2": getattr(segment, "bz2", 0),
+                        "bz3": getattr(segment, "bz3", 0),
+                        "dz": getattr(segment, "dz", 0.5),
+                        "dz_2": getattr(segment, "dz_2", 0.5),
+                        "l": getattr(segment, "l", 0),
+                    }
+                    bridge_segments_list.append(segment_dict)
+
+            if not bridge_segments_list:
+                raise UserError("Geen brugsegmenten gevonden voor IDEA model")
+
+            # Create IDEA model
+            model = create_bridge_idea_model(bridge_segments_list)
+            
+            # Generate XML input file
+            xml_file = model.generate_xml_input()
+            
+            # Validate content
+            if hasattr(xml_file, "getvalue"):
+                xml_content = xml_file.getvalue()
+            else:
+                xml_content = xml_file.read() if hasattr(xml_file, "read") else b""
+
+            if not xml_content:
+                raise UserError("XML bestand is leeg - IDEA model generatie gefaald")
+
+            # Convert to string if bytes
+            if isinstance(xml_content, bytes):
+                xml_content = xml_content.decode("utf-8")
+
+            return DownloadResult(xml_content, "idea_model.xml")
+
+        except Exception as e:
+            raise UserError(f"IDEA XML generatie gefaald: {str(e)}")
+
+    def download_idea_analysis_results(self, params: BridgeParametrization, **kwargs) -> DownloadResult:  # noqa: ARG002
+        """
+        Download IDEA StatiCa analysis results.
+
+        :param params: Bridge parametrization
+        :type params: BridgeParametrization  
+        :returns: Analysis results download
+        :rtype: DownloadResult
+        """
+        try:
+            # Extract bridge segments
+            bridge_segments_list = []
+            if hasattr(params, "bridge_segments_array") and params.bridge_segments_array:
+                for segment in params.bridge_segments_array:
+                    segment_dict = {
+                        "bz1": getattr(segment, "bz1", 0),
+                        "bz2": getattr(segment, "bz2", 0),
+                        "bz3": getattr(segment, "bz3", 0),
+                        "dz": getattr(segment, "dz", 0.5),
+                        "dz_2": getattr(segment, "dz_2", 0.5),
+                        "l": getattr(segment, "l", 0),
+                    }
+                    bridge_segments_list.append(segment_dict)
+
+            if not bridge_segments_list:
+                raise UserError("Geen brugsegmenten gevonden voor IDEA model")
+
+            # Create IDEA model
+            model = create_bridge_idea_model(bridge_segments_list)
+            
+            # Run analysis
+            output_file = run_idea_analysis(model, timeout=120)
+            
+            # Create ZIP with XML input and results
+            zip_file_obj = File()
+            with zipfile.ZipFile(zip_file_obj.source, "w", zipfile.ZIP_DEFLATED) as z:
+                # Add input XML
+                xml_file = model.generate_xml_input()
+                if hasattr(xml_file, "getvalue"):
+                    xml_content = xml_file.getvalue()
+                    z.writestr("input_model.xml", xml_content)
+                
+                # Add output results
+                if hasattr(output_file, "getvalue"):
+                    output_content = output_file.getvalue()
+                    z.writestr("analysis_results.xml", output_content)
+                elif hasattr(output_file, "source"):
+                    # If it's a File object
+                    with output_file.open_binary() as f:
+                        z.writestr("analysis_results.xml", f.read())
+
+            return DownloadResult(zip_file_obj, "idea_analysis_results.zip")
+
+        except Exception as e:
+            error_msg = (
+                f"IDEA analyse uitvoering gefaald: {str(e)}\n\n"
+                "Mogelijke oorzaken:\n"
+                "- IDEA worker niet beschikbaar of niet correct geïnstalleerd\n"
+                "- IDEA StatiCa licentie problemen\n"
+                "- Model configuratie ongeldig\n\n"
+                "Probeer in plaats daarvan alleen de XML input te downloaden."
+            )
+            raise UserError(error_msg)

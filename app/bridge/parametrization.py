@@ -7,6 +7,7 @@ from typing import Any
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
+    DownloadButton,
     DynamicArrayConstraint,
     IsFalse,
     LineBreak,
@@ -706,6 +707,51 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     # ----------------------------------
 
     scia = Page("SCIA")
+
+    # ----------------------------------
+    # --- IDEA StatiCa Page ---
+    # ----------------------------------
+
+    idea = Page(
+        "IDEA StatiCa",
+        views=["get_idea_model_preview"]
+    )
+
+    # Add download buttons as page attributes
+    idea.download_xml = DownloadButton("Download XML Input", method="download_idea_xml_file")
+    idea.download_results = DownloadButton("Download Analysis Results", method="download_idea_analysis_results")
+
+    idea.explanation = Text(
+        """
+        # IDEA StatiCa Concrete Integratie
+
+        Deze pagina biedt integratie met IDEA StatiCa Concrete voor gedetailleerde dwarsdoorsnede analyse.
+
+        ## Functionaliteit:
+        - **3D Preview**: Visualisatie van de dwarsdoorsnede met wapening
+        - **XML Input**: Download van IDEA StatiCa input bestand
+        - **Analysis Results**: Uitvoering van analyse en download van resultaten
+
+        ## Model Details:
+        - **Cross-section**: Rechthoekige doorsnede gebaseerd op eerste brugsegment
+        - **Materials**: Beton (C30/37) en betonstaal (B500B)
+        - **Reinforcement**: Automatische wapeningsindeling gebaseerd op configuratie
+        - **Loading**: Standaard ULS/SLS belastingcombinaties
+
+        ## Beperkingen huidige implementatie:
+        - Alleen rechthoekige doorsneden ondersteund
+        - Vaste materialen (toekomstige uitbreiding: configureerbaar via Info pagina)
+        - Basis wapeningspatroon (toekomstige uitbreiding: volledige wapeningsconfiguratie)
+        - Standaard belastingen (toekomstige uitbreiding: werkelijke verkeersbelastingen)
+
+        ## Toekomstige uitbreidingen:
+        - T-balk en kokerbalken doorsneden
+        - Variabele wapening per zone
+        - Schuifwapening en beugels
+        - Volledige belastingcombinaties
+        - Integratie met SCIA Engineer voor volledige brug analyse
+        """
+    )
 
     # ----------------------------------
     # --- Calculations Page ---
