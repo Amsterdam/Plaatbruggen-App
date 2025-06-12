@@ -122,7 +122,7 @@ def get_psi_factor(span: float, reference_period: float) -> float:
 def create_load_combination_table() -> Styler:
     """
     Generates a styled table view of load combinations based on the COMBINATION_TABLE constant.
-    
+
     Cells representing leading actions (capital "X") are highlighted with light green background
     based on predefined positions from NEN-EN 1990 table NB.19.
 
@@ -142,7 +142,7 @@ def create_load_combination_table() -> Styler:
 
     # Replace empty values with '-' for better readability
     df_combination_table = df_combination_table.fillna("-")
-    
+
     # Predefined positions for leading actions (capital "X") that should be highlighted
     # Format: (row_name, column_name) - these positions are fixed per NEN-EN 1990 table NB.19
     leading_action_positions = {
@@ -163,30 +163,27 @@ def create_load_combination_table() -> Styler:
         ("Impact op of onder de brug", "Aanrijding gr1a"),
         ("Impact op of onder de brug", "Aanrijding gr2"),
     }
-    
+
     # Create styling function that uses the DataFrame structure to determine positions
     def highlight_leading_actions(val: str) -> str:
         """
         This is a placeholder function - actual styling is applied using set_properties.
-        
+
         :param val: Cell value (not used in this approach)
         :type val: str
         :returns: Empty string (styling applied elsewhere)
         :rtype: str
         """
         return ""
-    
+
     # Start with base styling
     styled_df = df_combination_table.style
-    
+
     # Apply light green background to specific cells using iloc positions
     for row_name, col_name in leading_action_positions:
         if row_name in df_combination_table.index and col_name in df_combination_table.columns:
             row_idx = df_combination_table.index.get_loc(row_name)
             col_idx = df_combination_table.columns.get_loc(col_name)
-            styled_df = styled_df.set_properties(
-                subset=pd.IndexSlice[row_name, col_name],
-                **{"background-color": "lightgreen"}
-            )
-    
+            styled_df = styled_df.set_properties(subset=pd.IndexSlice[row_name, col_name], **{"background-color": "lightgreen"})
+
     return styled_df
