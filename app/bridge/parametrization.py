@@ -4,11 +4,10 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT, IDEA_INFO_TEXT
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
-    DownloadButton,
     DownloadButton,
     DynamicArrayConstraint,
     IsFalse,
@@ -24,12 +23,7 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
-
-from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT
-
-=========
->>>>>>>>> Temporary merge branch 2
-from .geometry_functions import get_steel_qualities
+from src.common.materials import get_reinforcement_qualities
 
 # --- Helper functions for Bridge Data Loading ---
 
@@ -521,9 +515,17 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     # General reinforcement parameters
     input.geometrie_wapening.staalsoort = OptionField(
         "Staalsoort",
-        options=get_steel_qualities(),
+        options=get_reinforcement_qualities(),
         default="B500B",
-        description="De kwaliteit van het betonstaal dat wordt toegepast in de brug.",
+        description=(
+            "De kwaliteit van het betonstaal dat wordt toegepast in de brug.\n\n"
+            "🔧 Integratie compatibiliteit:\n"
+            "• SCIA Engineer: Ondersteunt de meeste materialen (inclusief oude staalsoorten)\n"
+            "• IDEA StatiCa: Alleen moderne Eurocode materialen (B500A, B500B, B500C)\n\n"
+            "⚠️ Let op: Oude staalsoorten (QR24, QR40, FeB 400) worden automatisch "
+            "omgezet naar moderne equivalenten voor IDEA StatiCa analyse. "
+            "Voor exacte controle gebruik B500A, B500B of B500C."
+        ),
     )
 
     input.geometrie_wapening.langswapening_buiten = BooleanField(
@@ -725,47 +727,11 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
 
     idea = Page("IDEA StatiCa", views=["get_idea_model_preview"])
 
-    # Add download buttons as page attributes
-    idea.download_xml = DownloadButton("📄 Download RCS Model (XML)", method="download_idea_xml_file")
-    idea.download_results = DownloadButton("📊 Download Capacity Analysis", method="download_idea_analysis_results")
+    idea.explanation = Text(IDEA_INFO_TEXT)
 
-    idea.explanation = Text(
-        """
-        # IDEA StatiCa RCS - Dwarsdoorsnede Analyse
-
-        **IDEA StatiCa RCS** is gespecialiseerd in gedetailleerde analyse van gewapend beton dwarsdoorsneden.
-        
-        ## 🎯 Functionaliteit
-        - **Capaciteitsberekeningen**: Moment-, normaalkracht- en schuifcapaciteit
-        - **Interactiediagrammen**: M-N interactie voor belastingscombinaties  
-        - **Spanningsverdelingen**: Gedetailleerde spanning in beton en wapening
-        - **Scheurwijdte controle**: SLS controles volgens Eurocode
-
-        ## 🔧 Huidig Model
-        - **Geometrie**: Rechthoekige doorsnede uit eerste segment (bz1+bz2+bz3 × max(dz,dz_2))
-        - **Materialen**: C30/37 beton, B500B betonstaal
-        - **Wapening**: ⌀12mm @ 150mm h.o.h. boven/onder, 55mm dekking
-        - **Belastingen**: ULS (N=-99.9kN, My=200kNm), SLS (N=-100kN, My=210kNm)
-
-        ## 📊 3D Preview
-        - **Grijze blok**: Betonvolume doorsnede
-        - **Bruine cylinders**: Wapeningsstaven met realistische afmetingen
-        - **Coördinaten**: X (breedte), Z (hoogte) assen zichtbaar
-
-        ## 📥 Downloads
-        - **📄 RCS Model (XML)**: Input bestand voor handmatige controle
-        - **📊 Capacity Analysis**: Volledig analyserapport met capaciteiten
-
-        ## ⚠️ Beperkingen
-        - Alleen rechthoekige doorsneden (T-balken/kokers gepland)
-        - Vaste materialen (Info-pagina integratie komend)
-        - Standaard wapening (zone-specifieke configuratie gepland)
-        - Voorbeeld belastingen (verkeerslast integratie komend)
-
-        ---
-        💡 **Tip**: Gebruik RCS voor kritieke doorsneden na globale SCIA analyse
-        """
-    )
+    # Add download buttons as page attributes below the explanation
+    idea.download_xml = DownloadButton("Download RCS Model (XML)", method="download_idea_xml_file")
+    idea.download_results = DownloadButton("Download Capaciteitsanalyse", method="download_idea_analysis_results")
 
     # ----------------------------------
     # --- Calculations Page ---

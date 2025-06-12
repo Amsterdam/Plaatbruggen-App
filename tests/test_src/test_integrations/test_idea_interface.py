@@ -16,7 +16,7 @@ from src.integrations.idea_interface import (
     _get_reinforcement_material_enum,
     create_bridge_idea_model,
     create_reinforcement_layout,
-    create_simple_idea_beam_model,
+    create_simple_idea_slab_model,
     extract_cross_section_from_params,
     run_idea_analysis,
 )
@@ -171,12 +171,12 @@ class TestCreateReinforcementLayout:
             assert abs(y - (-cross_section.height / 2 + reinforcement_config["concrete_cover"] + diameter / 2)) < 0.001
 
 
-class TestCreateSimpleIdeaBeamModel:
-    """Tests for create_simple_idea_beam_model function."""
+class TestCreateSimpleIdeaSlabModel:
+    """Tests for create_simple_idea_slab_model function."""
 
     @patch("viktor.external.idea_rcs")
-    def test_create_simple_idea_beam_model_success(self, mock_idea_rcs: Mock) -> None:
-        """Test creating IDEA beam model successfully."""
+    def test_create_simple_idea_slab_model_success(self, mock_idea_rcs: Mock) -> None:
+        """Test creating IDEA slab model successfully."""
         # Setup mocks
         mock_model = Mock()
         mock_idea_rcs.Model.return_value = mock_model
@@ -189,12 +189,12 @@ class TestCreateSimpleIdeaBeamModel:
 
         mock_cs_mat = Mock()
         mock_mat_reinf = Mock()
-        mock_beam = Mock()
+        mock_slab = Mock()
         mock_cross_section = Mock()
 
         mock_model.create_concrete_material.return_value = mock_cs_mat
         mock_model.create_reinforcement_material.return_value = mock_mat_reinf
-        mock_model.create_beam.return_value = mock_beam
+        mock_model.create_one_way_slab.return_value = mock_slab
         mock_idea_rcs.RectSection.return_value = mock_cross_section
 
         reinforcement_config = {
@@ -209,20 +209,20 @@ class TestCreateSimpleIdeaBeamModel:
             width=2.0, height=0.6, concrete_material="C30/37", reinforcement_material="B500B", reinforcement_config=reinforcement_config
         )
 
-        result = create_simple_idea_beam_model(cross_section_data)
+        result = create_simple_idea_slab_model(cross_section_data)
 
         # Verify model creation calls
         mock_idea_rcs.Model.assert_called_once()
         mock_model.create_concrete_material.assert_called_once()
         mock_model.create_reinforcement_material.assert_called_once()
-        mock_model.create_beam.assert_called_once()
-        mock_beam.create_bar.assert_called()  # Should be called multiple times for bars
-        mock_beam.create_extreme.assert_called_once()
+        mock_model.create_one_way_slab.assert_called_once()
+        mock_slab.create_bar.assert_called()  # Should be called multiple times for bars
+        mock_slab.create_extreme.assert_called_once()
 
         assert result == mock_model
 
-    def test_create_simple_idea_beam_model_import_error(self) -> None:
-        """Test creating IDEA beam model with import error."""
+    def test_create_simple_idea_slab_model_import_error(self) -> None:
+        """Test creating IDEA slab model with import error."""
         reinforcement_config = {
             "main_diameter_top": 0.012,
             "main_spacing_top": 0.150,
@@ -237,7 +237,7 @@ class TestCreateSimpleIdeaBeamModel:
 
         with patch("viktor.external.idea_rcs", side_effect=ImportError("VIKTOR module not available")):
             with pytest.raises(ImportError, match="VIKTOR IDEA StatiCa module required"):
-                create_simple_idea_beam_model(cross_section_data)
+                create_simple_idea_slab_model(cross_section_data)
 
 
 class TestMaterialEnums:
@@ -292,7 +292,7 @@ class TestMaterialEnums:
 class TestCreateBridgeIdeaModel:
     """Tests for create_bridge_idea_model function."""
 
-    @patch("src.integrations.idea_interface.create_simple_idea_beam_model")
+    @patch("src.integrations.idea_interface.create_simple_idea_slab_model")
     @patch("src.integrations.idea_interface.extract_cross_section_from_params")
     def test_create_bridge_idea_model_success(self, mock_extract: Mock, mock_create_model: Mock) -> None:
         """Test creating bridge IDEA model successfully."""
@@ -385,14 +385,14 @@ class TestIntegrationScenarios:
 
         mock_cs_mat = Mock()
         mock_mat_reinf = Mock()
-        mock_beam = Mock()
+        mock_slab = Mock()
         mock_input_file = Mock()
         mock_analysis = Mock()
         mock_output_file = Mock()
 
         mock_model.create_concrete_material.return_value = mock_cs_mat
         mock_model.create_reinforcement_material.return_value = mock_mat_reinf
-        mock_model.create_beam.return_value = mock_beam
+        mock_model.create_one_way_slab.return_value = mock_slab
         mock_model.generate_xml_input.return_value = mock_input_file
         mock_idea_rcs.IdeaRcsAnalysis.return_value = mock_analysis
         mock_analysis.get_output_file.return_value = mock_output_file
@@ -425,7 +425,7 @@ class TestIntegrationScenarios:
 
         # IDEA-specific functions should raise ImportError
         with pytest.raises(ImportError):
-            create_simple_idea_beam_model(cross_section_data)
+            create_simple_idea_slab_model(cross_section_data)
 
         with pytest.raises(ImportError):
             _get_concrete_material_enum("C30/37")
