@@ -8,6 +8,7 @@ import trimesh
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
+from viktor.result import DownloadResult  # Import DownloadResult from correct module
 from viktor.views import (
     DataGroup,  # Add DataGroup
     DataItem,  # Add DataItem
@@ -31,6 +32,7 @@ from app.common.map_utils import (
     process_bridge_geometries,
     validate_shapefile_exists,
 )
+from app.constants import SCIA_ZIP_README_CONTENT  # Import the SCIA ZIP readme content
 from src.common.plot_utils import (
     create_bridge_outline_traces,
 )
@@ -57,25 +59,6 @@ from src.geometry.top_view_plot import build_top_view_figure
 
 # Import SCIA integration from src layer
 from src.integrations.scia_interface import create_bridge_scia_model
-from viktor.core import File, ViktorController
-from viktor.errors import UserError  # Add UserError
-from viktor.result import DownloadResult  # Import DownloadResult from correct module
-from viktor.views import (
-    DataGroup,  # Add DataGroup
-    DataItem,  # Add DataItem
-    DataResult,  # Add DataResult
-    DataView,  # Add DataView
-    GeometryResult,
-    GeometryView,
-    MapPoint,  # Add MapPoint
-    MapResult,  # Add MapResult
-    MapView,  # Add MapView
-    PDFResult,
-    PDFView,
-    PlotlyResult,  # Import PlotlyResult
-    PlotlyView,  # Import PlotlyView
-)
-
 
 # Import parametrization from the separate file
 from .parametrization import (
@@ -83,7 +66,6 @@ from .parametrization import (
     BridgeParametrization,
 )
 
-from app.constants import SCIA_ZIP_README_CONTENT  # Import the SCIA ZIP readme content
 
 # Define TypedDict for a row from params.bridge_segments_array
 class BridgeSegmentParamRow(TypedDict):
