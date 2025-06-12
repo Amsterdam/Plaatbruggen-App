@@ -23,6 +23,8 @@ from viktor.views import (
     PDFView,
     PlotlyResult,  # Import PlotlyResult
     PlotlyView,  # Import PlotlyView
+    TableResult,  # Import TableResult
+    TableView,  # Import TableView
 )
 
 # ParamsForLoadZones protocol and validate_load_zone_widths are in app.bridge.utils
@@ -32,7 +34,10 @@ from app.common.map_utils import (
     process_bridge_geometries,
     validate_shapefile_exists,
 )
+
+# Params for load combinations are in app.constants
 from app.constants import SCIA_ZIP_README_CONTENT  # Import the SCIA ZIP readme content
+from src.combinations.load_factors import create_load_combination_table
 from src.common.plot_utils import (
     create_bridge_outline_traces,
 )
@@ -398,6 +403,17 @@ class BridgeController(ViktorController):
         )
 
         return PlotlyResult(fig.to_json())
+
+    @TableView("Belastingscombinaties")
+    def get_load_combinations_view(self) -> TableResult:
+        """
+        Display the table of load combinations for the bridge.
+
+        :returns: TableResult containing the load combinations.
+        :rtype: TableResult
+        """
+        combination_table = create_load_combination_table()
+        return TableResult(combination_table)
 
     # ============================================================================================================
     # SCIA Integration
