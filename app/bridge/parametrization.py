@@ -584,40 +584,40 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
 
     # Main reinforcement - Longitudinal top
     input.geometrie_wapening.zones.hoofdwapening_langs_boven_diameter = NumberField(
-        "Diameter hoofdwapening langsrichting boven", default=12.0, suffix="mm", flex=47
+        "Diameter hoofdwapening langsrichting boven", default=12.0, min=6.0, suffix="mm", flex=47
     )
     input.geometrie_wapening.zones.hoofdwapening_langs_boven_hart_op_hart = NumberField(
-        "H.o.h. afstand hoofdwapening langsrichting boven", default=150.0, suffix="mm", flex=53
+        "H.o.h. afstand hoofdwapening langsrichting boven", default=150.0, min=50, suffix="mm", flex=53
     )
     input.geometrie_wapening.zones.lb3 = LineBreak()
 
     # Main reinforcement - Longitudinal bottom
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_diameter = NumberField(
-        "Diameter hoofdwapening langsrichting onder", default=12.0, suffix="mm", flex=47
+        "Diameter hoofdwapening langsrichting onder", default=12.0, min=6, suffix="mm", flex=47
     )
     input.geometrie_wapening.zones.hoofdwapening_langs_onder_hart_op_hart = NumberField(
-        "H.o.h. afstand hoofdwapening langsrichting onder", default=150.0, suffix="mm", flex=53
+        "H.o.h. afstand hoofdwapening langsrichting onder", default=150.0, min=50, suffix="mm", flex=53
     )
 
     input.geometrie_wapening.zones.lb4 = LineBreak()
     # Main reinforcement - Transverse Top
     input.geometrie_wapening.zones.hoofdwapening_dwars_boven_diameter = NumberField(
-        "Diameter hoofdwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47
+        "Diameter hoofdwapening dwarsrichting boven", default=12.0, min=6, suffix="mm", flex=47
     )
 
     input.geometrie_wapening.zones.hoofdwapening_dwars_boven_hart_op_hart = NumberField(
-        "H.o.h. afstand hoofdwapening dwarsrichting boven", default=150.0, suffix="mm", flex=53
+        "H.o.h. afstand hoofdwapening dwarsrichting boven", default=150.0, min=50, suffix="mm", flex=53
     )
 
     input.geometrie_wapening.zones.lb5 = LineBreak()
 
     # Main reinforcement - Transverse Bottom
     input.geometrie_wapening.zones.hoofdwapening_dwars_onder_diameter = NumberField(
-        "Diameter hoofdwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47
+        "Diameter hoofdwapening dwarsrichting onder", default=12.0, min=6, suffix="mm", flex=47
     )
 
     input.geometrie_wapening.zones.hoofdwapening_dwars_onder_hart_op_hart = NumberField(
-        "H.o.h. afstand hoofdwapening dwarsrichting onder", default=150.0, suffix="mm", flex=53
+        "H.o.h. afstand hoofdwapening dwarsrichting onder", default=150.0, min=50, suffix="mm", flex=53
     )
 
     # Visual separator for bijlegwapening
@@ -630,7 +630,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.geometrie_wapening.zones.lb7 = LineBreak()
 
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(
-        "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
+        "Diameter bijlegwapening langsrichting boven", default=12.0, min=6, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
     )
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = OutputField(
         "H.o.h. afstand bijlegwapening langsrichting boven",
@@ -644,7 +644,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
 
     # Additional reinforcement - Longitudinal bottom
     input.geometrie_wapening.zones.bijlegwapening_langs_onder_diameter = NumberField(
-        "Diameter bijlegwapening langsrichting onder", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
+        "Diameter bijlegwapening langsrichting onder", default=12.0, min=6, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
     )
     input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = OutputField(
         "H.o.h. afstand bijlegwapening langsrichting onder",
@@ -658,7 +658,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
 
     # Additional reinforcement - Transverse top
     input.geometrie_wapening.zones.bijlegwapening_dwars_boven_diameter = NumberField(
-        "Diameter bijlegwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
+        "Diameter bijlegwapening dwarsrichting boven", default=12.0, min=6, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
     )
     input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = OutputField(
         "H.o.h. afstand bijlegwapening dwarsrichting boven",
@@ -672,7 +672,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
 
     # Additional reinforcement - Transverse bottom
     input.geometrie_wapening.zones.bijlegwapening_dwars_onder_diameter = NumberField(
-        "Diameter bijlegwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
+        "Diameter bijlegwapening dwarsrichting onder", default=12.0, min=6, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
     )
     input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = OutputField(
         "H.o.h. afstand bijlegwapening dwarsrichting onder",
