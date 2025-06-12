@@ -23,7 +23,7 @@ from viktor.parametrization import (
     TextField,
 )
 
-from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT
 
 from .geometry_functions import get_steel_qualities
 
@@ -708,28 +708,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
 
     scia = Page("SCIA", views=["get_scia_model_preview"])
 
-    scia.info_text = Text(
-        """## SCIA Engineer Integration
-
-Deze pagina toont een preview van het SCIA model en biedt download opties voor SCIA Engineer bestanden.
-
-### Model Informatie
-Het huidige model is een **vereenvoudigde rechthoekige plaat** gebaseerd op:
-- **Lengte**: Som van alle segment lengtes (Afstand tot vorige snede)
-- **Breedte**: Breedte van het eerste segment (bz1 + bz2 + bz3)
-- **Dikte**: Vast op 0.5m (moet nog uitgebreid worden met variabele dikte per zone)
-- **Materiaal**: Standaard beton C30/37
-
-### Download Opties
-Gebruik de onderstaande knoppen om SCIA bestanden te downloaden:
-
-### Toekomstige Uitbreidingen
-- Complexe bruggeometrie (1:1 met werkelijke brugvorm)
-- Variabele dikte per zone (dz, dz_2 parameters)
-- Belastinggevallen en combinaties
-- Geavanceerde materiaal eigenschappen
-        """
-    )
+    scia.info_text = Text(SCIA_INFO_TEXT)
 
     # Download buttons - use DownloadButton instead of ActionButton
     scia.download_xml_button = DownloadButton("Download XML Files", method="download_scia_xml_files")

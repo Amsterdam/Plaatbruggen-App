@@ -83,6 +83,7 @@ from .parametrization import (
     BridgeParametrization,
 )
 
+from app.constants import SCIA_ZIP_README_CONTENT  # Import the SCIA ZIP readme content
 
 # Define TypedDict for a row from params.bridge_segments_array
 class BridgeSegmentParamRow(TypedDict):
@@ -578,28 +579,7 @@ class BridgeController(ViktorController):
                 z.writestr("bridge_model.def", def_content)
 
                 # Add a readme file with instructions
-                readme_content = """SCIA Engineer XML Files - Bridge Model
-
-This ZIP contains the generated SCIA model files:
-
-1. bridge_model.xml - Main model definition with geometry, materials, and mesh
-2. bridge_model.def - Definition file with additional model parameters
-
-To use these files:
-1. Open SCIA Engineer (version 24.0.3015.64 or compatible)
-2. Create a new project or open existing template
-3. Import the XML files: File > Import > XML files
-4. Review the imported model geometry and settings
-5. Define load cases and run analysis as needed
-
-Note: This is a simplified rectangular plate model. Future versions will support:
-- Complex bridge geometry matching actual shape
-- Variable thickness per zone
-- Load cases and combinations
-- Advanced material properties
-
-Generated from VIKTOR Bridge Assessment Tool
-"""
+                readme_content = SCIA_ZIP_README_CONTENT
                 z.writestr("README.txt", readme_content)
 
             # Generate filename with bridge info if available
