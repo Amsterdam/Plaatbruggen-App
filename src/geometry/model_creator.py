@@ -626,38 +626,44 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
         # Specify the vertices for each box
         boxes_vertices = [
             # Box 1 (at origin in Y-axis)
-            np.array([
-                [d0l, z1d0r, z1d0b],  # Vertex 0: Bottom-front-left -- D-1
-                [d1l, z1d1r, z1d1b],  # Vertex 1: Bottom-front-right
-                [d1l, z1d1l, z1d1b],  # Vertex 2: Bottom-back-right
-                [d0l, z1d0l, z1d0b],  # Vertex 3: Bottom-back-left -- D-1
-                [d0l, z1d0r, z1d0t],  # Vertex 4: Top-front-left -- D-1
-                [d1l, z1d1r, z1d1t],  # Vertex 5: Top-front-right
-                [d1l, z1d1l, z1d1t],  # Vertex 6: Top-back-right
-                [d0l, z1d0l, z1d0t],  # Vertex 7: Top-back-left -- D-1
-            ]),
+            np.array(
+                [
+                    [d0l, z1d0r, z1d0b],  # Vertex 0: Bottom-front-left -- D-1
+                    [d1l, z1d1r, z1d1b],  # Vertex 1: Bottom-front-right
+                    [d1l, z1d1l, z1d1b],  # Vertex 2: Bottom-back-right
+                    [d0l, z1d0l, z1d0b],  # Vertex 3: Bottom-back-left -- D-1
+                    [d0l, z1d0r, z1d0t],  # Vertex 4: Top-front-left -- D-1
+                    [d1l, z1d1r, z1d1t],  # Vertex 5: Top-front-right
+                    [d1l, z1d1l, z1d1t],  # Vertex 6: Top-back-right
+                    [d0l, z1d0l, z1d0t],  # Vertex 7: Top-back-left -- D-1
+                ]
+            ),
             # Box 2
-            np.array([
-                [d0l, z2d0r, z2d0b],  # Vertex 0: Bottom-front-left -- D-1
-                [d1l, z2d1r, z2d1b],  # Vertex 1: Bottom-front-right
-                [d1l, z2d1l, z2d1b],  # Vertex 2: Bottom-back-right
-                [d0l, z2d0l, z2d0b],  # Vertex 3: Bottom-back-left -- D-1
-                [d0l, z2d0r, z2d0t],  # Vertex 4: Top-front-left -- D-1
-                [d1l, z2d1r, z2d1t],  # Vertex 5: Top-front-right
-                [d1l, z2d1l, z2d1t],  # Vertex 6: Top-back-right
-                [d0l, z2d0l, z2d0t],  # Vertex 7: Top-back-left -- D-1
-            ]),
+            np.array(
+                [
+                    [d0l, z2d0r, z2d0b],  # Vertex 0: Bottom-front-left -- D-1
+                    [d1l, z2d1r, z2d1b],  # Vertex 1: Bottom-front-right
+                    [d1l, z2d1l, z2d1b],  # Vertex 2: Bottom-back-right
+                    [d0l, z2d0l, z2d0b],  # Vertex 3: Bottom-back-left -- D-1
+                    [d0l, z2d0r, z2d0t],  # Vertex 4: Top-front-left -- D-1
+                    [d1l, z2d1r, z2d1t],  # Vertex 5: Top-front-right
+                    [d1l, z2d1l, z2d1t],  # Vertex 6: Top-back-right
+                    [d0l, z2d0l, z2d0t],  # Vertex 7: Top-back-left -- D-1
+                ]
+            ),
             # Box 3
-            np.array([
-                [d0l, z3d0r, z3d0b],  # Vertex 0: Bottom-front-left -- D-1
-                [d1l, z3d1r, z3d1b],  # Vertex 1: Bottom-front-right
-                [d1l, z3d1l, z3d1b],  # Vertex 2: Bottom-back-right
-                [d0l, z3d0l, z3d0b],  # Vertex 3: Bottom-back-left -- D-1
-                [d0l, z3d0r, z3d0t],  # Vertex 4: Top-front-left -- D-1
-                [d1l, z3d1r, z3d1t],  # Vertex 5: Top-front-right
-                [d1l, z3d1l, z3d1t],  # Vertex 6: Top-back-right
-                [d0l, z3d0l, z3d0t],  # Vertex 7: Top-back-left -- D-1
-            ]),
+            np.array(
+                [
+                    [d0l, z3d0r, z3d0b],  # Vertex 0: Bottom-front-left -- D-1
+                    [d1l, z3d1r, z3d1b],  # Vertex 1: Bottom-front-right
+                    [d1l, z3d1l, z3d1b],  # Vertex 2: Bottom-back-right
+                    [d0l, z3d0l, z3d0b],  # Vertex 3: Bottom-back-left -- D-1
+                    [d0l, z3d0r, z3d0t],  # Vertex 4: Top-front-left -- D-1
+                    [d1l, z3d1r, z3d1t],  # Vertex 5: Top-front-right
+                    [d1l, z3d1l, z3d1t],  # Vertex 6: Top-back-right
+                    [d0l, z3d0l, z3d0t],  # Vertex 7: Top-back-left -- D-1
+                ]
+            ),
         ]
 
         # Define colors for each box in RGBA format
