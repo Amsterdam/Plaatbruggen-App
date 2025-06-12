@@ -37,8 +37,10 @@ from app.common.map_utils import (
 )
 
 # Params for load combinations are in app.constants
-from app.constants import COMBINATION_TABLE
-from app.constants import SCIA_ZIP_README_CONTENT  # Import the SCIA ZIP readme content
+from app.constants import (
+    COMBINATION_TABLE,
+    SCIA_ZIP_README_CONTENT,  # Import the SCIA ZIP readme content
+)
 from src.common.plot_utils import (
     create_bridge_outline_traces,
 )
@@ -63,10 +65,8 @@ from src.geometry.model_creator import (
 )
 from src.geometry.top_view_plot import build_top_view_figure
 
-
 # Import SCIA integration from src layer
 from src.integrations.scia_interface import create_bridge_scia_model
-
 
 # Import parametrization from the separate file
 from .parametrization import (

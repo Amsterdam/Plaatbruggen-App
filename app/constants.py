@@ -393,4 +393,3 @@ Gebruik de onderstaande knoppen om SCIA bestanden te downloaden:
 - Belastinggevallen en combinaties
 - Geavanceerde materiaal eigenschappen
         """
-
