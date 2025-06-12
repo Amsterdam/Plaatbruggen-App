@@ -23,7 +23,7 @@ from viktor.parametrization import (
     TextField,
 )
 
-from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT, MAX_DIMENSION_SEGMENTS
 
 from .geometry_functions import get_steel_qualities
 
@@ -92,7 +92,7 @@ def _bridge_field_is_empty(objectnumm: str, field_name: str) -> bool:
 # --- Helper functions for DynamicArray Default Rows ---
 
 
-def _create_default_dimension_segment_row(l_value: int, is_first: bool) -> dict[str, Any]:
+def _create_default_dimension_segment_row(l_value: int, is_first: bool, is_support: bool) -> dict[str, Any]:
     """Creates a dictionary for a default bridge dimension segment row."""
     return {
         "bz1": 10.0,
@@ -103,6 +103,7 @@ def _create_default_dimension_segment_row(l_value: int, is_first: bool) -> dict[
         "col_6": 0.0,
         "l": l_value,
         "is_first_segment": is_first,
+        "support_toggle": is_support,
     }
 
 
@@ -446,8 +447,8 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         min=2,
         name="bridge_segments_array",
         default=[
-            _create_default_dimension_segment_row(l_value=0, is_first=True),
-            _create_default_dimension_segment_row(l_value=10, is_first=False),
+            _create_default_dimension_segment_row(l_value=0, is_first=True, is_support=True),
+            _create_default_dimension_segment_row(l_value=10, is_first=False, is_support=False),
         ],
     )
     input.dimensions.array.is_first_segment = BooleanField("Is First Segment Marker", default=False, visible=False)
@@ -469,6 +470,22 @@ Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en 
         suffix="m",
         visible=_l_field_visibility_constraint,
     )
+
+    input.dimensions.array.support_toggle = BooleanField("Oplegging")
+
+    # # Dynamically check if it is the last row and if it is set support toggle to true
+    # for dim_segment in range(1, MAX_DIMENSION_SEGMENTS + 1):
+    #     _field = NumberField(
+    #         f"Breedte zone bij D{_idx_field}",
+    #         default=2.0,  # Default set to 2.0m for all fields
+    #         min=0.01,  # Minimum value set to 0.01m (1cm)
+    #         suffix="m",
+    #         description=f"Breedte van deze belastingzone ter hoogte van dwarsdoorsnede D{_idx_field}.",
+    #         visible=DX_WIDTH_VISIBILITY_CALLBACKS[_idx_field],
+    #     )
+    #     setattr(input.belastingzones.load_zones_array, f"d{_idx_field}_width", _field)
+
+
 
     # --- Bridge Geometry (moved to geometrie_brug tab) ---
     input.dimensions.lb1 = LineBreak()
