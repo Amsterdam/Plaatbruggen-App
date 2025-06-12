@@ -1,12 +1,31 @@
 """Module for the Bridge entity controller."""
 
 import zipfile
+from pathlib import Path  # Add Path import for SCIA template
 from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
 
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
+from viktor.core import File, ViktorController
+from viktor.errors import UserError  # Add UserError
+from viktor.result import DownloadResult  # Import DownloadResult from correct module
+from viktor.views import (
+    DataGroup,  # Add DataGroup
+    DataItem,  # Add DataItem
+    DataResult,  # Add DataResult
+    DataView,  # Add DataView
+    GeometryResult,
+    GeometryView,
+    MapPoint,  # Add MapPoint
+    MapResult,  # Add MapResult
+    MapView,  # Add MapView
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
+)
 
 # ParamsForLoadZones protocol and validate_load_zone_widths are in app.bridge.utils
 from app.bridge.utils import validate_load_zone_widths
@@ -15,6 +34,7 @@ from app.common.map_utils import (
     process_bridge_geometries,
     validate_shapefile_exists,
 )
+from app.constants import SCIA_ZIP_README_CONTENT  # Import the SCIA ZIP readme content
 from src.common.plot_utils import (
     create_bridge_outline_traces,
 )
@@ -396,6 +416,275 @@ class BridgeController(ViktorController):
         )
 
         return PlotlyResult(fig.to_json())
+
+    # ============================================================================================================
+    # SCIA Integration
+    # ============================================================================================================
+
+    def _convert_bridge_params_to_dicts(self, params: BridgeParametrization) -> list[dict[str, Any]]:
+        """
+        Convert bridge segment parameters to dictionary format for SCIA integration.
+
+        :param params: Bridge parametrization object
+        :type params: BridgeParametrization
+        :returns: List of bridge segment dictionaries
+        :rtype: list[dict[str, Any]]
+        """
+        bridge_segments = []
+        if params.bridge_segments_array:
+            for segment in params.bridge_segments_array:
+                segment_dict = {
+                    "bz1": getattr(segment, "bz1", 0),
+                    "bz2": getattr(segment, "bz2", 0),
+                    "bz3": getattr(segment, "bz3", 0),
+                    "l": getattr(segment, "l", 0),
+                    "dz": getattr(segment, "dz", 0),
+                    "dz_2": getattr(segment, "dz_2", 0),
+                }
+                bridge_segments.append(segment_dict)
+        return bridge_segments
+
+    def _get_scia_template_path(self) -> Path:
+        """
+        Get the path to the SCIA template file.
+
+        :returns: Path to the model.esa template file
+        :rtype: Path
+        :raises UserError: If template file is not found
+        """
+        # Path relative to the app root (automatisch-toetsmodel-plaatbruggen/)
+        template_path = Path("resources/templates/model.esa")
+
+        if not template_path.exists():
+            raise UserError(f"SCIA template file niet gevonden: {template_path}")
+
+        return template_path
+
+    @GeometryView("SCIA Model Preview", duration_guess=5, x_axis_to_right=True)
+    def get_scia_model_preview(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
+        """
+        Generate a preview of the SCIA model geometry.
+
+        Currently shows a simple rectangular plate representation that will be sent to SCIA.
+        This is a simplified preview - the actual SCIA model may contain additional details.
+
+        :param params: Bridge parametrization object
+        :type params: BridgeParametrization
+        :returns: 3D geometry result showing the SCIA model approximation
+        :rtype: GeometryResult
+        """
+        try:
+            # Convert bridge parameters to dictionary format
+            bridge_segments = self._convert_bridge_params_to_dicts(params)
+
+            if not bridge_segments:
+                self._raise_no_bridge_segments_error()
+
+            # Extract geometry using the same logic as SCIA interface
+            from src.integrations.scia_interface import extract_bridge_geometry_from_params
+
+            bridge_geometry = extract_bridge_geometry_from_params(bridge_segments)
+
+            # Create a simple box geometry to represent the SCIA plate
+            # Using trimesh to create a box with the bridge dimensions
+            plate_box = trimesh.creation.box(
+                extents=[
+                    bridge_geometry.total_length,  # X direction (length)
+                    bridge_geometry.total_width,  # Y direction (width)
+                    bridge_geometry.thickness,  # Z direction (thickness)
+                ]
+            )
+
+            # Position the box so it starts at origin in X and Y, and thickness goes upward
+            plate_box.apply_translation(
+                [
+                    bridge_geometry.total_length / 2,  # Center in X
+                    bridge_geometry.total_width / 2,  # Center in Y
+                    bridge_geometry.thickness / 2,  # Position so bottom is at Z=0
+                ]
+            )
+
+            # Set material color (concrete gray)
+            plate_box.visual.face_colors = [200, 200, 200, 255]  # Light gray
+
+            # Create scene and add info text
+            scene = trimesh.Scene()
+            scene.add_geometry(plate_box, node_name="SCIA_Plate")
+
+            # Add coordinate frame for reference
+            axis_length = min(bridge_geometry.total_length, bridge_geometry.total_width) * 0.1
+            scene.add_geometry(
+                trimesh.creation.axis(origin_size=axis_length / 10, axis_radius=axis_length / 50, axis_length=axis_length),
+                node_name="Coordinate_Frame",
+            )
+
+            # Export the scene as a GLTF file and return it as a GeometryResult
+            geometry = File()
+            with geometry.open_binary() as w:
+                w.write(trimesh.exchange.gltf.export_glb(scene))
+            return GeometryResult(geometry, geometry_type="gltf")
+
+        except Exception as e:
+            # Create error visualization
+            error_box = trimesh.creation.box(extents=[1, 1, 0.1])
+            error_box.visual.face_colors = [255, 100, 100, 255]  # Red color for error
+
+            scene = trimesh.Scene()
+            scene.add_geometry(error_box, node_name="Error")
+
+            raise UserError(f"Fout bij genereren SCIA model preview: {e!s}")
+
+    def download_scia_xml_files(self, params: BridgeParametrization, **kwargs) -> DownloadResult:  # noqa: ARG002
+        """
+        Generate and download SCIA XML input files.
+
+        Creates the SCIA model XML and definition files that can be imported into SCIA Engineer.
+
+        :param params: Bridge parametrization object
+        :type params: BridgeParametrization
+        :returns: ZIP file containing XML and definition files
+        :rtype: DownloadResult
+        """
+        try:
+            # Convert bridge parameters
+            bridge_segments = self._convert_bridge_params_to_dicts(params)
+
+            if not bridge_segments:
+                self._raise_no_bridge_segments_error()
+
+            # Get template path
+            template_path = self._get_scia_template_path()
+
+            # Create SCIA model
+            xml_file, def_file, _ = create_bridge_scia_model(bridge_segments, template_path)
+
+            # Debug: Check if files have content
+            xml_content = xml_file.getvalue() if hasattr(xml_file, "getvalue") else b""
+            def_content = def_file.getvalue() if hasattr(def_file, "getvalue") else b""
+
+            if not xml_content:
+                self._raise_empty_xml_error()
+            if not def_content:
+                self._raise_empty_def_error()
+
+            # Create ZIP file using VIKTOR's recommended approach from documentation
+            import zipfile
+
+            # Use File object and write directly to it
+            zip_file_obj = File()
+            with zipfile.ZipFile(zip_file_obj.source, "w", zipfile.ZIP_DEFLATED) as z:
+                # Add XML file
+                z.writestr("bridge_model.xml", xml_content)
+                # Add definition file
+                z.writestr("bridge_model.def", def_content)
+
+                # Add a readme file with instructions
+                readme_content = SCIA_ZIP_README_CONTENT
+                z.writestr("README.txt", readme_content)
+
+            # Generate filename with bridge info if available
+            bridge_name = getattr(params.info, "bridge_name", "UnknownBridge") or "UnknownBridge"
+            bridge_id = getattr(params.info, "bridge_objectnumm", "") or ""
+
+            filename_parts = ["SCIA_Model"]
+            if bridge_name and bridge_name != "UnknownBridge":
+                filename_parts.append(bridge_name.replace(" ", "_"))
+            if bridge_id:
+                filename_parts.append(bridge_id)
+            filename_parts.append("XML_Files.zip")
+
+            filename = "_".join(filename_parts)
+
+            # Return File object directly as shown in VIKTOR documentation
+            return DownloadResult(zip_file_obj, filename)
+
+        except Exception as e:
+            raise UserError(f"Fout bij genereren SCIA XML bestanden: {e!s}")
+
+    def download_scia_esa_model(self, params: BridgeParametrization, **kwargs) -> DownloadResult:  # noqa: ARG002
+        """
+        Generate and download complete SCIA model as ESA file.
+
+        Creates a complete SCIA model file that can be directly opened in SCIA Engineer.
+
+        :param params: Bridge parametrization object
+        :type params: BridgeParametrization
+        :returns: ESA model file for download
+        :rtype: DownloadResult
+        """
+        try:
+            # Convert bridge parameters
+            bridge_segments = self._convert_bridge_params_to_dicts(params)
+
+            if not bridge_segments:
+                self._raise_no_bridge_segments_error()
+
+            # Get template path
+            template_path = self._get_scia_template_path()
+
+            # Create SCIA model and analysis
+            xml_file, def_file, scia_analysis = create_bridge_scia_model(bridge_segments, template_path)
+
+            # Execute the analysis to generate the ESA model
+            # Note: This requires SCIA worker to be available
+            try:
+                scia_analysis.execute(timeout=300)  # 5 minute timeout
+
+                # Get the updated ESA model with our geometry
+                esa_model_file = scia_analysis.get_updated_esa_model()
+
+                # Debug: Check if ESA model file has content
+                if not esa_model_file:
+                    self._raise_empty_esa_error()
+
+                # Generate filename
+                bridge_name = getattr(params.info, "bridge_name", "UnknownBridge") or "UnknownBridge"
+                bridge_id = getattr(params.info, "bridge_objectnumm", "") or ""
+
+                filename_parts = ["SCIA_Model"]
+                if bridge_name and bridge_name != "UnknownBridge":
+                    filename_parts.append(bridge_name.replace(" ", "_"))
+                if bridge_id:
+                    filename_parts.append(bridge_id)
+                filename_parts.append("Model.esa")
+
+                filename = "_".join(filename_parts)
+
+                return DownloadResult(esa_model_file, filename)
+
+            except Exception as worker_error:
+                # If SCIA worker fails, provide helpful error message
+                error_msg = (
+                    f"SCIA worker uitvoering gefaald: {worker_error!s}\n\n"
+                    "Mogelijke oorzaken:\n"
+                    "- SCIA worker niet beschikbaar of niet correct geïnstalleerd\n"
+                    "- SCIA Engineer licentie problemen\n"
+                    "- Template bestand incompatibel met huidige SCIA versie\n\n"
+                    "Probeer in plaats daarvan de XML bestanden te downloaden."
+                )
+                raise UserError(error_msg)
+
+        except UserError:
+            # Re-raise UserError as-is
+            raise
+        except Exception as e:
+            raise UserError(f"Fout bij genereren SCIA ESA model: {e!s}")
+
+    def _raise_no_bridge_segments_error(self) -> None:
+        """Raise UserError for missing bridge segments."""
+        raise UserError("Geen brugsegmenten gedefinieerd. Ga naar de 'Invoer' pagina om de brug dimensies in te stellen.")
+
+    def _raise_empty_xml_error(self) -> None:
+        """Raise UserError for empty XML file."""
+        raise UserError("XML bestand is leeg - SCIA model generatie gefaald")
+
+    def _raise_empty_def_error(self) -> None:
+        """Raise UserError for empty definition file."""
+        raise UserError("Definition bestand is leeg - SCIA model generatie gefaald")
+
+    def _raise_empty_esa_error(self) -> None:
+        """Raise UserError for empty ESA model file."""
+        raise UserError("ESA model bestand is leeg - SCIA analyse gefaald")
 
     # ============================================================================================================
     # output - Rapport
