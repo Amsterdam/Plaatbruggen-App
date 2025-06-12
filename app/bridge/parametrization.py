@@ -25,13 +25,14 @@ from viktor.parametrization import (
 )
 
 from .geometry_functions import get_steel_qualities
+from app.constants import BRIDGE_DATA_PATH
 
 # --- Helper functions for Bridge Data Loading ---
 
 
 def _load_bridge_data() -> list[dict[str, Any]]:
     """Load bridge data from the filtered_bridges.json file."""
-    bridge_data_path = Path(__file__).parent.parent.parent / "resources" / "data" / "bridges" / "filtered_bridges.json"
+    bridge_data_path = BRIDGE_DATA_PATH
     try:
         with bridge_data_path.open("r", encoding="utf-8") as f:
             return json.load(f)
@@ -250,8 +251,8 @@ class BridgeParametrization(Parametrization):
 
     # Bridge identification section
     info.bridge_info_section = Text(
-        """# Brugdetails
-Hieronder vindt u belangrijke informatie over deze brugconstructie."""
+        """# Bridge Details
+Below you will find important information about this bridge structure."""
     )
 
     # Saved bridge identifiers (now visible and with better labels)
@@ -328,7 +329,7 @@ Hieronder vindt u belangrijke informatie over deze brugconstructie."""
     info.lb2b = LineBreak()
 
     info.width_properties_header = Text("### Breedteverdeling")
-    info.roadway_width = TextField("Rijwaybreedte", default="", suffix="m", description="Breedte toegewezen aan voertuigverkeer")
+    info.roadway_width = TextField("Rijwegbreedte", default="", suffix="m", description="Breedte toegewezen aan voertuigverkeer")
     info.tram_width = TextField("Breedte trambaan", default="", suffix="m", description="Breedte van de trambaan")
     info.bicycle_path_width = TextField("Fietspaadbreedte", default="", suffix="m", description="Breedte van fietspaden")
     info.sidewalk_north_east_width = TextField(
