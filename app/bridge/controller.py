@@ -405,11 +405,16 @@ class BridgeController(ViktorController):
         return PlotlyResult(fig.to_json())
 
     @TableView("Belastingscombinaties")
-    def get_load_combinations_view(self) -> TableResult:
+    def get_load_combinations_view(self, params, **kwargs) -> TableResult:
         """
         Display the table of load combinations for the bridge.
+        
+        The table shows which loads are active in each combination, with:
+        - "X" (capital): Leading action (highlighted in light green)
+        - "x" (lowercase): Accompanying action
+        - "-": Not included in combination
 
-        :returns: TableResult containing the load combinations.
+        :returns: TableResult containing the styled load combinations table.
         :rtype: TableResult
         """
         combination_table = create_load_combination_table()
