@@ -1,6 +1,8 @@
 """Module for the Bridge entity controller."""
 
+from pathlib import Path  # Add Path import for SCIA template
 import zipfile
+from pathlib import Path  # Add Path import for SCIA template
 from pathlib import Path  # Add Path import for SCIA template
 from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 

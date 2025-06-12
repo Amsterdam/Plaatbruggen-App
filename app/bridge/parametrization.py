@@ -27,6 +27,8 @@ from viktor.parametrization import (
 
 from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT
 
+=========
+>>>>>>>>> Temporary merge branch 2
 from .geometry_functions import get_steel_qualities
 
 # --- Helper functions for Bridge Data Loading ---
