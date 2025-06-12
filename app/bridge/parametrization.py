@@ -92,15 +92,40 @@ def _bridge_field_is_empty(objectnumm: str, field_name: str) -> bool:
 # --- Helper functions for DynamicArray Default Rows ---
 
 
-def _create_default_dimension_segment_row(l_value: int, is_first: bool) -> dict[str, Any]:
-    """Creates a dictionary for a default bridge dimension segment row."""
+def _create_default_dimension_segment_row(
+    *,  # Force keyword arguments for clarity
+    l_value: float = 0,
+    is_first: bool = False,
+    bz1: float = 10.0,
+    bz2: float = 3.0,
+    bz3: float = 15.0,
+    dz: float = 0.7,
+    dz_2: float = 0.8,
+    col_6: float = 0.0,
+) -> dict[str, Any]:
+    """
+    Creates a dictionary for a default bridge dimension segment row with customizable values.
+
+    Args:
+        l_value: Distance to previous section. Default: 0.
+        is_first: Whether this is the first segment. Default: False.
+        bz1: Width of zone 1 (Breedte zone 1). Default: 16.0 m.
+        bz2: Width of zone 2 (Breedte zone 2). Default: 3.0 m.
+        bz3: Width of zone 3 (Breedte zone 3). Default: 16.0 m.
+        dz: Thickness of zones 1 and 3 (Dikte zone 1 en 3). Default: 1.0 m.
+        dz_2: Thickness of zone 2 (Dikte zone 2). Default: 1.5 m.
+        col_6: Alpha angle. Default: 0.0 degrees.
+
+    Returns:
+        dict[str, Any]: Dictionary containing the segment row parameters.
+    """
     return {
-        "bz1": 10.0,
-        "bz2": 5.0,
-        "bz3": 15.0,
-        "dz": 2.0,
-        "dz_2": 3.0,
-        "col_6": 0.0,
+        "bz1": bz1,
+        "bz2": bz2,
+        "bz3": bz3,
+        "dz": dz,
+        "dz_2": dz_2,
+        "col_6": col_6,
         "l": l_value,
         "is_first_segment": is_first,
     }
@@ -435,16 +460,19 @@ Below you will find important information about this bridge structure."""
         name="bridge_segments_array",
         default=[
             _create_default_dimension_segment_row(l_value=0, is_first=True),
+            _create_default_dimension_segment_row(l_value=25, is_first=False),
+            _create_default_dimension_segment_row(l_value=15, is_first=False),
+            _create_default_dimension_segment_row(l_value=10, is_first=False),
             _create_default_dimension_segment_row(l_value=10, is_first=False),
         ],
     )
     input.dimensions.array.is_first_segment = BooleanField("Is First Segment Marker", default=False, visible=False)
 
     input.dimensions.array.bz1 = NumberField("Breedte zone 1", default=10.0, suffix="m")
-    input.dimensions.array.bz2 = NumberField("Breedte zone 2", default=5.0, suffix="m")
+    input.dimensions.array.bz2 = NumberField("Breedte zone 2", default=3.0, suffix="m")
     input.dimensions.array.bz3 = NumberField("Breedte zone 3", default=15.0, suffix="m")
-    input.dimensions.array.dz = NumberField("Dikte zone 1 en 3", default=2.0, suffix="m")
-    input.dimensions.array.dz_2 = NumberField("Dikte zone 2", default=3.0, suffix="m")
+    input.dimensions.array.dz = NumberField("Dikte zone 1 en 3", default=0.7, suffix="m")
+    input.dimensions.array.dz_2 = NumberField("Dikte zone 2", default=0.8, suffix="m")
     input.dimensions.array.col_6 = NumberField("alpha", default=0.0, suffix="Graden", visible=False)
 
     _l_field_visibility_constraint = DynamicArrayConstraint(
