@@ -2,10 +2,8 @@
 
 import json
 from collections.abc import Callable, Mapping
-from pathlib import Path
 from typing import Any
 
-from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -24,8 +22,9 @@ from viktor.parametrization import (
     TextField,
 )
 
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
+
 from .geometry_functions import get_steel_qualities
-from app.constants import BRIDGE_DATA_PATH
 
 # --- Helper functions for Bridge Data Loading ---
 
