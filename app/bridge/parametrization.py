@@ -4,6 +4,7 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -22,8 +23,6 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
-
-from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 
 from .geometry_functions import get_steel_qualities
 
@@ -712,10 +711,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     # --- IDEA StatiCa Page ---
     # ----------------------------------
 
-    idea = Page(
-        "IDEA StatiCa",
-        views=["get_idea_model_preview"]
-    )
+    idea = Page("IDEA StatiCa", views=["get_idea_model_preview"])
 
     # Add download buttons as page attributes
     idea.download_xml = DownloadButton("Download XML Input", method="download_idea_xml_file")

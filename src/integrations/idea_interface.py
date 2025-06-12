@@ -12,7 +12,6 @@ Future enhancements needed:
 - Integration with bridge geometry for automatic cross-section selection
 """
 
-import io
 from dataclasses import dataclass
 from typing import Any
 
@@ -110,10 +109,10 @@ def extract_cross_section_from_params(bridge_segments_params: list[dict[str, Any
     # TODO: Extract from actual reinforcement parameters
     reinforcement_config = {
         "main_diameter_top": 0.012,  # 12mm
-        "main_spacing_top": 0.150,   # 150mm
+        "main_spacing_top": 0.150,  # 150mm
         "main_diameter_bottom": 0.012,  # 12mm
-        "main_spacing_bottom": 0.150,   # 150mm
-        "concrete_cover": 0.055,     # 55mm
+        "main_spacing_bottom": 0.150,  # 150mm
+        "concrete_cover": 0.055,  # 55mm
     }
 
     return BridgeCrossSectionData(
@@ -121,7 +120,7 @@ def extract_cross_section_from_params(bridge_segments_params: list[dict[str, Any
         height=height,
         concrete_material=concrete_material,
         reinforcement_material=reinforcement_material,
-        reinforcement_config=reinforcement_config
+        reinforcement_config=reinforcement_config,
     )
 
 
@@ -136,39 +135,35 @@ def create_reinforcement_layout(cross_section: BridgeCrossSectionData) -> Reinfo
     """
     config = cross_section.reinforcement_config
     cover = config["concrete_cover"]
-    
+
     # Calculate bar positions for top reinforcement
     main_bars_top = []
     spacing_top = config["main_spacing_top"]
     diameter_top = config["main_diameter_top"]
-    
+
     # Position bars across the width with specified spacing
     y_top = cross_section.height / 2 - cover - diameter_top / 2
     num_bars_top = max(2, int(cross_section.width / spacing_top) + 1)
-    
+
     for i in range(num_bars_top):
         x_pos = -cross_section.width / 2 + cover + i * spacing_top
         if x_pos <= cross_section.width / 2 - cover:
             main_bars_top.append((x_pos, y_top, diameter_top))
-    
+
     # Calculate bar positions for bottom reinforcement
     main_bars_bottom = []
     spacing_bottom = config["main_spacing_bottom"]
     diameter_bottom = config["main_diameter_bottom"]
-    
+
     y_bottom = -cross_section.height / 2 + cover + diameter_bottom / 2
     num_bars_bottom = max(2, int(cross_section.width / spacing_bottom) + 1)
-    
+
     for i in range(num_bars_bottom):
         x_pos = -cross_section.width / 2 + cover + i * spacing_bottom
         if x_pos <= cross_section.width / 2 - cover:
             main_bars_bottom.append((x_pos, y_bottom, diameter_bottom))
-    
-    return ReinforcementConfig(
-        main_bars_top=main_bars_top,
-        main_bars_bottom=main_bars_bottom,
-        concrete_cover=cover
-    )
+
+    return ReinforcementConfig(main_bars_top=main_bars_top, main_bars_bottom=main_bars_bottom, concrete_cover=cover)
 
 
 def create_simple_idea_beam_model(cross_section_data: BridgeCrossSectionData) -> Any:  # noqa: ANN401
@@ -210,7 +205,7 @@ def create_simple_idea_beam_model(cross_section_data: BridgeCrossSectionData) ->
     :raises ImportError: When VIKTOR IDEA module is not available
     """
     try:
-        import viktor.external.idea_rcs as idea_rcs
+        from viktor.external import idea_rcs
     except ImportError as e:
         raise ImportError("VIKTOR IDEA StatiCa module required for IDEA integration") from e
 
@@ -228,18 +223,18 @@ def create_simple_idea_beam_model(cross_section_data: BridgeCrossSectionData) ->
 
     # Create rectangular cross-section
     cross_section = idea_rcs.RectSection(cross_section_data.width, cross_section_data.height)
-    
+
     # Create beam member
     beam = model.create_beam(cross_section, cs_mat)
 
     # Add reinforcement bars
     reinforcement = create_reinforcement_layout(cross_section_data)
-    
+
     # Add top reinforcement
     for x, y, diameter in reinforcement.main_bars_top:
         beam.create_bar((x, y), diameter, mat_reinf)
-    
-    # Add bottom reinforcement  
+
+    # Add bottom reinforcement
     for x, y, diameter in reinforcement.main_bars_bottom:
         beam.create_bar((x, y), diameter, mat_reinf)
 
@@ -262,7 +257,7 @@ def _get_concrete_material_enum(material_name: str) -> Any:  # noqa: ANN401
     :rtype: Any
     """
     try:
-        import viktor.external.idea_rcs as idea_rcs
+        from viktor.external import idea_rcs
     except ImportError as e:
         raise ImportError("VIKTOR IDEA StatiCa module required") from e
 
@@ -278,7 +273,7 @@ def _get_concrete_material_enum(material_name: str) -> Any:  # noqa: ANN401
         "C45/55": idea_rcs.ConcreteMaterial.C45_55,
         "C50/60": idea_rcs.ConcreteMaterial.C50_60,
     }
-    
+
     return material_mapping.get(material_name, idea_rcs.ConcreteMaterial.C30_37)
 
 
@@ -292,7 +287,7 @@ def _get_reinforcement_material_enum(material_name: str) -> Any:  # noqa: ANN401
     :rtype: Any
     """
     try:
-        import viktor.external.idea_rcs as idea_rcs
+        from viktor.external import idea_rcs
     except ImportError as e:
         raise ImportError("VIKTOR IDEA StatiCa module required") from e
 
@@ -304,7 +299,7 @@ def _get_reinforcement_material_enum(material_name: str) -> Any:  # noqa: ANN401
         "B500B": idea_rcs.ReinforcementMaterial.B_500B,
         "B500C": idea_rcs.ReinforcementMaterial.B_500C,
     }
-    
+
     return material_mapping.get(material_name, idea_rcs.ReinforcementMaterial.B_500B)
 
 
@@ -321,10 +316,10 @@ def create_bridge_idea_model(bridge_segments_params: list[dict[str, Any]]) -> An
     """
     # Extract cross-section data from bridge parameters
     cross_section_data = extract_cross_section_from_params(bridge_segments_params)
-    
+
     # Create IDEA model
     model = create_simple_idea_beam_model(cross_section_data)
-    
+
     return model
 
 
@@ -342,22 +337,22 @@ def run_idea_analysis(model: Any, timeout: int = 60) -> Any:  # noqa: ANN401
     :raises RuntimeError: If analysis fails
     """
     try:
-        import viktor.external.idea_rcs as idea_rcs
+        from viktor.external import idea_rcs
     except ImportError as e:
         raise ImportError("VIKTOR IDEA StatiCa module required") from e
 
     try:
         # Generate input XML file
         input_file = model.generate_xml_input()
-        
+
         # Run analysis
         analysis = idea_rcs.IdeaRcsAnalysis(input_file)
         analysis.execute(timeout)
-        
+
         # Get output file
         output_file = analysis.get_output_file()
-        
+
         return output_file
-        
+
     except Exception as e:
-        raise RuntimeError(f"IDEA analysis failed: {str(e)}") from e 
+        raise RuntimeError(f"IDEA analysis failed: {e!s}") from e

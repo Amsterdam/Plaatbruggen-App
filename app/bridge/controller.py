@@ -5,26 +5,8 @@ from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
+
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
-from viktor.core import File, ViktorController
-from viktor.errors import UserError  # Add UserError
-from viktor.parametrization import DownloadButton
-from viktor.result import DownloadResult
-from viktor.views import (
-    DataGroup,  # Add DataGroup
-    DataItem,  # Add DataItem
-    DataResult,  # Add DataResult
-    DataView,  # Add DataView
-    GeometryResult,
-    GeometryView,
-    MapPoint,  # Add MapPoint
-    MapResult,  # Add MapResult
-    MapView,  # Add MapView
-    PDFResult,
-    PDFView,
-    PlotlyResult,  # Import PlotlyResult
-    PlotlyView,  # Import PlotlyView
-)
 
 # ParamsForLoadZones protocol and validate_load_zone_widths are in app.bridge.utils
 from app.bridge.utils import validate_load_zone_widths
@@ -57,6 +39,24 @@ from src.geometry.model_creator import (
 )
 from src.geometry.top_view_plot import build_top_view_figure
 from src.integrations.idea_interface import create_bridge_idea_model, run_idea_analysis
+from viktor.core import File, ViktorController
+from viktor.errors import UserError  # Add UserError
+from viktor.result import DownloadResult
+from viktor.views import (
+    DataGroup,  # Add DataGroup
+    DataItem,  # Add DataItem
+    DataResult,  # Add DataResult
+    DataView,  # Add DataView
+    GeometryResult,
+    GeometryView,
+    MapPoint,  # Add MapPoint
+    MapResult,  # Add MapResult
+    MapView,  # Add MapView
+    PDFResult,
+    PDFView,
+    PlotlyResult,  # Import PlotlyResult
+    PlotlyView,  # Import PlotlyView
+)
 
 # Import parametrization from the separate file
 from .parametrization import (
@@ -451,6 +451,7 @@ class BridgeController(ViktorController):
 
             # Extract cross-section from first segment
             from src.integrations.idea_interface import extract_cross_section_from_params
+
             cross_section_data = extract_cross_section_from_params(bridge_segments_list)
 
             # Create trimesh box representing the cross-section
@@ -461,6 +462,7 @@ class BridgeController(ViktorController):
 
             # Create reinforcement visualization
             from src.integrations.idea_interface import create_reinforcement_layout
+
             reinforcement = create_reinforcement_layout(cross_section_data)
 
             # Create scene and add cross-section
@@ -469,13 +471,13 @@ class BridgeController(ViktorController):
 
             # Add reinforcement bars as small spheres
             for i, (x, y, diameter) in enumerate(reinforcement.main_bars_top):
-                bar_sphere = trimesh.creation.icosphere(subdivisions=1, radius=diameter/2)
+                bar_sphere = trimesh.creation.icosphere(subdivisions=1, radius=diameter / 2)
                 bar_sphere.apply_translation([x, 0, y])
                 bar_sphere.visual.face_colors = [139, 69, 19, 255]  # Brown for rebar
                 scene.add_geometry(bar_sphere, node_name=f"TopBar_{i}")
 
             for i, (x, y, diameter) in enumerate(reinforcement.main_bars_bottom):
-                bar_sphere = trimesh.creation.icosphere(subdivisions=1, radius=diameter/2)
+                bar_sphere = trimesh.creation.icosphere(subdivisions=1, radius=diameter / 2)
                 bar_sphere.apply_translation([x, 0, y])
                 bar_sphere.visual.face_colors = [139, 69, 19, 255]  # Brown for rebar
                 scene.add_geometry(bar_sphere, node_name=f"BottomBar_{i}")
@@ -488,13 +490,13 @@ class BridgeController(ViktorController):
             return GeometryResult(geometry_file, geometry_type="gltf")
 
         except Exception as e:
-            raise UserError(f"IDEA model preview generatie gefaald: {str(e)}")
+            raise UserError(f"IDEA model preview generatie gefaald: {e!s}")
 
     def download_idea_xml_file(self, params: BridgeParametrization, **kwargs) -> DownloadResult:  # noqa: ARG002
         """
         Download IDEA StatiCa XML input file.
 
-        :param params: Bridge parametrization  
+        :param params: Bridge parametrization
         :type params: BridgeParametrization
         :returns: XML file download
         :rtype: DownloadResult
@@ -519,10 +521,10 @@ class BridgeController(ViktorController):
 
             # Create IDEA model
             model = create_bridge_idea_model(bridge_segments_list)
-            
+
             # Generate XML input file
             xml_file = model.generate_xml_input()
-            
+
             # Validate content
             if hasattr(xml_file, "getvalue"):
                 xml_content = xml_file.getvalue()
@@ -539,14 +541,14 @@ class BridgeController(ViktorController):
             return DownloadResult(xml_content, "idea_model.xml")
 
         except Exception as e:
-            raise UserError(f"IDEA XML generatie gefaald: {str(e)}")
+            raise UserError(f"IDEA XML generatie gefaald: {e!s}")
 
     def download_idea_analysis_results(self, params: BridgeParametrization, **kwargs) -> DownloadResult:  # noqa: ARG002
         """
         Download IDEA StatiCa analysis results.
 
         :param params: Bridge parametrization
-        :type params: BridgeParametrization  
+        :type params: BridgeParametrization
         :returns: Analysis results download
         :rtype: DownloadResult
         """
@@ -570,10 +572,10 @@ class BridgeController(ViktorController):
 
             # Create IDEA model
             model = create_bridge_idea_model(bridge_segments_list)
-            
+
             # Run analysis
             output_file = run_idea_analysis(model, timeout=120)
-            
+
             # Create ZIP with XML input and results
             zip_file_obj = File()
             with zipfile.ZipFile(zip_file_obj.source, "w", zipfile.ZIP_DEFLATED) as z:
@@ -582,7 +584,7 @@ class BridgeController(ViktorController):
                 if hasattr(xml_file, "getvalue"):
                     xml_content = xml_file.getvalue()
                     z.writestr("input_model.xml", xml_content)
-                
+
                 # Add output results
                 if hasattr(output_file, "getvalue"):
                     output_content = output_file.getvalue()
@@ -596,7 +598,7 @@ class BridgeController(ViktorController):
 
         except Exception as e:
             error_msg = (
-                f"IDEA analyse uitvoering gefaald: {str(e)}\n\n"
+                f"IDEA analyse uitvoering gefaald: {e!s}\n\n"
                 "Mogelijke oorzaken:\n"
                 "- IDEA worker niet beschikbaar of niet correct geïnstalleerd\n"
                 "- IDEA StatiCa licentie problemen\n"
