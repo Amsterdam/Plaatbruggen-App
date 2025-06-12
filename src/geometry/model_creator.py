@@ -568,6 +568,11 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
     # Determine the number of sub-zones based on input dimensions
     dynamic_arrays = len(params.bridge_segments_array)
 
+    if not params.bridge_segments_array:
+        # If there are no segments, return an empty scene
+        # NOTE: Empty scene is the expected behavior for no segments
+        return trimesh.Scene()
+
     # Generate a dynamic color list for the sub-zones
     clist = list(range(0, 255, int(float(255 / dynamic_arrays))))
     clist.insert(0, 0)
@@ -618,47 +623,41 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
         z3d1t = 0
         z3d1b = -params.bridge_segments_array[dynamic_array].dz
 
-        # Specify the vertices for each box, shifted along the Y-axis
+        # Specify the vertices for each box
         boxes_vertices = [
             # Box 1 (at origin in Y-axis)
-            np.array(
-                [
-                    [d0l, z1d0r, z1d0b],  # Vertex 0: Bottom-front-left -- D-1
-                    [d1l, z1d1r, z1d1b],  # Vertex 1: Bottom-front-right
-                    [d1l, z1d1l, z1d1b],  # Vertex 2: Bottom-back-right
-                    [d0l, z1d0l, z1d0b],  # Vertex 3: Bottom-back-left -- D-1
-                    [d0l, z1d0r, z1d0t],  # Vertex 4: Top-front-left -- D-1
-                    [d1l, z1d1r, z1d1t],  # Vertex 5: Top-front-right
-                    [d1l, z1d1l, z1d1t],  # Vertex 6: Top-back-right
-                    [d0l, z1d0l, z1d0t],  # Vertex 7: Top-back-left -- D-1
-                ]
-            ),
-            # Box 2 (shifted along Y-axis by 3 units)
-            np.array(
-                [
-                    [d0l, z2d0r, z2d0b],  # Vertex 0: Bottom-front-left -- D-1
-                    [d1l, z2d1r, z2d1b],  # Vertex 1: Bottom-front-right
-                    [d1l, z2d1l, z2d1b],  # Vertex 2: Bottom-back-right
-                    [d0l, z2d0l, z2d0b],  # Vertex 3: Bottom-back-left -- D-1
-                    [d0l, z2d0r, z2d0t],  # Vertex 4: Top-front-left -- D-1
-                    [d1l, z2d1r, z2d1t],  # Vertex 5: Top-front-right
-                    [d1l, z2d1l, z2d1t],  # Vertex 6: Top-back-right
-                    [d0l, z2d0l, z2d0t],  # Vertex 7: Top-back-left -- D-1
-                ]
-            ),
-            # Box 3 (shifted along Y-axis by 6 units)
-            np.array(
-                [
-                    [d0l, z3d0r, z3d0b],  # Vertex 0: Bottom-front-left -- D-1
-                    [d1l, z3d1r, z3d1b],  # Vertex 1: Bottom-front-right
-                    [d1l, z3d1l, z3d1b],  # Vertex 2: Bottom-back-right
-                    [d0l, z3d0l, z3d0b],  # Vertex 3: Bottom-back-left -- D-1
-                    [d0l, z3d0r, z3d0t],  # Vertex 4: Top-front-left -- D-1
-                    [d1l, z3d1r, z3d1t],  # Vertex 5: Top-front-right
-                    [d1l, z3d1l, z3d1t],  # Vertex 6: Top-back-right
-                    [d0l, z3d0l, z3d0t],  # Vertex 7: Top-back-left -- D-1
-                ]
-            ),
+            np.array([
+                [d0l, z1d0r, z1d0b],  # Vertex 0: Bottom-front-left -- D-1
+                [d1l, z1d1r, z1d1b],  # Vertex 1: Bottom-front-right
+                [d1l, z1d1l, z1d1b],  # Vertex 2: Bottom-back-right
+                [d0l, z1d0l, z1d0b],  # Vertex 3: Bottom-back-left -- D-1
+                [d0l, z1d0r, z1d0t],  # Vertex 4: Top-front-left -- D-1
+                [d1l, z1d1r, z1d1t],  # Vertex 5: Top-front-right
+                [d1l, z1d1l, z1d1t],  # Vertex 6: Top-back-right
+                [d0l, z1d0l, z1d0t],  # Vertex 7: Top-back-left -- D-1
+            ]),
+            # Box 2
+            np.array([
+                [d0l, z2d0r, z2d0b],  # Vertex 0: Bottom-front-left -- D-1
+                [d1l, z2d1r, z2d1b],  # Vertex 1: Bottom-front-right
+                [d1l, z2d1l, z2d1b],  # Vertex 2: Bottom-back-right
+                [d0l, z2d0l, z2d0b],  # Vertex 3: Bottom-back-left -- D-1
+                [d0l, z2d0r, z2d0t],  # Vertex 4: Top-front-left -- D-1
+                [d1l, z2d1r, z2d1t],  # Vertex 5: Top-front-right
+                [d1l, z2d1l, z2d1t],  # Vertex 6: Top-back-right
+                [d0l, z2d0l, z2d0t],  # Vertex 7: Top-back-left -- D-1
+            ]),
+            # Box 3
+            np.array([
+                [d0l, z3d0r, z3d0b],  # Vertex 0: Bottom-front-left -- D-1
+                [d1l, z3d1r, z3d1b],  # Vertex 1: Bottom-front-right
+                [d1l, z3d1l, z3d1b],  # Vertex 2: Bottom-back-right
+                [d0l, z3d0l, z3d0b],  # Vertex 3: Bottom-back-left -- D-1
+                [d0l, z3d0r, z3d0t],  # Vertex 4: Top-front-left -- D-1
+                [d1l, z3d1r, z3d1t],  # Vertex 5: Top-front-right
+                [d1l, z3d1l, z3d1t],  # Vertex 6: Top-back-right
+                [d0l, z3d0l, z3d0t],  # Vertex 7: Top-back-left -- D-1
+            ]),
         ]
 
         # Define colors for each box in RGBA format
@@ -668,54 +667,18 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
             [clist[dynamic_array], 255, clist[dynamic_array], 255],  # Box 3: Green with varying intensity
         ]
 
-        # Create individual box meshes with assigned colors
-        box_meshes = []
+        # Create and add individual box meshes with assigned colors
         for vertices, color in zip(boxes_vertices, box_colors):
             box_mesh = create_box(vertices, color)
-            # Ensure the mesh is solid
-            box_mesh.visual.face_colors = np.tile(color, (len(box_mesh.faces), 1))
-            box_mesh.visual.vertex_colors = np.tile(color, (len(box_mesh.vertices), 1))
-            box_meshes.append(box_mesh)
-
-        # Combine all box meshes into a single mesh
-        all_segment_vertices = []
-        all_segment_faces = []
-        current_face_offset = 0
-
-        if not params.bridge_segments_array:
-            # If there are no segments, return an empty scenes
-            # NOTE: Empty scene is the expected behavior for no segments
-            return trimesh.Scene()
-
-        for i, segment_params in enumerate(params.bridge_segments_array):
-            # Process mesh before combining
-            box_meshes[i].process()  # Merges duplicate vertices
-            box_meshes[i].fix_normals()  # Ensures consistent face orientation
-            # Append vertices
-            all_segment_vertices.append(box_meshes[i].vertices)
-            # Append faces, adjusting indices by the current vertex offset
-            all_segment_faces.append(box_meshes[i].faces + current_face_offset)
-            # Update vertex offset for the next mesh
-            current_face_offset += len(box_meshes[i].vertices)
-
-        # Combine all meshes
-        if not all_segment_vertices or not all_segment_faces:
-            # This case should ideally be caught by the check for empty bridge_segments_array,
-            # but as a safeguard if segments somehow produce no vertices/faces:
-            # Log this? Or handle as error?
-            return trimesh.Scene()  # Return an empty scene
-
-        final_vertices = np.vstack(all_segment_vertices)
-        final_faces = np.vstack(all_segment_faces)
-
-        if final_vertices.shape[0] == 0 or final_vertices.shape[1] != 3:
-            # If vstack results in no vertices or incorrect dimensions, something is wrong
-            # Log this? Or handle as error?
-            # This could happen if all_segment_vertices contained only empty arrays or arrays with wrong shape
-            return trimesh.Scene()
-
-        combined_mesh = trimesh.Trimesh(vertices=final_vertices, faces=final_faces)
-        combined_scene.add_geometry(combined_mesh)
+            # Convert color to uint8 numpy array and ensure it's applied consistently
+            color_array = np.array(color, dtype=np.uint8)
+            box_mesh.visual.face_colors = color_array
+            box_mesh.visual.vertex_colors = color_array
+            # Process mesh before adding
+            box_mesh.process()  # Merges duplicate vertices
+            box_mesh.fix_normals()  # Ensures consistent face orientation
+            # Add directly to scene
+            combined_scene.add_geometry(box_mesh)
 
     if axes:
         # Add the X, Y, Z axes to the scene
@@ -727,7 +690,6 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
         combined_scene.add_geometry(black_dot)
 
     rebars_scene = create_rebars(params, color=[0, 0, 0, 255])  # Call the function to create rebars
-
     combined_scene.add_geometry(rebars_scene)  # Add the rebars to the scene
 
     # Add transparent section planes to visualize where the 2D sections will be taken
