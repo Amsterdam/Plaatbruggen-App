@@ -41,8 +41,7 @@ class BridgeGeometryData:
     material_name: str
 
 
-def extract_bridge_geometry_from_params(bridge_segments_params: list[dict[str, Any]], 
-                                        concrete_material: str | None = None) -> BridgeGeometryData:
+def extract_bridge_geometry_from_params(bridge_segments_params: list[dict[str, Any]], concrete_material: str | None = None) -> BridgeGeometryData:
     """
     Extract bridge geometry data from bridge segment parameters.
 
@@ -106,14 +105,18 @@ def extract_bridge_geometry_from_params(bridge_segments_params: list[dict[str, A
     # Use provided material or get default from centralized system
     if concrete_material is None:
         from src.common.materials import get_default_materials
+
         defaults = get_default_materials()
         material_name = defaults["concrete"]
     else:
         # Validate material exists in project database and is SCIA-compatible
-        from src.common.materials import validate_material_exists, get_supported_scia_materials, normalize_material_name
+        from src.common.materials import get_supported_scia_materials, normalize_material_name, validate_material_exists
+
         if not validate_material_exists(concrete_material, "concrete"):
             supported_materials = get_supported_scia_materials()["concrete"]
-            raise ValueError(f"Concrete material '{concrete_material}' not found in project database. SCIA-supported materials: {supported_materials}")
+            raise ValueError(
+                f"Concrete material '{concrete_material}' not found in project database. SCIA-supported materials: {supported_materials}"
+            )
         # Use normalized material name to ensure compatibility with CSV database format
         material_name = normalize_material_name(concrete_material)
 
@@ -366,9 +369,9 @@ def create_scia_analysis_from_template(xml_file: io.BytesIO, def_file: io.BytesI
     return scia.SciaAnalysis(xml_file, def_file, esa_template)
 
 
-def create_bridge_scia_model(bridge_segments_params: list[dict[str, Any]], 
-                             template_path: Path,
-                             concrete_material: str | None = None) -> tuple[Any, Any, Any]:
+def create_bridge_scia_model(
+    bridge_segments_params: list[dict[str, Any]], template_path: Path, concrete_material: str | None = None
+) -> tuple[Any, Any, Any]:
     """
     Main function to create complete SCIA model from bridge parameters.
 

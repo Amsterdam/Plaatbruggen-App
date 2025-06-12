@@ -1,31 +1,13 @@
 """Module for the Bridge entity controller."""
 
-from pathlib import Path  # Add Path import for SCIA template
 import zipfile
+from pathlib import Path  # Add Path import for SCIA template
 from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
 
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
-from viktor.core import File, ViktorController
-from viktor.errors import UserError  # Add UserError
-from viktor.result import DownloadResult  # Import DownloadResult from correct module
-from viktor.views import (
-    DataGroup,  # Add DataGroup
-    DataItem,  # Add DataItem
-    DataResult,  # Add DataResult
-    DataView,  # Add DataView
-    GeometryResult,
-    GeometryView,
-    MapPoint,  # Add MapPoint
-    MapResult,  # Add MapResult
-    MapView,  # Add MapView
-    PDFResult,
-    PDFView,
-    PlotlyResult,  # Import PlotlyResult
-    PlotlyView,  # Import PlotlyView
-)
 
 # ParamsForLoadZones protocol and validate_load_zone_widths are in app.bridge.utils
 from app.bridge.utils import validate_load_zone_widths
@@ -62,7 +44,7 @@ from src.integrations.idea_interface import create_bridge_idea_model, run_idea_a
 from src.integrations.scia_interface import create_bridge_scia_model, extract_bridge_geometry_from_params
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
-from viktor.result import DownloadResult
+from viktor.result import DownloadResult  # Import DownloadResult from correct module
 from viktor.views import (
     DataGroup,  # Add DataGroup
     DataItem,  # Add DataItem
@@ -723,7 +705,7 @@ class BridgeController(ViktorController):
     def get_idea_model_preview(self, params: BridgeParametrization, **kwargs) -> GeometryResult:  # noqa: ARG002
         """
         Generate 3D preview of IDEA StatiCa RCS cross-section model.
-        
+
         Shows the cross-section as viewed from the front, with:
         - Concrete section as gray rectangular block
         - Reinforcement bars as detailed cylinders
@@ -759,22 +741,18 @@ class BridgeController(ViktorController):
             concrete_material = getattr(params.info, "concrete_strength_class", None) or "C30/37"
             reinforcement_material = getattr(params.info, "steel_quality_reinforcement", None) or "B500B"
 
-            cross_section_data = extract_cross_section_from_params(
-                bridge_segments_list, concrete_material, reinforcement_material
-            )
+            cross_section_data = extract_cross_section_from_params(bridge_segments_list, concrete_material, reinforcement_material)
 
             # Create scene
             scene = trimesh.Scene()
 
             # Create concrete plate - horizontal orientation for bridge deck cross-section
-            # For a bridge plate, thickness is the height, width is the width  
+            # For a bridge plate, thickness is the height, width is the width
             plate_thickness = cross_section_data.height
             plate_width = cross_section_data.width
             plate_length = max(2.0, plate_width * 0.3)  # Show some depth for 3D visualization
-            
-            concrete_plate = trimesh.creation.box(
-                extents=[plate_width, plate_length, plate_thickness]
-            )
+
+            concrete_plate = trimesh.creation.box(extents=[plate_width, plate_length, plate_thickness])
             # Light concrete gray
             concrete_plate.visual.face_colors = [180, 180, 180, 255]
             scene.add_geometry(concrete_plate, node_name="ConcretePlate")
@@ -792,16 +770,14 @@ class BridgeController(ViktorController):
             for i, (x, y, diameter) in enumerate(reinforcement.main_bars_top):
                 # Create cylinder for reinforcement bar running in Y direction
                 bar_cylinder = trimesh.creation.cylinder(
-                    radius=diameter/2000,  # Convert mm to m
+                    radius=diameter / 2000,  # Convert mm to m
                     height=bar_length,
-                    sections=8
+                    sections=8,
                 )
                 # Rotate to align with Y-axis (length direction)
-                bar_cylinder.apply_transform(trimesh.transformations.rotation_matrix(
-                    angle=3.14159/2, direction=[1, 0, 0]
-                ))
+                bar_cylinder.apply_transform(trimesh.transformations.rotation_matrix(angle=3.14159 / 2, direction=[1, 0, 0]))
                 # Position the bar (x from reinforcement, y=0 center, z=top layer)
-                bar_cylinder.apply_translation([x - plate_width/2, 0, top_z_position])
+                bar_cylinder.apply_translation([x - plate_width / 2, 0, top_z_position])
                 # Dark steel color
                 bar_cylinder.visual.face_colors = [101, 67, 33, 255]  # Dark brown steel
                 scene.add_geometry(bar_cylinder, node_name=f"TopReinforcement_{i}")
@@ -811,16 +787,14 @@ class BridgeController(ViktorController):
             for i, (x, y, diameter) in enumerate(reinforcement.main_bars_bottom):
                 # Create cylinder for reinforcement bar running in Y direction
                 bar_cylinder = trimesh.creation.cylinder(
-                    radius=diameter/2000,  # Convert mm to m
+                    radius=diameter / 2000,  # Convert mm to m
                     height=bar_length,
-                    sections=8
+                    sections=8,
                 )
                 # Rotate to align with Y-axis (length direction)
-                bar_cylinder.apply_transform(trimesh.transformations.rotation_matrix(
-                    angle=3.14159/2, direction=[1, 0, 0]
-                ))
+                bar_cylinder.apply_transform(trimesh.transformations.rotation_matrix(angle=3.14159 / 2, direction=[1, 0, 0]))
                 # Position the bar (x from reinforcement, y=0 center, z=bottom layer)
-                bar_cylinder.apply_translation([x - plate_width/2, 0, bottom_z_position])
+                bar_cylinder.apply_translation([x - plate_width / 2, 0, bottom_z_position])
                 # Dark steel color
                 bar_cylinder.visual.face_colors = [101, 67, 33, 255]  # Dark brown steel
                 scene.add_geometry(bar_cylinder, node_name=f"BottomReinforcement_{i}")
@@ -828,19 +802,17 @@ class BridgeController(ViktorController):
             # Add coordinate system indicator for orientation
             # Small coordinate arrows to show orientation
             arrow_scale = min(plate_width, plate_thickness) * 0.1
-            
+
             # X-axis arrow (red) - width direction
             x_arrow = trimesh.creation.cylinder(radius=0.01, height=arrow_scale)
-            x_arrow.apply_transform(trimesh.transformations.rotation_matrix(
-                angle=3.14159/2, direction=[0, 0, 1]
-            ))
-            x_arrow.apply_translation([plate_width/2 + arrow_scale/2, -plate_length/2 - 0.1, -plate_thickness/2 - 0.1])
+            x_arrow.apply_transform(trimesh.transformations.rotation_matrix(angle=3.14159 / 2, direction=[0, 0, 1]))
+            x_arrow.apply_translation([plate_width / 2 + arrow_scale / 2, -plate_length / 2 - 0.1, -plate_thickness / 2 - 0.1])
             x_arrow.visual.face_colors = [255, 0, 0, 255]  # Red for X
             scene.add_geometry(x_arrow, node_name="X_Axis")
-            
-            # Z-axis arrow (blue) - thickness/height direction  
+
+            # Z-axis arrow (blue) - thickness/height direction
             z_arrow = trimesh.creation.cylinder(radius=0.01, height=arrow_scale)
-            z_arrow.apply_translation([plate_width/2 + 0.1, -plate_length/2 - 0.1, -plate_thickness/2 + arrow_scale/2])
+            z_arrow.apply_translation([plate_width / 2 + 0.1, -plate_length / 2 - 0.1, -plate_thickness / 2 + arrow_scale / 2])
             z_arrow.visual.face_colors = [0, 0, 255, 255]  # Blue for Z
             scene.add_geometry(z_arrow, node_name="Z_Axis")
 
@@ -887,7 +859,7 @@ class BridgeController(ViktorController):
             # Create IDEA RCS cross-section model with materials from params.info
             concrete_material = getattr(params.info, "concrete_strength_class", None) or "C30/37"
             reinforcement_material = getattr(params.info, "steel_quality_reinforcement", None) or "B500B"
-            
+
             model = create_bridge_idea_model(bridge_segments_list, concrete_material, reinforcement_material)
 
             # Generate XML input file
@@ -946,7 +918,7 @@ class BridgeController(ViktorController):
             # Create IDEA RCS cross-section model with materials from params.info
             concrete_material = getattr(params.info, "concrete_strength_class", None) or "C30/37"
             reinforcement_material = getattr(params.info, "steel_quality_reinforcement", None) or "B500B"
-            
+
             model = create_bridge_idea_model(bridge_segments_list, concrete_material, reinforcement_material)
 
             # Run cross-section analysis

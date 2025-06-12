@@ -4,7 +4,8 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT, IDEA_INFO_TEXT
+from app.constants import BRIDGE_DATA_PATH, IDEA_INFO_TEXT, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT
+from src.common.materials import get_reinforcement_qualities
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -23,7 +24,6 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
-from src.common.materials import get_reinforcement_qualities
 
 # --- Helper functions for Bridge Data Loading ---
 
