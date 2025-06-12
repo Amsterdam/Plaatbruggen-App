@@ -381,21 +381,25 @@ def get_material_compatibility_info(material_name: str) -> dict[str, str]:
 
     # Check SCIA compatibility (more permissive)
     scia_supported = get_supported_scia_materials()["reinforcement"]
-    scia_status = "✅ Direct support" if normalized_name in scia_supported else "❌ Not supported"
+    scia_status = "Direct support" if normalized_name in scia_supported else "Not supported"
 
     # Check IDEA compatibility (only modern materials)
     idea_supported = get_supported_idea_materials()["reinforcement"]
     if normalized_name in idea_supported:
-        idea_status = "✅ Direct support"
+        idea_status = "Direct support"
     else:
-        # Import the strength-based mapping function
-        try:
-            from src.integrations.idea_interface import _get_strength_based_idea_equivalent
-
-            equivalent = _get_strength_based_idea_equivalent(normalized_name)
-            idea_status = f"🔄 Auto-mapped to {equivalent}"
-        except ImportError:
-            idea_status = "❌ Not supported"
+        # Simple strength-based mapping for common materials
+        strength_mapping = {
+            "QR22": "B500A",
+            "QR24": "B500A",
+            "QR30": "B500B",
+            "QR40": "B500B",
+            "FeB 400": "B500B",
+            "QR48": "B500C",
+            "FeB 500": "B500C",
+        }
+        equivalent = strength_mapping.get(normalized_name, "B500B")
+        idea_status = f"Auto-mapped to {equivalent}"
 
     return {
         "material": material_name,
