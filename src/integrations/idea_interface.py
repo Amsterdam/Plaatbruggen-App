@@ -343,7 +343,10 @@ def _get_reinforcement_material_enum(material_name: str) -> Any:  # noqa: ANN401
     :rtype: Any
     :raises ImportError: If VIKTOR IDEA module not available
     """
-    idea_rcs = import_idea_rcs()
+    try:
+        from viktor.external import idea_rcs
+    except ImportError as e:
+        raise ImportError("VIKTOR IDEA StatiCa module required") from e
 
     # Mapping of material names to IDEA enums
     material_mapping = {
@@ -393,7 +396,7 @@ def run_idea_analysis(model: Any, timeout: int = 300) -> Any:  # noqa: ANN401
     :raises RuntimeError: If analysis execution fails
     """
     try:
-        idea_rcs = import_idea_rcs()
+        from viktor.external import idea_rcs
     except ImportError as e:
         raise ImportError("VIKTOR IDEA StatiCa module required") from e
 
