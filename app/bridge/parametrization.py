@@ -402,16 +402,17 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
                 "hoofdwapening_dwars_onder_hart_op_hart": 150.0,
                 "heeft_bijlegwapening": False,
                 "bijlegwapening_langs_boven_diameter": 12.0,
-                #"bijlegwapening_langs_boven_hart_op_hart": 13.0,
+                "bijlegwapening_langs_onder_diameter": 12.0,
+                "bijlegwapening_dwars_boven_diameter": 12.0,
+                "bijlegwapening_dwars_onder_diameter": 12.0,
             },
         ],
-    )
-
+    )    
     # Zone number selection
     input.geometrie_wapening.zones.zone_number = MultiSelectField(
         "Zones", 
-        options=["1-1", "2-1", "3-1"],  # Default options for zones
-        default=["1-1"],  # Default to all zones for the first configuration
+        options=define_options_numbering,  # Use dynamic options based on number of segments
+        default=["1-1", "2-1", "3-1"],  # Default to all zones for the first configuration
         description="Selecteer de zones waar deze wapeningsconfiguratie moet worden toegepast."
     )
 
@@ -462,11 +463,6 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)    
 
     # Additional reinforcement fields - only visible when heeft_bijlegwapening is True
-    # _bijleg_visibility = DynamicArrayConstraint(
-    #     dynamic_array_name="reinforcement_zones_array",
-    #     operand=IsTrue(Lookup("$row.heeft_bijlegwapening")),
-    # )
-
     input.geometrie_wapening.zones.lb7 = LineBreak()
 
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(

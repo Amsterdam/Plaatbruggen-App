@@ -83,26 +83,6 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             "height_end": height_end,
             "length": next_segment_data.l
         }
-def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, PLR0915
-    """
-    Create a mesh representing rebars based on specified parameters.
-
-    Args:
-        params (Munch): Parameters for the rebars, including positions and dimensions.
-        color (list): RGBA color for the rebars, format [R, G, B, A].
-
-    Returns:
-        trimesh.Scene: A trimesh object representing the rebars.
-
-    """
-
-    def get_cumulative_distance(segment_idx: int) -> float:
-        """Calculate the cumulative distance to the start of a segment."""
-        total_distance = 0.0
-        for i in range(segment_idx):
-            # The l parameter in each segment defines the distance to the next segment
-            total_distance += bridge_segments_array[i + 1].l
-        return total_distance
 
     def get_zone_parameters(zone_entry: Munch) -> dict:
         """Get all parameters for a specific zone."""
@@ -394,44 +374,46 @@ def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, P
                 zone_dims["height_end"]
             )
 
-        top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
-        create_rebar_meshes(
-            top_positions,
-            z_positions["long_top"],
-            zone_params["diam_long_top"],
-            zone_dims["length"],
-            x_offset,
-            zone_dims["height_start"],
-            zone_dims["height_end"],
-        )
-        # Create bottom shear reinforcement
-        if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
-            shear_positions_bottom = get_shear_positions(
-                effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"]
-            )
-            create_shear_rebars(
-                shear_positions_bottom,
-                y_offset,
-                zone_dims["bz"],
-                zone_params["diam_shear_bottom"],
-                z_positions["shear_bottom"],
+            # Create longitudinal top reinforcement
+            top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
+            create_rebar_meshes(
+                top_positions,
+                z_positions["long_top"],
+                zone_params["diam_long_top"],
+                zone_dims["length"],
                 x_offset,
                 zone_dims["height_start"],
                 zone_dims["height_end"],
             )
+
+            # Create bottom shear reinforcement
+            if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
+                shear_positions_bottom = get_shear_positions(
+                    effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"]
+                )
+                create_shear_rebars(
+                    shear_positions_bottom,
+                    y_offset,
+                    zone_dims["bz"],
+                    zone_params["diam_shear_bottom"],
+                    z_positions["shear_bottom"],
+                    x_offset,
+                    zone_dims["height_start"],
+                    zone_dims["height_end"],
+                )
 
             # Create top shear reinforcement
             if zone_params.get("hoh_shear_top") and zone_params.get("diam_shear_top"):
                 shear_positions_top = get_shear_positions(effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"])
                 create_shear_rebars(
                     shear_positions_top,
-                y_offset,
-                zone_dims["bz"],
-                zone_params["diam_shear_top"],
-                z_positions["shear_top"],
-                x_offset,
-                zone_dims["height_start"],
-                zone_dims["height_end"],
+                    y_offset,
+                    zone_dims["bz"],
+                    zone_params["diam_shear_top"],
+                    z_positions["shear_top"],
+                    x_offset,
+                    zone_dims["height_start"],
+                    zone_dims["height_end"],
                 )
 
             # Create bijlegwapening (additional reinforcement) if enabled
