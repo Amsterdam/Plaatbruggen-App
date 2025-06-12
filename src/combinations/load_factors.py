@@ -12,296 +12,12 @@ valid value.
 """
 
 import numpy as np
+import pandas as pd
 from scipy.interpolate import RegularGridInterpolator  # type: ignore[import-untyped]
 
+from app.constants import COMBINATION_TABLE, PSI_FACTORS_NEN8701
+
 """"tedstandard: psi_factor.py"""
-
-
-LOAD_COMBINATIONS = {
-    "permanente_belasting": {
-        "P": 1.0,
-        "gr1a": 1.0,
-        "gr1b": 1.0,
-        "gr2": 1.0,
-        "gr3": 1.0,
-        "gr4": 1.0,
-        "gr5": 1.0,
-        "W_b1": 1.0,
-        "W_b2": 1.0,
-        "T_b1": 1.0,
-        "T_b2": 1.0,
-        "S": 1.0,
-        "A1_a": 1.0,
-        "A1_b1": 1.0,
-        "A1_b2": 1.0,
-    },
-    "voorspaning": {
-        "P": 1.0,
-        "gr1a": 1.0,
-        "gr1b": 1.0,
-        "gr2": 1.0,
-        "gr3": 1.0,
-        "gr4": 1.0,
-        "gr5": 1.0,
-        "W_b1": 1.0,
-        "W_b2": 1.0,
-        "T_b1": 1.0,
-        "T_b2": 1.0,
-        "S": 1.0,
-        "A1_a": 1.0,
-        "A1_b1": 1.0,
-        "A1_b2": 1.0,
-    },
-    "zetting": {
-        "P": 0.0,
-        "gr1a": 1.0,
-        "gr1b": 0.0,
-        "gr2": 0.0,
-        "gr3": 0.0,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.0,
-        "W_b2": 0.0,
-        "T_b1": 0.0,
-        "T_b2": 0.0,
-        "S": 0.0,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-    "TS": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 1.0,
-        "gr2": 0.0,
-        "gr3": 0.8,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.8,
-        "W_b2": 0.8,
-        "T_b1": 0.64,
-        "T_b2": 0.8,
-        "S": 0.64,
-        "A1_a": 0.0,
-        "A1_b1": 0.8,
-        "A1_b2": 0.64,
-    },
-    "UDL": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 1.0,
-        "gr2": 0.0,
-        "gr3": 0.8,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.8,
-        "W_b2": 0.8,
-        "T_b1": 0.64,
-        "T_b2": 0.8,
-        "S": 0.64,
-        "A1_a": 0.0,
-        "A1_b1": 0.8,
-        "A1_b2": 0.64,
-    },
-    "enkele_as": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.0,
-        "gr2": 1.0,
-        "gr3": 0.0,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.0,
-        "W_b2": 0.0,
-        "T_b1": 0.0,
-        "T_b2": 0.0,
-        "S": 0.0,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-    "horizontale_belasting": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.8,
-        "gr2": 0.0,
-        "gr3": 1.0,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.8,
-        "W_b2": 0.64,
-        "T_b1": 0.8,
-        "T_b2": 0.64,
-        "S": 0.8,
-        "A1_a": 0.0,
-        "A1_b1": 0.64,
-        "A1_b2": 0.8,
-    },
-    "voetpaden": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.4,
-        "gr2": 0.0,
-        "gr3": 0.4,
-        "gr4": 1.0,
-        "gr5": 1.0,
-        "W_b1": 0.0,
-        "W_b2": 0.32,
-        "T_b1": 0.32,
-        "T_b2": 0.32,
-        "S": 0.32,
-        "A1_a": 0.0,
-        "A1_b1": 0.32,
-        "A1_b2": 0.32,
-    },
-    "mensenmenigte": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.0,
-        "gr2": 0.0,
-        "gr3": 0.0,
-        "gr4": 0.0,
-        "gr5": 1.0,
-        "W_b1": 0.0,
-        "W_b2": 0.0,
-        "T_b1": 0.0,
-        "T_b2": 0.0,
-        "S": 0.0,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-    "bijzonder_voertuigen": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.0,
-        "gr2": 0.0,
-        "gr3": 0.0,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 1.0,
-        "W_b2": 0.0,
-        "T_b1": 0.0,
-        "T_b2": 0.0,
-        "S": 0.0,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-    "wind_Fwk": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.3,
-        "gr2": 0.0,
-        "gr3": 0.3,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.3,
-        "W_b2": 1.0,
-        "T_b1": 1.0,
-        "T_b2": 0.3,
-        "S": 0.3,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-    "wind_Fw": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 1.0,
-        "gr2": 0.0,
-        "gr3": 1.0,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 1.0,
-        "W_b2": 0.0,
-        "T_b1": 0.0,
-        "T_b2": 0.0,
-        "S": 0.0,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-    "temperatuur": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.3,
-        "gr2": 0.0,
-        "gr3": 0.3,
-        "gr4": 0.0,
-        "gr5": 0.3,
-        "W_b1": 0.3,
-        "W_b2": 0.3,
-        "T_b1": 0.3,
-        "T_b2": 1.0,
-        "S": 1.0,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-    "sneeuw": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.0,
-        "gr2": 0.0,
-        "gr3": 0.0,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.0,
-        "W_b2": 0.0,
-        "T_b1": 0.0,
-        "T_b2": 0.0,
-        "S": 1.0,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-    "impact": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.0,
-        "gr2": 0.0,
-        "gr3": 0.0,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.0,
-        "W_b2": 0.0,
-        "T_b1": 0.0,
-        "T_b2": 0.0,
-        "S": 0.0,
-        "A1_a": 1.0,
-        "A1_b1": 1.0,
-        "A1_b2": 1.0,
-    },
-    "aardbevingsbelasting": {
-        "P": 0.0,
-        "gr1a": 0.0,
-        "gr1b": 0.0,
-        "gr2": 0.0,
-        "gr3": 0.0,
-        "gr4": 0.0,
-        "gr5": 0.0,
-        "W_b1": 0.0,
-        "W_b2": 0.0,
-        "T_b1": 0.0,
-        "T_b2": 0.0,
-        "S": 0.0,
-        "A1_a": 0.0,
-        "A1_b1": 0.0,
-        "A1_b2": 0.0,
-    },
-}
-
-
-# Define constant lookup table at module level
-PSI_FACTORS: dict[float, dict[int, float]] = {
-    100: {20: 1.00, 50: 1.00, 100: 1.00, 200: 1.00},
-    50: {20: 0.99, 50: 0.99, 100: 0.99, 200: 0.99},
-    30: {20: 0.99, 50: 0.99, 100: 0.98, 200: 0.97},
-    15: {20: 0.98, 50: 0.98, 100: 0.96, 200: 0.96},
-    1: {20: 0.95, 50: 0.94, 100: 0.89, 200: 0.88},
-    1 / 12: {20: 0.91, 50: 0.91, 100: 0.81, 200: 0.81},
-}
 
 
 def _clamp(value: float, min_value: float, max_value: float) -> float:
@@ -344,7 +60,7 @@ def validate_input(span: float, reference_period: float) -> tuple[float, float]:
     if reference_period <= 0:
         raise ValueError("Reference period must be positive")
 
-    valid_periods = sorted(PSI_FACTORS.keys())
+    valid_periods = sorted(PSI_FACTORS_NEN8701.keys())
 
     if reference_period > max(valid_periods):
         raise ValueError(f"Reference period must not exceed {max(valid_periods)} years")
@@ -357,19 +73,19 @@ def validate_input(span: float, reference_period: float) -> tuple[float, float]:
 
 def get_interpolation_data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Prepare data for 2D interpolation from PSI_FACTORS table.
+    Prepare data for 2D interpolation from PSI_FACTORS_NEN8701 table.
 
     Returns:
         Tuple containing span values, period values, and psi values as 2D array
 
     """
-    spans = sorted(PSI_FACTORS[100].keys())
-    periods = sorted(PSI_FACTORS.keys(), reverse=True)  # Sort periods in descending order
+    spans = sorted(PSI_FACTORS_NEN8701[100].keys())
+    periods = sorted(PSI_FACTORS_NEN8701.keys(), reverse=True)  # Sort periods in descending order
 
     values = np.zeros((len(periods), len(spans)))
     for i, period in enumerate(periods):
         for j, span in enumerate(spans):
-            values[i, j] = PSI_FACTORS[period][span]
+            values[i, j] = PSI_FACTORS_NEN8701[period][span]
 
     return np.array(spans), np.array(periods), values
 
@@ -400,3 +116,25 @@ def get_psi_factor(span: float, reference_period: float) -> float:
         raise ValueError("Interpolation failed. Input values may be outside valid range.")
 
     return float(result[0])
+
+
+def create_load_combination_table() -> pd.DataFrame:
+    """
+    Generates a table view of load combinations based on the COMBINATION_TABLE constant.
+
+    :returns: Table showing load combinations and their active loads.
+    :rtype: pd.DataFrame
+    """
+    # Get all unique loads (rows) from the first combination
+    loads = list(next(iter(COMBINATION_TABLE.values())).keys())
+
+    # Create DataFrame with loads as index and combinations as columns
+    data = []
+    for load in loads:
+        row = [COMBINATION_TABLE[combination][load] for combination in COMBINATION_TABLE]
+        data.append(row)
+
+    df_combination_table = pd.DataFrame(data=data, columns=list(COMBINATION_TABLE.keys()), index=loads)
+
+    # Replace empty values with '-' for better readability
+    return df_combination_table.fillna("-")

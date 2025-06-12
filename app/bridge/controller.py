@@ -3,7 +3,6 @@
 from pathlib import Path  # Add Path import for SCIA template
 from typing import Any, TypedDict, cast  # Import cast, Any, and TypedDict
 
-import pandas as pd  # Import pandas for DataFrame handling
 import plotly.graph_objects as go  # Import Plotly graph objects
 import trimesh
 import viktor.api_v1 as api_sdk  # Import VIKTOR API SDK
@@ -37,10 +36,8 @@ from app.common.map_utils import (
 )
 
 # Params for load combinations are in app.constants
-from app.constants import (
-    COMBINATION_TABLE,
-    SCIA_ZIP_README_CONTENT,  # Import the SCIA ZIP readme content
-)
+from app.constants import SCIA_ZIP_README_CONTENT  # Import the SCIA ZIP readme content
+from src.combinations.load_factors import create_load_combination_table
 from src.common.plot_utils import (
     create_bridge_outline_traces,
 )
@@ -408,33 +405,15 @@ class BridgeController(ViktorController):
         return PlotlyResult(fig.to_json())
 
     @TableView("Belastingscombinaties")
-    def get_load_combinations_view(self, params: BridgeParametrization, **kwargs) -> TableResult:  # noqa: ARG002
+    def get_load_combinations_view(self) -> TableResult:
         """
-        Generates a table view of load combinations based on the COMBINATION_TABLE constant.
+        Display the table of load combinations for the bridge.
 
-        Args:
-            params: Bridge parametrization data.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            TableResult: Table showing load combinations and their active loads.
-
+        :returns: TableResult containing the load combinations.
+        :rtype: TableResult
         """
-        # Get all unique loads (rows) from the first combination
-        loads = list(next(iter(COMBINATION_TABLE.values())).keys())
-
-        # Create DataFrame with loads as index and combinations as columns
-        data = []
-        for load in loads:
-            row = [COMBINATION_TABLE[combination][load] for combination in COMBINATION_TABLE]
-            data.append(row)
-
-        df_combination_table = pd.DataFrame(data=data, columns=list(COMBINATION_TABLE.keys()), index=loads)
-
-        # Replace empty values with '-' for better readability
-        df_combination_table = df_combination_table.fillna("-")
-
-        return TableResult(df_combination_table)
+        combination_table = create_load_combination_table()
+        return TableResult(combination_table)
 
     # ============================================================================================================
     # SCIA Integration
