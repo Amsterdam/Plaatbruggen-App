@@ -102,16 +102,16 @@ Het huidige model is een **vereenvoudigde rechthoekige plaat** gebaseerd op:
 - **Dikte**: Vast op 0.5m (moet nog uitgebreid worden met variabele dikte per zone)
 - **Materiaal**: Standaard beton C30/37
 
-### 🔧 Materiaal Compatibiliteit
+### Materiaal Compatibiliteit
 SCIA Engineer ondersteunt een brede range aan materialen via string-gebaseerde namen:
 
-**✅ Volledig ondersteund:**
+**Volledig ondersteund:**
 - **Alle moderne Eurocode materialen** (C12/15 tot C90/105, B500A/B/C)
 - **Oudere Nederlandse materialen** (K150-K600, B12,5-B65)
 - **Oude wapeningsstaal** (QR22-QR54, QRn32-QRn54, FeB 220/400/500)
 - **Historische staalsoorten** (St. 37, St. 52, Speciaal st. 36/48)
 
-**💡 Voordeel:** SCIA accepteert materialen direct zoals ze in de project database staan.
+**Voordeel:** SCIA accepteert materialen direct zoals ze in de project database staan.
 
 ### Download Opties
 Gebruik de onderstaande knoppen om SCIA bestanden te downloaden:
@@ -140,19 +140,19 @@ Het huidige model is een **vereenvoudigde rechthoekige plaat** met wapening geba
 - **Bovenwapening**: Hart-op-hart afstand 150mm, betondekking 55mm
 - **Onderwapening**: Hart-op-hart afstand 150mm, betondekking 55mm
 
-### 🔧 Materiaal Compatibiliteit
+### Materiaal Compatibiliteit
 IDEA StatiCa ondersteunt alleen moderne Eurocode materialen:
 
-**✅ Direct ondersteund:**
+**Direct ondersteund:**
 - **B500A, B500B, B500C** (moderne Eurocode wapeningsstaal)
 - **C12/15 tot C50/60** (standaard betonklassen)
 
-**⚠️ Automatische omzetting oude materialen:**
-- **QR24, QR22** → B500A (lage sterkte: 220-240 N/mm²)
-- **QR30, QR40, FeB 400** → B500B (medium sterkte: 300-400 N/mm²)  
-- **QR48, FeB 500** → B500C (hoge sterkte: 400+ N/mm²)
+**Automatische omzetting oude materialen:**
+- **QR24, QR22** naar B500A (lage sterkte: 220-240 N/mm²)
+- **QR30, QR40, FeB 400** naar B500B (medium sterkte: 300-400 N/mm²)  
+- **QR48, FeB 500** naar B500C (hoge sterkte: 400+ N/mm²)
 
-**💡 Aanbeveling:** Voor exacte materiaalcontrole, selecteer direct B500A/B/C in wapeningsinstellingen.
+**Aanbeveling:** Voor exacte materiaalcontrole, selecteer direct B500A/B/C in wapeningsinstellingen.
 
 ### Download Opties
 Gebruik de onderstaande knoppen om IDEA RCS bestanden te downloaden:

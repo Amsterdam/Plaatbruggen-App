@@ -518,13 +518,9 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
         options=get_reinforcement_qualities(),
         default="B500B",
         description=(
-            "De kwaliteit van het betonstaal dat wordt toegepast in de brug.\n\n"
-            "🔧 Integratie compatibiliteit:\n"
-            "• SCIA Engineer: Ondersteunt de meeste materialen (inclusief oude staalsoorten)\n"
-            "• IDEA StatiCa: Alleen moderne Eurocode materialen (B500A, B500B, B500C)\n\n"
-            "⚠️ Let op: Oude staalsoorten (QR24, QR40, FeB 400) worden automatisch "
-            "omgezet naar moderne equivalenten voor IDEA StatiCa analyse. "
-            "Voor exacte controle gebruik B500A, B500B of B500C."
+            "Kwaliteit van het betonstaal. "
+            "SCIA: alle materialen. IDEA: alleen B500A/B/C. "
+            "Oude staalsoorten worden automatisch omgezet."
         ),
     )
 
