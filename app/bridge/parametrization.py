@@ -517,11 +517,7 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
         "Staalsoort",
         options=get_reinforcement_qualities(),
         default="B500B",
-        description=(
-            "Kwaliteit van het betonstaal. "
-            "SCIA: alle materialen. IDEA: alleen B500A/B/C. "
-            "Oude staalsoorten worden automatisch omgezet."
-        ),
+        description=("Kwaliteit van het betonstaal. SCIA: alle materialen. IDEA: alleen B500A/B/C. Oude staalsoorten worden automatisch omgezet."),
     )
 
     input.geometrie_wapening.langswapening_buiten = BooleanField(
