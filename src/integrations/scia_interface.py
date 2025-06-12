@@ -97,8 +97,8 @@ def extract_bridge_geometry_from_params(bridge_segments_params: list[dict[str, A
     #
     # NOTE: Do NOT use average thickness - create 3 separate plate elements with their own thicknesses
     # The simplified rectangular model should be replaced with proper multi-zone implementation
-    # TODO: Extract actual thickness from params.input.dimensions.bridge_segments_array
-    # TODO: Use params.info.construction_height for realistic deck thickness (convert from mm to m)
+    # Extract actual thickness from bridge_segments_array when zone-specific implementation is added
+    # Use construction_height for realistic deck thickness (convert from mm to m) when available
     thickness = 0.5  # Hardcoded for now - will be replaced by 3-zone implementation
 
     # Material selection from centralized material system

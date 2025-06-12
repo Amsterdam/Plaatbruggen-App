@@ -115,28 +115,29 @@ def get_reinforcement_material_properties(material_name: str) -> dict[str, Any]:
         raise FileNotFoundError(f"Reinforcement materials file not found: {REINFORCEMENT_PATH}") from e
 
 
-def validate_material_compatibility(concrete: str, reinforcement: str) -> bool:
+def check_material_compatibility(concrete: str, reinforcement: str) -> bool:
     """
-    Validate that concrete and reinforcement materials are compatible.
+    Check if concrete and reinforcement materials are compatible.
 
-    :param concrete: Concrete material name
+    :param concrete: Concrete grade (e.g., "C30/37")
     :type concrete: str
-    :param reinforcement: Reinforcement material name
+    :param reinforcement: Reinforcement material (e.g., "B500B")
     :type reinforcement: str
     :returns: True if materials are compatible
     :rtype: bool
+    :raises ValueError: If material names are invalid
     """
     try:
         # Check if both materials exist in the system
-        concrete_props = get_concrete_material_properties(concrete)
-        reinforcement_props = get_reinforcement_material_properties(reinforcement)
+        get_concrete_material_properties(concrete)
+        get_reinforcement_material_properties(reinforcement)
 
         # Add compatibility logic here if needed
         # For now, just verify both materials exist
-        return True
-
     except ValueError:
         return False
+    else:
+        return True
 
 
 def get_default_materials() -> dict[str, str]:

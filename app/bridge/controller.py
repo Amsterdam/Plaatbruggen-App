@@ -40,7 +40,6 @@ from src.geometry.model_creator import (
     prepare_load_zone_geometry_data,
 )
 from src.geometry.top_view_plot import build_top_view_figure
-from src.integrations.idea_interface import create_bridge_idea_model, run_idea_analysis
 from src.integrations.scia_interface import create_bridge_scia_model, extract_bridge_geometry_from_params
 from viktor.core import File, ViktorController
 from viktor.errors import UserError  # Add UserError
@@ -674,8 +673,20 @@ class BridgeController(ViktorController):
         raise UserError("Definition bestand is leeg - SCIA model generatie gefaald")
 
     def _raise_empty_esa_error(self) -> None:
-        """Raise UserError for empty ESA model file."""
-        raise UserError("ESA model bestand is leeg - SCIA analyse gefaald")
+        """Raise UserError for empty ESA file."""
+        raise UserError("ESA bestand is leeg - SCIA worker uitvoering gefaald")
+
+    def _raise_no_idea_segments_error(self) -> None:
+        """Raise UserError for missing bridge segments in IDEA RCS model."""
+        raise UserError("Geen brugsegmenten gevonden voor IDEA RCS model")
+
+    def _raise_no_idea_analysis_segments_error(self) -> None:
+        """Raise UserError for missing bridge segments in IDEA RCS analysis."""
+        raise UserError("Geen brugsegmenten gevonden voor IDEA RCS analyse")
+
+    def _raise_empty_idea_xml_error(self) -> None:
+        """Raise UserError for empty IDEA XML file."""
+        raise UserError("XML bestand is leeg - IDEA RCS model generatie gefaald")
 
     # ============================================================================================================
     # output - Rapport
@@ -732,12 +743,12 @@ class BridgeController(ViktorController):
                     bridge_segments_list.append(segment_dict)
 
             if not bridge_segments_list:
-                raise UserError("Geen brugsegmenten gevonden voor IDEA RCS model")
+                self._raise_no_idea_segments_error()
 
             # Extract cross-section from first segment
             from src.integrations.idea_interface import extract_cross_section_from_params
 
-            # TODO: Get materials from params.info when available
+            # Use materials from params.info when available
             concrete_material = getattr(params.info, "concrete_strength_class", None) or "C30/37"
             reinforcement_material = getattr(params.info, "steel_quality_reinforcement", None) or "B500B"
 
@@ -854,31 +865,26 @@ class BridgeController(ViktorController):
                     bridge_segments_list.append(segment_dict)
 
             if not bridge_segments_list:
-                raise UserError("Geen brugsegmenten gevonden voor IDEA RCS analyse")
+                self._raise_no_idea_analysis_segments_error()
 
             # Create IDEA RCS cross-section model with materials from params.info
-            concrete_material = getattr(params.info, "concrete_strength_class", None) or "C30/37"
-            reinforcement_material = getattr(params.info, "steel_quality_reinforcement", None) or "B500B"
+            from src.integrations.idea_interface import create_bridge_idea_model
 
-            model = create_bridge_idea_model(bridge_segments_list, concrete_material, reinforcement_material)
+            try:
+                # Generate XML input file
+                model = create_bridge_idea_model(bridge_segments_list)
+                xml_file = model.generate_xml_input()
 
-            # Generate XML input file
-            xml_file = model.generate_xml_input()
+                # Validate content
+                xml_content = xml_file.getvalue() if hasattr(xml_file, "getvalue") else xml_file.read() if hasattr(xml_file, "read") else b""
 
-            # Validate content
-            if hasattr(xml_file, "getvalue"):
-                xml_content = xml_file.getvalue()
-            else:
-                xml_content = xml_file.read() if hasattr(xml_file, "read") else b""
+                if not xml_content:
+                    self._raise_empty_idea_xml_error()
 
-            if not xml_content:
-                raise UserError("XML bestand is leeg - IDEA RCS model generatie gefaald")
+                return DownloadResult(xml_content, "idea_rcs_cross_section.xml")
 
-            # Convert to string if bytes
-            if isinstance(xml_content, bytes):
-                xml_content = xml_content.decode("utf-8")
-
-            return DownloadResult(xml_content, "idea_rcs_cross_section.xml")
+            except Exception as e:
+                raise UserError(f"IDEA RCS XML generatie gefaald: {e!s}")
 
         except Exception as e:
             raise UserError(f"IDEA RCS XML generatie gefaald: {e!s}")
@@ -913,36 +919,57 @@ class BridgeController(ViktorController):
                     bridge_segments_list.append(segment_dict)
 
             if not bridge_segments_list:
-                raise UserError("Geen brugsegmenten gevonden voor IDEA RCS analyse")
+                self._raise_no_idea_analysis_segments_error()
 
             # Create IDEA RCS cross-section model with materials from params.info
-            concrete_material = getattr(params.info, "concrete_strength_class", None) or "C30/37"
-            reinforcement_material = getattr(params.info, "steel_quality_reinforcement", None) or "B500B"
+            from src.integrations.idea_interface import create_bridge_idea_model, run_idea_analysis
 
-            model = create_bridge_idea_model(bridge_segments_list, concrete_material, reinforcement_material)
-
-            # Run cross-section analysis
-            output_file = run_idea_analysis(model, timeout=120)
-
-            # Create ZIP with XML input and analysis results
-            zip_file_obj = File()
-            with zipfile.ZipFile(zip_file_obj.source, "w", zipfile.ZIP_DEFLATED) as z:
-                # Add input XML model
+            try:
+                # Generate XML input file
+                model = create_bridge_idea_model(bridge_segments_list)
                 xml_file = model.generate_xml_input()
-                if hasattr(xml_file, "getvalue"):
-                    xml_content = xml_file.getvalue()
+
+                # Validate content
+                xml_content = xml_file.getvalue() if hasattr(xml_file, "getvalue") else xml_file.read() if hasattr(xml_file, "read") else b""
+
+                if not xml_content:
+                    self._raise_empty_idea_xml_error()
+
+                # Run cross-section analysis
+                output_file = run_idea_analysis(model, timeout=120)
+
+                # Create ZIP with XML input and analysis results
+                zip_file_obj = File()
+                with zipfile.ZipFile(zip_file_obj.source, "w", zipfile.ZIP_DEFLATED) as z:
+                    # Add input XML model
                     z.writestr("rcs_input_model.xml", xml_content)
 
-                # Add analysis output results
-                if hasattr(output_file, "getvalue"):
-                    output_content = output_file.getvalue()
-                    z.writestr("rcs_analysis_results.xml", output_content)
-                elif hasattr(output_file, "source"):
-                    # If it's a File object
-                    with output_file.open_binary() as f:
-                        z.writestr("rcs_analysis_results.xml", f.read())
+                    # Add analysis output results
+                    if hasattr(output_file, "getvalue"):
+                        output_content = output_file.getvalue()
+                        z.writestr("rcs_analysis_results.xml", output_content)
+                    elif hasattr(output_file, "source"):
+                        # If it's a File object
+                        with output_file.open_binary() as f:
+                            z.writestr("rcs_analysis_results.xml", f.read())
 
-            return DownloadResult(zip_file_obj, "idea_rcs_analysis_complete.zip")
+                return DownloadResult(zip_file_obj, "idea_rcs_analysis_complete.zip")
+
+            except Exception as e:
+                error_msg = (
+                    f"IDEA RCS analyse uitvoering gefaald: {e!s}\n\n"
+                    "Mogelijke oorzaken:\n"
+                    "- IDEA RCS worker niet beschikbaar of niet correct geïnstalleerd\n"
+                    "- IDEA StatiCa licentie problemen of expired\n"
+                    "- Cross-section model configuratie ongeldig\n"
+                    "- Timeout tijdens capaciteitsberekeningen\n\n"
+                    "💡 Suggesties:\n"
+                    "- Controleer IDEA StatiCa installatie en licentie\n"
+                    "- Probeer in plaats daarvan alleen de XML input te downloaden\n"
+                    "- Verhoog timeout voor complexe doorsneden\n"
+                    "- Verificeer brugsegment dimensies (bz1, bz2, bz3, dz, dz_2)"
+                )
+                raise UserError(error_msg)
 
         except Exception as e:
             error_msg = (

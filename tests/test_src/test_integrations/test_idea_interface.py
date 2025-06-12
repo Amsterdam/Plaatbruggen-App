@@ -235,9 +235,11 @@ class TestCreateSimpleIdeaSlabModel:
             width=2.0, height=0.6, concrete_material="C30/37", reinforcement_material="B500B", reinforcement_config=reinforcement_config
         )
 
-        with patch("viktor.external.idea_rcs", side_effect=ImportError("VIKTOR module not available")):
-            with pytest.raises(ImportError, match="VIKTOR IDEA StatiCa module required"):
-                create_simple_idea_slab_model(cross_section_data)
+        with (
+            patch("viktor.external.idea_rcs", side_effect=ImportError("VIKTOR module not available")),
+            pytest.raises(ImportError, match="VIKTOR IDEA StatiCa module required"),
+        ):
+            create_simple_idea_slab_model(cross_section_data)
 
 
 class TestMaterialEnums:
@@ -312,7 +314,7 @@ class TestCreateBridgeIdeaModel:
     @patch("src.integrations.idea_interface.extract_cross_section_from_params")
     def test_create_bridge_idea_model_invalid_params(self, mock_extract: Mock) -> None:
         """Test creating bridge IDEA model with invalid parameters."""
-        bridge_segments_params = []
+        bridge_segments_params: list[dict[str, float]] = []
         mock_extract.side_effect = ValueError("No bridge segments provided")
 
         with pytest.raises(ValueError, match="No bridge segments provided"):

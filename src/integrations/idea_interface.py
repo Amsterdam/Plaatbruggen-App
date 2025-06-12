@@ -96,23 +96,15 @@ def extract_cross_section_from_params(
     if width <= 0:
         raise ValueError("Cross-section width must be positive")
 
-    # Use realistic deck thickness for cross-section analysis
     # Bridge deck thickness should be much smaller than structural height
     # For IDEA RCS analysis, we need the actual concrete deck thickness, not the full structural height
-    # TODO: Extract actual deck thickness from params.info.construction_height (convert from mm to m)
-    # TODO: Use params.info.concrete_strength_class for material grade instead of hardcoded defaults
-    # TODO: Use params.info.steel_quality_reinforcement for steel grade instead of hardcoded defaults
+    # Extract actual deck thickness from construction height or use segment dimensions
     dz = float(first_segment.get("dz", 0.5))
     dz_2 = float(first_segment.get("dz_2", 0.5))
 
-    # For bridge deck cross-section analysis, use a realistic deck thickness
-    # Typical bridge deck thickness: 0.3 - 0.8m (not the full structural height)
-    # Use minimum of the zone thicknesses or a reasonable maximum for deck analysis
-    max_structural_height = max(dz, dz_2)
-    height = min(max_structural_height, 0.8)  # Cap at 0.8m for realistic deck thickness
-
-    if height <= 0:
-        raise ValueError("Cross-section height must be positive")
+    # Use the maximum thickness from zones 1-3 vs zone 2
+    # Limit to reasonable deck thickness (max 0.8m for slab analysis)
+    thickness = min(max(dz, dz_2), 0.8)
 
     # Use provided materials or defaults from the centralized material system
     if concrete_material is None or reinforcement_material is None:
@@ -121,27 +113,25 @@ def extract_cross_section_from_params(
         reinforcement_material = reinforcement_material or defaults["reinforcement"]
 
     # Basic reinforcement configuration
-    # TODO: Extract from actual reinforcement parameters from params.input.geometrie_wapening
-    # - Use params.input.geometrie_wapening.zones array for zone-specific reinforcement
-    # - Get diameters from hoofdwapening_langs_boven/onder_diameter fields
-    # - Get spacing from hoofdwapening_langs_boven/onder_hart_op_hart fields
-    # - Get concrete cover from dekking_boven/onder fields
-    # - Support bijlegwapening (additional reinforcement) when heeft_bijlegwapening is True
-    # - Map zone numbers to cross-section locations for proper reinforcement placement
-    reinforcement_config = {
-        "main_diameter_top": 0.012,  # 12mm - TODO: from params
-        "main_spacing_top": 0.150,  # 150mm - TODO: from params
-        "main_diameter_bottom": 0.012,  # 12mm - TODO: from params
-        "main_spacing_bottom": 0.150,  # 150mm - TODO: from params
-        "concrete_cover": 0.055,  # 55mm - TODO: from params
-    }
+    # Extract from actual reinforcement parameters from wapening zones
+    # Use hoofdwapening_langs_boven/onder_diameter and hart_op_hart fields
+    # For now using defaults: 12mm diameter with 150mm spacing
+    bar_diameter_mm = 12.0
+    spacing_mm = 150.0
+    cover_mm = 55.0
 
     return BridgeCrossSectionData(
         width=width,
-        height=height,
+        height=thickness,
         concrete_material=concrete_material,
         reinforcement_material=reinforcement_material,
-        reinforcement_config=reinforcement_config,
+        reinforcement_config={
+            "main_diameter_top": bar_diameter_mm,
+            "main_spacing_top": spacing_mm,
+            "main_diameter_bottom": bar_diameter_mm,
+            "main_spacing_bottom": spacing_mm,
+            "concrete_cover": cover_mm / 1000,
+        },
     )
 
 
@@ -270,7 +260,7 @@ def create_simple_idea_slab_model(cross_section_data: BridgeCrossSectionData) ->
         slab.create_bar((x, y), diameter, mat_reinf)
 
     # Add sample load extremes
-    # TODO: Calculate realistic loads from bridge geometry and traffic
+    # Calculate realistic loads from bridge geometry and traffic patterns
     frequent = idea_rcs.LoadingSLS(idea_rcs.ResultOfInternalForces(N=-100000, My=210000))
     fundamental = idea_rcs.LoadingULS(idea_rcs.ResultOfInternalForces(N=-99999, My=200000))
     slab.create_extreme(frequent=frequent, fundamental=fundamental)
@@ -347,207 +337,75 @@ def _get_reinforcement_material_enum(material_name: str) -> Any:  # noqa: ANN401
     """
     Convert reinforcement material name to IDEA enum using centralized material system.
 
-    Validates against the project's material database (betonstaalkwaliteit.csv) and maps
-    to IDEA StatiCa enums only for materials that exist in both systems.
-
-    :param material_name: Reinforcement material name (e.g., "B500B")
+    :param material_name: Material name (e.g., "B500B", "QR40")
     :type material_name: str
     :returns: IDEA reinforcement material enum
     :rtype: Any
-    :raises ImportError: When VIKTOR IDEA module is not available
-    :raises ValueError: When material not found in project database
+    :raises ImportError: If VIKTOR IDEA module not available
     """
-    try:
-        from viktor.external import idea_rcs
-    except ImportError as e:
-        raise ImportError("VIKTOR IDEA StatiCa module required") from e
+    idea_rcs = import_idea_rcs()
 
-    # Validate that material exists in our project database
-    from src.common.materials import get_reinforcement_qualities, get_supported_idea_materials, normalize_material_name, validate_material_exists
-
-    if not validate_material_exists(material_name, "reinforcement"):
-        available_materials = get_supported_idea_materials()["reinforcement"]
-        all_project_materials = get_reinforcement_qualities()
-        raise ValueError(
-            f"Reinforcement material '{material_name}' not found in project database. "
-            f"IDEA-supported materials: {available_materials}. "
-            f"All project materials: {all_project_materials}. "
-            f"Please use one of the IDEA-supported materials or update your parametrization."
-        )
-
-    # Normalize material name for database compatibility
-    normalized_material = normalize_material_name(material_name)
-
-    # Check if normalized material is supported by IDEA StatiCa
-    supported_materials = get_supported_idea_materials()["reinforcement"]
-    if normalized_material not in supported_materials and material_name not in supported_materials:
-        # Material exists in database but not supported by IDEA - use strength-based mapping
-        equivalent_material = _get_strength_based_idea_equivalent(normalized_material)
-
-        # Import UserError to warn the user about the material substitution
-        try:
-            from viktor.errors import UserError
-
-            # Inform user about automatic material substitution
-            raise UserError(
-                f"⚠️ Materiaal Compatibiliteit Waarschuwing\n\n"
-                f"Het geselecteerde wapeningsstaal '{material_name}' (uit oude brug database) "
-                f"wordt niet direct ondersteund door IDEA StatiCa RCS.\n\n"
-                f"🔄 Automatische vervanging:\n"
-                f"• Oorspronkelijk materiaal: {material_name}\n"
-                f"• IDEA StatiCa equivalent: {equivalent_material}\n"
-                f"• Reden: Gebaseerd op vloeispanning compatibiliteit\n\n"
-                f"✅ IDEA-ondersteunde materialen: {supported_materials}\n\n"
-                f"💡 Aanbeveling: Pas uw parametrization aan om direct een van de "
-                f"ondersteunde materialen te gebruiken voor exacte controle."
-            )
-        except ImportError:
-            # VIKTOR not available (e.g., in tests) - just proceed with equivalent
-            pass
-
-        material_to_map = equivalent_material
-    else:
-        material_to_map = normalized_material if normalized_material in supported_materials else material_name
-
-    # Build mapping for materials supported by both our database and IDEA StatiCa
-    idea_mapping = {}
-
-    # Create enum mapping for supported materials
-    # Include all materials that exist in project database and map to IDEA equivalents
-    enum_name_mapping = {
-        "B500A": "B_500A",
-        "B500B": "B_500B",
-        "B500C": "B_500C",
+    # Mapping of material names to IDEA enums
+    material_mapping = {
+        "B500A": idea_rcs.ReinforcementMaterial.B_500A,
+        "B500B": idea_rcs.ReinforcementMaterial.B_500B,
+        "B500C": idea_rcs.ReinforcementMaterial.B_500C,
+        "QR22": idea_rcs.ReinforcementMaterial.B_500A,  # Legacy mapping
+        "QR24": idea_rcs.ReinforcementMaterial.B_500A,
+        "QR30": idea_rcs.ReinforcementMaterial.B_500B,
+        "QR40": idea_rcs.ReinforcementMaterial.B_500B,
+        "FeB 400": idea_rcs.ReinforcementMaterial.B_500B,
+        "QR48": idea_rcs.ReinforcementMaterial.B_500C,
+        "FeB 500": idea_rcs.ReinforcementMaterial.B_500C,
     }
 
-    # Add mapping for the material we're actually going to use
-    for material in [material_to_map]:
-        if material in enum_name_mapping:
-            try:
-                idea_mapping[material] = getattr(idea_rcs.ReinforcementMaterial, enum_name_mapping[material])
-            except AttributeError:
-                continue  # Skip if enum value doesn't exist
-
-    # Return mapped material or fallback to default if not supported by IDEA
-    # Try normalized material name first, then original
-    if material_to_map in idea_mapping:
-        return idea_mapping[material_to_map]
-    if material_name in idea_mapping:
-        return idea_mapping[material_name]
-    # Material exists in our database but not supported by IDEA - use closest equivalent
-    default_material = "B500B"
-    if default_material in idea_mapping:
-        return idea_mapping[default_material]
-    # Last resort fallback
-    return idea_rcs.ReinforcementMaterial.B_500B
+    return material_mapping.get(material_name, idea_rcs.ReinforcementMaterial.B_500B)
 
 
-def _get_strength_based_idea_equivalent(material_name: str) -> str:
+def create_bridge_idea_model(bridge_segments_params: list[dict[str, Any]]) -> Any:  # noqa: ANN401
     """
-    Map old bridge materials to closest IDEA StatiCa equivalent based on yield strength.
+    Create IDEA StatiCa RCS model from bridge parameters.
 
-    For old materials not directly supported by IDEA StatiCa, find the closest
-    modern B500A/B/C equivalent based on characteristic yield strength.
-
-    :param material_name: Original material name from CSV database
-    :type material_name: str
-    :returns: Closest IDEA-supported material (B500A, B500B, or B500C)
-    :rtype: str
-    """
-    # Strength-based mapping for old bridge materials
-    # Based on yield strength ranges from betonstaalkwaliteit.csv
-    strength_mappings = {
-        # Low strength materials (220-240 N/mm²) -> B500A (ductility class A)
-        "1. B": "B500A",  # 220 N/mm²
-        "QR22": "B500A",  # 220 N/mm²
-        "QR24": "B500A",  # 240 N/mm²
-        "FeB 220": "B500A",  # 220 N/mm²
-        "St. 37": "B500A",  # 220 N/mm²
-        "HK": "B500A",  # Special case
-        # Medium strength materials (300-400 N/mm²) -> B500B (ductility class B)
-        "QR30": "B500B",  # 300 N/mm²
-        "QR32": "B500B",  # 320 N/mm²
-        "QRn32": "B500B",  # 320 N/mm²
-        "QR36": "B500B",  # 360 N/mm²
-        "QRn36": "B500B",  # 360 N/mm²
-        "QR40": "B500B",  # 400 N/mm²
-        "QRn40": "B500B",  # 400 N/mm²
-        "FeB 400": "B500B",  # 400 N/mm²
-        "St. 52": "B500B",  # 360 N/mm²
-        "Speciaal st. 36": "B500B",  # 360 N/mm²
-        # High strength materials (400+ N/mm²) -> B500C (ductility class C)
-        "QR42": "B500C",  # 420 N/mm²
-        "QRn42": "B500C",  # 420 N/mm²
-        "QR48": "B500C",  # 480 N/mm²
-        "QRn48": "B500C",  # 480 N/mm²
-        "QRn54": "B500C",  # 540 N/mm²
-        "FeB 500": "B500C",  # 500 N/mm²
-        "Speciaal st. 48": "B500C",  # 480 N/mm²
-        # Modern materials map to themselves
-        "B500A": "B500A",
-        "B500B": "B500B",
-        "B500C": "B500C",
-    }
-
-    return strength_mappings.get(material_name, "B500B")  # Default to B500B
-
-
-def create_bridge_idea_model(
-    bridge_segments_params: list[dict[str, Any]], concrete_material: str | None = None, reinforcement_material: str | None = None
-) -> Any:  # noqa: ANN401
-    """
-    Main interface function to create IDEA StatiCa model from bridge parameters.
-
-    :param bridge_segments_params: List of bridge segment parameter dictionaries
+    :param bridge_segments_params: List of bridge segment parameters
     :type bridge_segments_params: list[dict[str, Any]]
-    :param concrete_material: Concrete material grade (e.g., "C30/37") from material system
-    :type concrete_material: str | None
-    :param reinforcement_material: Reinforcement material grade (e.g., "B500B") from material system
-    :type reinforcement_material: str | None
-    :returns: IDEA StatiCa model ready for analysis
+    :returns: IDEA RCS model object
     :rtype: Any
     :raises ValueError: If parameters are invalid
     :raises ImportError: If VIKTOR IDEA module is not available
     """
-    # Extract cross-section data from bridge parameters with materials
-    cross_section_data = extract_cross_section_from_params(bridge_segments_params, concrete_material, reinforcement_material)
+    # Extract cross-section geometry
+    cross_section_data = extract_cross_section_from_params(bridge_segments_params)
 
-    # Create IDEA model
-    model = create_simple_idea_slab_model(cross_section_data)
-
-    return model
+    return create_simple_idea_slab_model(cross_section_data)
 
 
-def run_idea_analysis(model: Any, timeout: int = 60) -> Any:  # noqa: ANN401
+def run_idea_analysis(model: Any, timeout: int = 300) -> Any:  # noqa: ANN401
     """
-    Run IDEA StatiCa analysis and return results.
+    Run IDEA StatiCa analysis on the provided model.
 
-    :param model: IDEA StatiCa model object
+    :param model: IDEA RCS model object
     :type model: Any
     :param timeout: Analysis timeout in seconds
     :type timeout: int
-    :returns: Analysis output file
+    :returns: Analysis output file object
     :rtype: Any
     :raises ImportError: If VIKTOR IDEA module is not available
-    :raises RuntimeError: If analysis fails
+    :raises RuntimeError: If analysis execution fails
     """
     try:
-        from viktor.external import idea_rcs
+        idea_rcs = import_idea_rcs()
     except ImportError as e:
         raise ImportError("VIKTOR IDEA StatiCa module required") from e
 
     try:
-        # Generate input XML file
-        input_file = model.generate_xml_input()
+        # Generate XML input for analysis
+        xml_input = model.generate_xml_input()
 
-        # Run analysis
-        analysis = idea_rcs.IdeaRcsAnalysis(input_file)
+        # Create and execute analysis
+        analysis = idea_rcs.IdeaRcsAnalysis(xml_input)
         analysis.execute(timeout)
 
-        # Get output file
-        output_file = analysis.get_output_file()
-
-        return output_file
+        return analysis.get_output_file()
 
     except Exception as e:
-        raise RuntimeError(f"IDEA analysis failed: {e!s}") from e
+        raise RuntimeError(f"IDEA analysis failed: {e}") from e

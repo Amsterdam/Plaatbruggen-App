@@ -149,7 +149,7 @@ IDEA StatiCa ondersteunt alleen moderne Eurocode materialen:
 
 **Automatische omzetting oude materialen:**
 - **QR24, QR22** naar B500A (lage sterkte: 220-240 N/mm²)
-- **QR30, QR40, FeB 400** naar B500B (medium sterkte: 300-400 N/mm²)  
+- **QR30, QR40, FeB 400** naar B500B (medium sterkte: 300-400 N/mm²)
 - **QR48, FeB 500** naar B500C (hoge sterkte: 400+ N/mm²)
 
 **Aanbeveling:** Voor exacte materiaalcontrole, selecteer direct B500A/B/C in wapeningsinstellingen.
