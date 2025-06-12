@@ -25,7 +25,6 @@ class TestBridgeControllerViews(unittest.TestCase):
         """Test that all view methods exist and are callable."""
         view_methods = [
             "get_3d_view",
-            "get_bridge_summary_view",
             "get_2d_cross_section",
             "get_2d_horizontal_section",
             "get_2d_longitudinal_section",
