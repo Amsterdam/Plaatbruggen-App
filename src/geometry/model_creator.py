@@ -83,6 +83,26 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             "height_end": height_end,
             "length": next_segment_data.l
         }
+def create_rebars(params: Munch, color: list) -> trimesh.Scene:  # noqa: C901, PLR0915
+    """
+    Create a mesh representing rebars based on specified parameters.
+
+    Args:
+        params (Munch): Parameters for the rebars, including positions and dimensions.
+        color (list): RGBA color for the rebars, format [R, G, B, A].
+
+    Returns:
+        trimesh.Scene: A trimesh object representing the rebars.
+
+    """
+
+    def get_cumulative_distance(segment_idx: int) -> float:
+        """Calculate the cumulative distance to the start of a segment."""
+        total_distance = 0.0
+        for i in range(segment_idx):
+            # The l parameter in each segment defines the distance to the next segment
+            total_distance += bridge_segments_array[i + 1].l
+        return total_distance
 
     def get_zone_parameters(zone_entry: Munch) -> dict:
         """Get all parameters for a specific zone."""
@@ -228,7 +248,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         # Add y_offset to all positions
         return [pos + y_offset for pos in bijleg_positions]
 
-    def get_shear_positions(width_eff: float, hoh: float, diameter_shear: float, zone_params: dict) -> list[float]:
+    def get_shear_positions(width_eff: float, hoh: float, diameter_shear: float) -> list[float]:
         """Calculate positions for shear reinforcement."""
         n_rebars = int(width_eff / hoh)
         if n_rebars < 1:
@@ -285,13 +305,14 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
         y_offset: float,
         height: float,
         rebar_diameter: float,  # New parameter for single diameter
-        z_position: float,      # New parameter for single z-position
+        z_position: float,  # New parameter for single z-position
         x_offset: float,
         height_start: float | None = None,
         height_end: float | None = None,
     ) -> None:
-        """Create and position shear rebars for a zone at specified height.
-        
+        """
+        Create and position shear rebars for a zone at specified height.
+
         Args:
             x_positions: List of x-coordinates for rebar placement
             y_offset: Offset in y direction for the rebars
@@ -301,6 +322,7 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
             x_offset: Global x-offset for segment positioning
             height_start: Starting height for variable height rebars (optional)
             height_end: Ending height for variable height rebars (optional)
+
         """
         if height_start is None:
             height_start = height
@@ -372,30 +394,44 @@ def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:
                 zone_dims["height_end"]
             )
 
-            # Create longitudinal top reinforcement
-            top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
-            create_rebar_meshes(
-                top_positions,
-                z_positions["long_top"],
-                zone_params["diam_long_top"],
-                zone_dims["length"],
+        top_positions = calculate_rebar_positions(effective_widths["long_top"], zone_params["hoh_long_top"], y_offset)
+        create_rebar_meshes(
+            top_positions,
+            z_positions["long_top"],
+            zone_params["diam_long_top"],
+            zone_dims["length"],
+            x_offset,
+            zone_dims["height_start"],
+            zone_dims["height_end"],
+        )
+        # Create bottom shear reinforcement
+        if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
+            shear_positions_bottom = get_shear_positions(
+                effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"]
+            )
+            create_shear_rebars(
+                shear_positions_bottom,
+                y_offset,
+                zone_dims["bz"],
+                zone_params["diam_shear_bottom"],
+                z_positions["shear_bottom"],
                 x_offset,
                 zone_dims["height_start"],
-                zone_dims["height_end"]
-            )        
-
-            # Create bottom shear reinforcement
-            if zone_params.get("hoh_shear_bottom") and zone_params.get("diam_shear_bottom"):
-                shear_positions_bottom = get_shear_positions(effective_widths["shear_bottom"], zone_params["hoh_shear_bottom"], zone_params["diam_shear_bottom"], zone_params)
-                create_shear_rebars(
-                    shear_positions_bottom, y_offset, zone_dims["bz"], zone_params["diam_shear_bottom"], z_positions["shear_bottom"], x_offset, zone_dims["height_start"], zone_dims["height_end"]
-                )
+                zone_dims["height_end"],
+            )
 
             # Create top shear reinforcement
             if zone_params.get("hoh_shear_top") and zone_params.get("diam_shear_top"):
-                shear_positions_top = get_shear_positions(effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"], zone_params)
+                shear_positions_top = get_shear_positions(effective_widths["shear_top"], zone_params["hoh_shear_top"], zone_params["diam_shear_top"])
                 create_shear_rebars(
-                    shear_positions_top, y_offset, zone_dims["bz"], zone_params["diam_shear_top"], z_positions["shear_top"], x_offset, zone_dims["height_start"], zone_dims["height_end"]
+                    shear_positions_top,
+                y_offset,
+                zone_dims["bz"],
+                zone_params["diam_shear_top"],
+                z_positions["shear_top"],
+                x_offset,
+                zone_dims["height_start"],
+                zone_dims["height_end"],
                 )
 
             # Create bijlegwapening (additional reinforcement) if enabled
@@ -748,39 +784,43 @@ def create_3d_model(params: (dict | Munch), axes: bool = True, section_planes: b
             box_meshes.append(box_mesh)
 
         # Combine all box meshes into a single mesh
-        combined_vertices = []
-        combined_faces = []
-        combined_colors = []
-        vertex_offset = 0
+        all_segment_vertices = []
+        all_segment_faces = []
+        current_face_offset = 0
 
-        for mesh in box_meshes:
+        if not params.bridge_segments_array:
+            # If there are no segments, return an empty scenes
+            # NOTE: Empty scene is the expected behavior for no segments
+            return trimesh.Scene()
+
+        for i, segment_params in enumerate(params.bridge_segments_array):
             # Process mesh before combining
-            mesh.process()  # Merges duplicate vertices
-            mesh.fix_normals()  # Ensures consistent face orientation
+            box_meshes[i].process()  # Merges duplicate vertices
+            box_meshes[i].fix_normals()  # Ensures consistent face orientation
             # Append vertices
-            combined_vertices.append(mesh.vertices)
+            all_segment_vertices.append(box_meshes[i].vertices)
             # Append faces, adjusting indices by the current vertex offset
-            combined_faces.append(mesh.faces + vertex_offset)
-            # Append face colors
-            combined_colors.append(mesh.visual.face_colors)
+            all_segment_faces.append(box_meshes[i].faces + current_face_offset)
             # Update vertex offset for the next mesh
-            vertex_offset += len(mesh.vertices)
+            current_face_offset += len(box_meshes[i].vertices)
 
-        # Stack all vertices, faces and colors into single arrays
-        final_vertices = np.vstack(combined_vertices)
-        final_faces = np.vstack(combined_faces)
-        final_colors = np.vstack(combined_colors)
+        # Combine all meshes
+        if not all_segment_vertices or not all_segment_faces:
+            # This case should ideally be caught by the check for empty bridge_segments_array,
+            # but as a safeguard if segments somehow produce no vertices/faces:
+            # Log this? Or handle as error?
+            return trimesh.Scene()  # Return an empty scene
 
-        # Create the final combined mesh
+        final_vertices = np.vstack(all_segment_vertices)
+        final_faces = np.vstack(all_segment_faces)
+
+        if final_vertices.shape[0] == 0 or final_vertices.shape[1] != 3:
+            # If vstack results in no vertices or incorrect dimensions, something is wrong
+            # Log this? Or handle as error?
+            # This could happen if all_segment_vertices contained only empty arrays or arrays with wrong shape
+            return trimesh.Scene()
+
         combined_mesh = trimesh.Trimesh(vertices=final_vertices, faces=final_faces)
-        # Process the combined mesh
-        combined_mesh.process()  # Merges duplicate vertices
-        combined_mesh.update_faces(combined_mesh.unique_faces())  # Removes any duplicate faces using the new recommended method
-        combined_mesh.fix_normals()  # Ensures consistent face orientation
-        # Set the face colors for the combined mesh, adjusting for potentially merged faces
-        combined_mesh.visual.face_colors = final_colors[: len(combined_mesh.faces)]
-
-        # Add the mesh to the scene
         combined_scene.add_geometry(combined_mesh)
 
     if axes:

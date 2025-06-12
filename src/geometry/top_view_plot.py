@@ -31,7 +31,7 @@ def _add_zone_polygon_traces(fig: go.Figure, zone_polygons_data: list[dict[str, 
 
 def _add_bridge_outline_traces(fig: go.Figure, bridge_lines_data: list[dict[str, Any]]) -> None:
     """Adds bridge outline traces to the figure."""
-    for line_segment in bridge_lines_data:
+    for i, line_segment in enumerate(bridge_lines_data):
         fig.add_trace(
             go.Scatter(
                 x=[line_segment["start"][0], line_segment["end"][0]],
@@ -40,6 +40,7 @@ def _add_bridge_outline_traces(fig: go.Figure, bridge_lines_data: list[dict[str,
                 line={"color": "blue", "width": 2},
                 hoverinfo="none",
                 showlegend=False,
+                name=f"Bridge Outline Segment {i}",
             )
         )
 
