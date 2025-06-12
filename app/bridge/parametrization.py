@@ -247,7 +247,7 @@ class BridgeParametrization(Parametrization):
     # ----------------------------------
     # --- Info Page ---
     # ----------------------------------
-    info = Page("Info", views=["get_bridge_map_view", "get_bridge_summary_view"])
+    info = Page("Info", views=["get_bridge_map_view"])
 
     # Bridge identification section
     info.bridge_info_section = Text(
