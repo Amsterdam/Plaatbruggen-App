@@ -23,7 +23,7 @@ from viktor.parametrization import (
     TextField,
 )
 
-from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT, DIMENSIONS_SEGMENTS_EXPLANATION
 
 from .geometry_functions import get_steel_qualities
 
@@ -426,18 +426,7 @@ Below you will find important information about this bridge structure."""
     # --- Invoer Page -> Dimensions tab ---
     # ----------------------------------------
 
-    input.dimensions.segment_explanation = Text(
-        """Definieer hier de dwarsdoorsneden (snedes) van de brug.
-Elk item in de lijst hieronder representeert een dwarsdoorsnede.
-- Het **eerste item** definieert de geometrie van het begin van de brug (snede D1).
-- Elk **volgend item** definieert de geometrie van de *volgende* dwarsdoorsnede (D2, D3, etc.).
-- Het veld '**Afstand tot vorige snede**' (`l`) geeft de lengte van het brugsegment *tussen* de voorgaande en de huidige snede.
-  Dit veld is niet zichtbaar voor de eerste snede.
-- De overige dimensievelden (zoals `bz1`, `bz2`, `dz` voor de dikte van zone 1 en 3, en `dz_2` voor de dikte van zone 2)
-  beschrijven de eigenschappen van de *huidige* dwarsdoorsnede.
-Standaard zijn twee dwarsdoorsneden (D1 en D2) voorgedefinieerd, wat resulteert in één brugsegment.
-Pas de waarden aan, of voeg meer dwarsdoorsneden toe/verwijder ze via de '+' en '-' knoppen."""
-    )
+    input.dimensions.segment_explanation = Text(DIMENSIONS_SEGMENTS_EXPLANATION)
 
     input.dimensions.array = DynamicArray(
         "Brug dimensies",
