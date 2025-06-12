@@ -81,7 +81,7 @@ def parse_zone_number(zone_numbers: list[str] | str) -> list[tuple[int, int]]:
     return result
 
 
-def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901, PLR0915
+def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901, PLR0915, PLR0912
     """Create a mesh representing rebars based on specified parameters."""
 
     def get_zone_dimensions(position: int, segment_idx: int) -> dict:
