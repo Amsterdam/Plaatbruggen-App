@@ -24,6 +24,8 @@ from viktor.parametrization import (
     TextField,
 )
 
+
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS, SCIA_INFO_TEXT
 from .geometry_functions import get_steel_qualities
 
 # --- Helper functions for Bridge Data Loading ---
@@ -705,7 +707,14 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     # --- SCIA Page ---
     # ----------------------------------
 
-    scia = Page("SCIA")
+    scia = Page("SCIA", views=["get_scia_model_preview"])
+
+    scia.info_text = Text(SCIA_INFO_TEXT)
+
+    # Download buttons - use DownloadButton instead of ActionButton
+    scia.download_xml_button = DownloadButton("Download XML Files", method="download_scia_xml_files")
+
+    scia.download_esa_button = DownloadButton("Download ESA Model", method="download_scia_esa_model")
 
     # ----------------------------------
     # --- IDEA StatiCa Page ---
