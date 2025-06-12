@@ -80,6 +80,7 @@ def parse_zone_number(zone_numbers: list[str] | str) -> list[tuple[int, int]]:
             result.append((pos, seg - 1))  # Convert to 0-based segment index
     return result
 
+
 def create_rebars(params: Munch, color: list) -> trimesh.Trimesh:  # noqa: C901, PLR0915
     """Create a mesh representing rebars based on specified parameters."""
 
