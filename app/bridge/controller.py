@@ -460,7 +460,7 @@ class BridgeController(ViktorController):
             bridge_segments = self._convert_bridge_params_to_dicts(params)
 
             if not bridge_segments:
-                raise UserError("Geen brugsegmenten gedefinieerd. Ga naar de 'Invoer' pagina om de brug dimensies in te stellen.")
+                self._raise_no_bridge_segments_error()
 
             # Extract geometry using the same logic as SCIA interface
             from src.integrations.scia_interface import extract_bridge_geometry_from_params
@@ -532,7 +532,7 @@ class BridgeController(ViktorController):
             bridge_segments = self._convert_bridge_params_to_dicts(params)
 
             if not bridge_segments:
-                raise UserError("Geen brugsegmenten gedefinieerd. Ga naar de 'Invoer' pagina om de brug dimensies in te stellen.")
+                self._raise_no_bridge_segments_error()
 
             # Get template path
             template_path = self._get_scia_template_path()
@@ -545,9 +545,9 @@ class BridgeController(ViktorController):
             def_content = def_file.getvalue() if hasattr(def_file, "getvalue") else b""
 
             if not xml_content:
-                raise UserError("XML bestand is leeg - SCIA model generatie gefaald")
+                self._raise_empty_xml_error()
             if not def_content:
-                raise UserError("Definition bestand is leeg - SCIA model generatie gefaald")
+                self._raise_empty_def_error()
 
             # Create ZIP file using VIKTOR's recommended approach from documentation
             import zipfile
@@ -620,7 +620,7 @@ Generated from VIKTOR Bridge Assessment Tool
             bridge_segments = self._convert_bridge_params_to_dicts(params)
 
             if not bridge_segments:
-                raise UserError("Geen brugsegmenten gedefinieerd. Ga naar de 'Invoer' pagina om de brug dimensies in te stellen.")
+                self._raise_no_bridge_segments_error()
 
             # Get template path
             template_path = self._get_scia_template_path()
@@ -638,7 +638,7 @@ Generated from VIKTOR Bridge Assessment Tool
 
                 # Debug: Check if ESA model file has content
                 if not esa_model_file:
-                    raise UserError("ESA model bestand is leeg - SCIA analyse gefaald")
+                    self._raise_empty_esa_error()
 
                 # Generate filename
                 bridge_name = getattr(params.info, "bridge_name", "UnknownBridge") or "UnknownBridge"
@@ -672,6 +672,22 @@ Generated from VIKTOR Bridge Assessment Tool
             raise
         except Exception as e:
             raise UserError(f"Fout bij genereren SCIA ESA model: {e!s}")
+
+    def _raise_no_bridge_segments_error(self) -> None:
+        """Raise UserError for missing bridge segments."""
+        raise UserError("Geen brugsegmenten gedefinieerd. Ga naar de 'Invoer' pagina om de brug dimensies in te stellen.")
+
+    def _raise_empty_xml_error(self) -> None:
+        """Raise UserError for empty XML file."""
+        raise UserError("XML bestand is leeg - SCIA model generatie gefaald")
+
+    def _raise_empty_def_error(self) -> None:
+        """Raise UserError for empty definition file."""
+        raise UserError("Definition bestand is leeg - SCIA model generatie gefaald")
+
+    def _raise_empty_esa_error(self) -> None:
+        """Raise UserError for empty ESA model file."""
+        raise UserError("ESA model bestand is leeg - SCIA analyse gefaald")
 
     # ============================================================================================================
     # output - Rapport

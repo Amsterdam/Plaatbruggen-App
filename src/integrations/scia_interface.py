@@ -314,7 +314,7 @@ def create_simple_scia_plate_model(bridge_geometry: BridgeGeometryData) -> tuple
     return xml_file, def_file
 
 
-def create_scia_analysis_from_template(xml_file: io.BytesIO, def_file: io.BytesIO, template_path: Path) -> Any:
+def create_scia_analysis_from_template(xml_file: io.BytesIO, def_file: io.BytesIO, template_path: Path) -> Any:  # noqa: ANN401
     """
     Create SCIA analysis using template file and generated XML input.
 
