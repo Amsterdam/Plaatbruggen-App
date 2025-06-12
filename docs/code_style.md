@@ -8,6 +8,7 @@ Dit project gebruikt **Ruff** voor het handhaven van code style (volgens PEP 8) 
 
 De hoofd-dependency voor het draaien van de VIKTOR applicatie zelf wordt geïnstalleerd via:
 
+
 ```bash
 pip install viktor
 ```
