@@ -29,6 +29,7 @@ from .geometry_functions import get_steel_qualities
 
 # --- Helper functions for DynamicArray Default Rows ---
 
+
 def _create_default_dimension_segment_row(l_value: int, is_first: bool) -> dict[str, Any]:
     """Creates a dictionary for a default bridge dimension segment row."""
     return {
@@ -120,6 +121,7 @@ DX_WIDTH_VISIBILITY_CALLBACKS = {i: _create_dx_width_visibility_callback(i) for 
 
 # --- Functions for dynamic reinforcement zones ---
 
+
 def define_options_numbering(params: Mapping, **kwargs) -> list:  # noqa: ARG001
     """
     Define options for zone numbering based on the number of segments.
@@ -171,7 +173,7 @@ def _get_model_zmax(params: Mapping, **kwargs) -> float:  # noqa: ARG001
     dz_max = max(segment.dz_2 - segment.dz for segment in params.bridge_segments_array)
     max_value = dz_max
     return max_value - 0.01
-    
+
 
 # ----------------------------------
 # --- Main Parametrization Class ---
@@ -349,8 +351,8 @@ In het model, wordt deze bijlegwapening automatisch tussen het bestaande hoofdwa
 
 Zorg ervoor dat elke zone altijd precies 1 keer is aangevinkt, anders kan het model niet correct worden gegenereerd.
 Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningsconfiguraties worden gedefinieerd."""
-    )  
-    
+    )
+
     # General reinforcement parameters
     input.geometrie_wapening.staalsoort = OptionField(
         "Staalsoort",
@@ -407,13 +409,13 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
                 "bijlegwapening_dwars_onder_diameter": 12.0,
             },
         ],
-    )    
+    )
     # Zone number selection
     input.geometrie_wapening.zones.zone_number = MultiSelectField(
-        "Zones", 
+        "Zones",
         options=define_options_numbering,  # Use dynamic options based on number of segments
         default=["1-1", "2-1", "3-1"],  # Default to all zones for the first configuration
-        description="Selecteer de zones waar deze wapeningsconfiguratie moet worden toegepast."
+        description="Selecteer de zones waar deze wapeningsconfiguratie moet worden toegepast.",
     )
 
     input.geometrie_wapening.zones.lb2 = LineBreak()
@@ -460,14 +462,14 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.geometrie_wapening.zones.lb6 = LineBreak()
 
     # Additional reinforcement toggle
-    input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)    
+    input.geometrie_wapening.zones.heeft_bijlegwapening = BooleanField("Bijlegwapening aanwezig?", default=False)
 
     # Additional reinforcement fields - only visible when heeft_bijlegwapening is True
     input.geometrie_wapening.zones.lb7 = LineBreak()
 
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_diameter = NumberField(
         "Diameter bijlegwapening langsrichting boven", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
-    )      
+    )
     input.geometrie_wapening.zones.bijlegwapening_langs_boven_hart_op_hart = OutputField(
         "H.o.h. afstand bijlegwapening langsrichting boven",
         value=RowLookup("hoofdwapening_langs_boven_hart_op_hart"),
@@ -483,11 +485,11 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
         "Diameter bijlegwapening langsrichting onder", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
     )
     input.geometrie_wapening.zones.bijlegwapening_langs_onder_hart_op_hart = OutputField(
-        "H.o.h. afstand bijlegwapening langsrichting onder", 
-        value=RowLookup("hoofdwapening_langs_onder_hart_op_hart"), 
+        "H.o.h. afstand bijlegwapening langsrichting onder",
+        value=RowLookup("hoofdwapening_langs_onder_hart_op_hart"),
         visible=RowLookup("heeft_bijlegwapening"),
-        suffix="mm", 
-        flex=53
+        suffix="mm",
+        flex=53,
     )
 
     input.geometrie_wapening.zones.lb9 = LineBreak()
@@ -497,25 +499,25 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
         "Diameter bijlegwapening dwarsrichting boven", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
     )
     input.geometrie_wapening.zones.bijlegwapening_dwars_boven_hart_op_hart = OutputField(
-        "H.o.h. afstand bijlegwapening dwarsrichting boven", 
-        value=RowLookup("hoofdwapening_dwars_boven_hart_op_hart"), 
+        "H.o.h. afstand bijlegwapening dwarsrichting boven",
+        value=RowLookup("hoofdwapening_dwars_boven_hart_op_hart"),
         visible=RowLookup("heeft_bijlegwapening"),
-        suffix="mm", 
-        flex=53
+        suffix="mm",
+        flex=53,
     )
-    
+
     input.geometrie_wapening.zones.lb10 = LineBreak()
-    
+
     # Additional reinforcement - Transverse bottom
     input.geometrie_wapening.zones.bijlegwapening_dwars_onder_diameter = NumberField(
         "Diameter bijlegwapening dwarsrichting onder", default=12.0, suffix="mm", flex=47, visible=RowLookup("heeft_bijlegwapening")
     )
     input.geometrie_wapening.zones.bijlegwapening_dwars_onder_hart_op_hart = OutputField(
-        "H.o.h. afstand bijlegwapening dwarsrichting onder", 
-        value=RowLookup("hoofdwapening_dwars_onder_hart_op_hart"), 
+        "H.o.h. afstand bijlegwapening dwarsrichting onder",
+        value=RowLookup("hoofdwapening_dwars_onder_hart_op_hart"),
         visible=RowLookup("heeft_bijlegwapening"),
-        suffix="mm", 
-        flex=53
+        suffix="mm",
+        flex=53,
     )
 
     # ----------------------------------------
