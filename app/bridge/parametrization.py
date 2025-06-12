@@ -724,38 +724,44 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     idea = Page("IDEA StatiCa", views=["get_idea_model_preview"])
 
     # Add download buttons as page attributes
-    idea.download_xml = DownloadButton("Download XML Input", method="download_idea_xml_file")
-    idea.download_results = DownloadButton("Download Analysis Results", method="download_idea_analysis_results")
+    idea.download_xml = DownloadButton("📄 Download RCS Model (XML)", method="download_idea_xml_file")
+    idea.download_results = DownloadButton("📊 Download Capacity Analysis", method="download_idea_analysis_results")
 
     idea.explanation = Text(
         """
-        # IDEA StatiCa Concrete Integratie
+        # IDEA StatiCa RCS - Dwarsdoorsnede Analyse
 
-        Deze pagina biedt integratie met IDEA StatiCa Concrete voor gedetailleerde dwarsdoorsnede analyse.
+        **IDEA StatiCa RCS** is gespecialiseerd in gedetailleerde analyse van gewapend beton dwarsdoorsneden.
+        
+        ## 🎯 Functionaliteit
+        - **Capaciteitsberekeningen**: Moment-, normaalkracht- en schuifcapaciteit
+        - **Interactiediagrammen**: M-N interactie voor belastingscombinaties  
+        - **Spanningsverdelingen**: Gedetailleerde spanning in beton en wapening
+        - **Scheurwijdte controle**: SLS controles volgens Eurocode
 
-        ## Functionaliteit:
-        - **3D Preview**: Visualisatie van de dwarsdoorsnede met wapening
-        - **XML Input**: Download van IDEA StatiCa input bestand
-        - **Analysis Results**: Uitvoering van analyse en download van resultaten
+        ## 🔧 Huidig Model
+        - **Geometrie**: Rechthoekige doorsnede uit eerste segment (bz1+bz2+bz3 × max(dz,dz_2))
+        - **Materialen**: C30/37 beton, B500B betonstaal
+        - **Wapening**: ⌀12mm @ 150mm h.o.h. boven/onder, 55mm dekking
+        - **Belastingen**: ULS (N=-99.9kN, My=200kNm), SLS (N=-100kN, My=210kNm)
 
-        ## Model Details:
-        - **Cross-section**: Rechthoekige doorsnede gebaseerd op eerste brugsegment
-        - **Materials**: Beton (C30/37) en betonstaal (B500B)
-        - **Reinforcement**: Automatische wapeningsindeling gebaseerd op configuratie
-        - **Loading**: Standaard ULS/SLS belastingcombinaties
+        ## 📊 3D Preview
+        - **Grijze blok**: Betonvolume doorsnede
+        - **Bruine cylinders**: Wapeningsstaven met realistische afmetingen
+        - **Coördinaten**: X (breedte), Z (hoogte) assen zichtbaar
 
-        ## Beperkingen huidige implementatie:
-        - Alleen rechthoekige doorsneden ondersteund
-        - Vaste materialen (toekomstige uitbreiding: configureerbaar via Info pagina)
-        - Basis wapeningspatroon (toekomstige uitbreiding: volledige wapeningsconfiguratie)
-        - Standaard belastingen (toekomstige uitbreiding: werkelijke verkeersbelastingen)
+        ## 📥 Downloads
+        - **📄 RCS Model (XML)**: Input bestand voor handmatige controle
+        - **📊 Capacity Analysis**: Volledig analyserapport met capaciteiten
 
-        ## Toekomstige uitbreidingen:
-        - T-balk en kokerbalken doorsneden
-        - Variabele wapening per zone
-        - Schuifwapening en beugels
-        - Volledige belastingcombinaties
-        - Integratie met SCIA Engineer voor volledige brug analyse
+        ## ⚠️ Beperkingen
+        - Alleen rechthoekige doorsneden (T-balken/kokers gepland)
+        - Vaste materialen (Info-pagina integratie komend)
+        - Standaard wapening (zone-specifieke configuratie gepland)
+        - Voorbeeld belastingen (verkeerslast integratie komend)
+
+        ---
+        💡 **Tip**: Gebruik RCS voor kritieke doorsneden na globale SCIA analyse
         """
     )
 
