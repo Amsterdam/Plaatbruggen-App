@@ -1,9 +1,9 @@
 """Module for the Bridge entity parametrization."""
 
+import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from app.constants import LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -23,7 +23,71 @@ from viktor.parametrization import (
     TextField,
 )
 
+from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, MAX_LOAD_ZONE_SEGMENT_FIELDS
+
 from .geometry_functions import get_steel_qualities
+
+# --- Helper functions for Bridge Data Loading ---
+
+
+def _load_bridge_data() -> list[dict[str, Any]]:
+    """Load bridge data from the filtered_bridges.json file."""
+    bridge_data_path = BRIDGE_DATA_PATH
+    try:
+        with bridge_data_path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def _get_bridge_by_objectnumm(objectnumm: str) -> dict[str, Any] | None:
+    """Get bridge data by OBJECTNUMM."""
+    if not objectnumm:
+        return None
+
+    bridge_data = _load_bridge_data()
+    for bridge in bridge_data:
+        if bridge.get("OBJECTNUMM") == objectnumm:
+            return bridge
+    return None
+
+
+def _get_bridge_field_value(objectnumm: str, field_name: str, default: str = "") -> str:
+    """Get a text field value from bridge data."""
+    bridge = _get_bridge_by_objectnumm(objectnumm)
+    if bridge and field_name in bridge:
+        value = bridge[field_name]
+        if value is not None and value != "":
+            return str(value)
+    return default
+
+
+def _get_bridge_numeric_field_value(objectnumm: str, field_name: str, default: float = 0.0) -> float:
+    """Get a numeric field value from bridge data."""
+    bridge = _get_bridge_by_objectnumm(objectnumm)
+    if bridge and field_name in bridge:
+        value = bridge[field_name]
+        if value is not None:
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                pass
+    return default
+
+
+def _bridge_field_has_value(objectnumm: str, field_name: str) -> bool:
+    """Check if a bridge field has a meaningful value."""
+    bridge = _get_bridge_by_objectnumm(objectnumm)
+    if bridge and field_name in bridge:
+        value = bridge[field_name]
+        return value is not None and value != ""
+    return False
+
+
+def _bridge_field_is_empty(objectnumm: str, field_name: str) -> bool:
+    """Check if a bridge field is empty or missing."""
+    return not _bridge_field_has_value(objectnumm, field_name)
+
 
 # --- Helper functions for DynamicArray Default Rows ---
 
@@ -188,51 +252,149 @@ class BridgeParametrization(Parametrization):
     # Bridge identification section
     info.bridge_info_section = Text(
         """# Bridge Details
-Below you'll find key information about this bridge structure."""
+Below you will find important information about this bridge structure."""
     )
 
     # Saved bridge identifiers (now visible and with better labels)
-    info.bridge_objectnumm = TextField("Bridge ID (OBJECTNUMM)", default="", description="Unique identifier for this bridge in the system")
-    info.bridge_name = TextField("Bridge Name", default="", description="Official name of this bridge structure")
+    info.bridge_objectnumm = TextField("Brug ID (OBJECTNUMM)", default="", description="Unieke identificatie voor deze brug in het systeem")
+    info.bridge_name = TextField("Brugnaam", default="", description="Officiële naam van deze brug")
 
     # Additional bridge information fields
-    info.bridge_description = Text(
-        """## Bridge Overview
-This bridge model represents a plate bridge structure as part of the automatic assessment model for plate bridges.
-Use the tabs below to view geometric properties, load configurations, and analysis results.
-        """
-    )
 
     info.lb1 = LineBreak()
 
-    info.bridge_location_header = Text("## Location Information")
-    info.location_description = TextField(
-        "Location Description", default="", description="Descriptive location of the bridge (e.g., 'Crossing River A at Highway B')"
+    info.bridge_location_header = Text("## Locatie Informatie")
+
+    info.stadsdeel = TextField(
+        "Stadsdeel",
+        default="",
+        description="Stadsdeel waar de brug zich bevindt (bijv. Centrum, Noord)",
     )
-    info.city = TextField("City/Municipality", default="", description="Municipality where the bridge is located")
+
+    info.straat = TextField(
+        "Straat",
+        default="",
+        description="Straat of waterweg waar de brug zich bevindt",
+    )
+
+    info.waterway = TextField("Waterweg/Kruising", default="", description="Waterweg of obstakel dat de brug kruist")
 
     info.lb2 = LineBreak()
 
-    info.bridge_properties_header = Text("## Bridge Properties")
-    info.construction_year = NumberField("Construction Year", default=2000, min=1900, max=2100, description="Year when the bridge was constructed")
-    info.total_length = NumberField(
-        "Total Length", default=0.0, suffix="m", description="Total length of the bridge structure (calculated from segments)"
+    info.bridge_properties_header = Text("## Brugeigenschappen")
+
+    info.bridge_type = TextField(
+        "Brugtype",
+        default="",
+        description="Structurele type classificatie van de brug",
     )
-    info.total_width = NumberField(
-        "Total Width", default=0.0, suffix="m", description="Maximum width of the bridge structure (calculated from segments)"
+
+    info.construction_year = TextField(
+        "Stichtingsjaar",
+        default="",
+        description="Jaar waarin de brug is gebouwd",
+    )
+
+    info.usage = TextField(
+        "Gebruik",
+        default="",
+        description="Primaire functie van de brug (bijv. wegverkeer, voetgangers)",
+    )
+
+    info.concrete_strength_class = TextField("Betonsterkteklasse", default="", description="Beton sterkte classificatie (bijv. B25, B45)")
+    info.steel_quality_reinforcement = TextField("Staalkwaliteit (Wapening)", default="", description="Kwaliteitsklasse van betonstaal (bijv. B500)")
+    info.deck_layer = TextField("Deklaag", default="", description="Type van het dekoppervlak (bijv. Asfalt, Beton)")
+
+    info.lb2a = LineBreak()
+
+    info.geometric_properties_header = Text("### Geometrische Eigenschappen")
+    info.number_of_spans = NumberField("Aantal Velden", default=1, min=1, description="Aantal structurele overspanningen in de brug")
+    info.static_system = TextField("Statisch Systeem", default="", description="Statisch systeemtype (bijv. statisch bepaald/onbepaald)")
+    info.crossing_angle = NumberField("Kruisingshoek", default=90.0, suffix="°", description="Hoek waaronder de brug het obstakel kruist")
+    info.theoretical_length = TextField("Theoretische Lengte", default="", suffix="m", description="Theoretische overspanningslengte")
+    info.deck_width = TextField("Brugdekbreedte", default="", suffix="m", description="Totale breedte van het brugdek")
+    info.construction_height = NumberField("Constructiehoogte", default=0.0, suffix="mm", description="Hoogte van de dekconstuctie")
+    info.slenderness = TextField("Slankheidsverhouding", default="", description="Slankheidsverhouding van de dekoverspanningen")
+    info.daily_length = TextField("Ldag", default="", suffix="m", description="Dagelijkse lengte van de brug")
+
+    info.lb2c = LineBreak()
+
+    info.structural_properties_header = Text("### Structurele Eigenschappen")
+    info.bearing_type = TextField("Opleggingen", default="", description="Type van de opleggingen/lagers")
+    info.orthotropy = TextField("Orthotropie/Isotropie", default="", description="Orthotropisch of isotropisch gedrag van het dek")
+    info.beams_in_slab = OptionField(
+        "Liggers in plaat", default="Onbekend", options=["Onbekend", "Ja", "Nee"], description="Aanwezigheid van liggers in de plaat"
+    )
+
+    info.lb2b = LineBreak()
+
+    info.width_properties_header = Text("### Breedteverdeling")
+    info.roadway_width = TextField("Rijwegbreedte", default="", suffix="m", description="Breedte toegewezen aan voertuigverkeer")
+    info.tram_width = TextField("Breedte trambaan", default="", suffix="m", description="Breedte van de trambaan")
+    info.bicycle_path_width = TextField("Fietspaadbreedte", default="", suffix="m", description="Breedte van fietspaden")
+    info.sidewalk_north_east_width = TextField(
+        "Trottoirbreedte (Noord/Oost)", default="", suffix="m", description="Breedte van trottoir aan noord/oost zijde"
+    )
+    info.sidewalk_south_west_width = TextField(
+        "Trottoirbreedte (Zuid/West)", default="", suffix="m", description="Breedte van trottoir aan zuid/west zijde"
+    )
+    info.edge_beam_thickness = TextField("Dikte schampkant", default="", suffix="mm", description="Dikte van de schampkant/randdrager")
+    info.edge_loading = OptionField(
+        "Randbelasting", default="Onbekend", options=["Onbekend", "Ja", "Nee"], description="Aanwezigheid van randbelasting op de brug"
     )
 
     info.lb3 = LineBreak()
 
-    info.bridge_status_header = Text("## Assessment Status")
-    info.assessment_date = TextField("Last Assessment", default="", description="Date of the last assessment")
-    info.assessment_status = OptionField(
-        "Assessment Status",
-        default="Not started",
-        options=["Not started", "In progress", "Completed", "Requires attention"],
-        description="Current status of the bridge assessment",
+    info.bridge_status_header = Text("## Beoordelingsstatus")
+
+    info.arb_flag = OptionField(
+        "ARB Beoordelingsvlag",
+        default="Niet ingesteld",
+        options=["Niet ingesteld", "puur groen", "groen/oranje", "oranje/groen", "puur oranje", "oranje/rood", "puur rood"],
+        description="Huidige ARB (Assessment of Reliability of Bridges) statusvlag",
     )
-    info.assessment_notes = TextAreaField("Assessment Notes", default="", description="Notes about the assessment process or findings")
+
+    info.basic_test_ghpo = OptionField(
+        "Basale Toets GHPO",
+        default="Niet ingesteld",
+        options=["Niet ingesteld", "groen", "oranje", "rood", "nvt", "Wel"],
+        description="Basale toetsresultaat voor GHPO (Richtlijn voor Beoordeling van Bestaande Constructies)",
+    )
+
+    info.contractor_iha = TextField(
+        "Opdrachtnemer IHA", default="", description="Opdrachtnemer verantwoordelijk voor individuele gezondheidsbeoordeling"
+    )
+    info.assessment_notes = TextAreaField("Beoordelingsnotities", default="", description="Aanvullende opmerkingen over de brugbeoordeling")
+
+    info.lb4 = LineBreak()
+
+    info.reinforcement_header = Text("## Wapeningsgegevens")
+    info.support_reinforcement_diameter = TextField(
+        "Steunpuntswapening diameter", default="", suffix="mm", description="Diameter van steunpuntswapening in langsrichting"
+    )
+    info.support_reinforcement_spacing = TextField(
+        "Steunpuntswapening h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van steunpuntswapening"
+    )
+    info.support_reinforcement_layer = TextField("Steunpuntswapening laag", default="", description="Laag nummer van steunpuntswapening")
+    info.field_reinforcement_diameter = TextField(
+        "Veldwapening diameter", default="", suffix="mm", description="Diameter van veldwapening in langsrichting"
+    )
+    info.field_reinforcement_spacing = TextField(
+        "Veldwapening h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van veldwapening"
+    )
+    info.field_reinforcement_layer = TextField("Veldwapening laag", default="", description="Laag nummer van veldwapening")
+    info.field_reinforcement_transverse_diameter = TextField(
+        "Veldwapening dwarsrichting diameter", default="", suffix="mm", description="Diameter van veldwapening in dwarsrichting"
+    )
+    info.field_reinforcement_transverse_spacing = TextField(
+        "Veldwapening dwarsrichting h.o.h.-afstand", default="", suffix="mm", description="Hart-op-hart afstand van veldwapening dwarsrichting"
+    )
+    info.field_reinforcement_transverse_layer = TextField(
+        "Veldwapening dwarsrichting laag", default="", description="Laag nummer van veldwapening dwarsrichting"
+    )
+    info.concrete_cover = TextField(
+        "Dekking buitenkant wapening", default="", suffix="mm", description="Betondekking aan de buitenkant van de wapening"
+    )
 
     # ----------------------------------
     # --- Invoer Page ---
