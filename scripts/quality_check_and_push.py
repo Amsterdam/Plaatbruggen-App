@@ -188,29 +188,66 @@ def commit_changes(message: str) -> bool:
     return True
 
 
-def run_quality_check(name: str, command: str, can_auto_fix: bool = False) -> CheckResult:
-    """Run a single quality check and return the result."""
-    print(f"{Colors.CYAN}[>] Running {name}...{Colors.RESET}")
-    exit_code, output = run_command(command)
+def run_quality_check_with_progress(name: str, command: str, can_auto_fix: bool = False) -> CheckResult:
+    """Run a single quality check with live progress indication."""
+    import itertools
+    import threading
+    import time
+
+    print(f"{Colors.CYAN}[>] Running {name}...{Colors.RESET}", end="", flush=True)
+    start_time = time.time()
+
+    # Progress indicator for longer operations
+    spinner = itertools.cycle(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧"])
+    stop_spinner = threading.Event()
+
+    def show_spinner():
+        while not stop_spinner.is_set():
+            print(f"\r{Colors.CYAN}[>] Running {name}... {next(spinner)}{Colors.RESET}", end="", flush=True)
+            time.sleep(0.1)
+
+    # Start spinner for tests (which take longer)
+    if "Tests" in name:
+        spinner_thread = threading.Thread(target=show_spinner)
+        spinner_thread.daemon = True
+        spinner_thread.start()
+
+    try:
+        exit_code, output = run_command(command)
+    finally:
+        if "Tests" in name:
+            stop_spinner.set()
+            # Clear the spinner line
+            print(f"\r{Colors.CYAN}[>] Running {name}...{Colors.RESET}", end="", flush=True)
+
     passed = exit_code == 0
+    duration = time.time() - start_time
 
     # Parse error details
     error_count, error_details = parse_error_details(name, output)
 
     if passed:
-        status = f"{Colors.GREEN}[+] PASSED"
+        status = f" {Colors.GREEN}[+] PASSED"
+        if duration > 1.0:  # Show duration for longer operations
+            status += f" ({duration:.1f}s)"
     else:
-        status = f"{Colors.RED}[X] FAILED"
+        status = f" {Colors.RED}[X] FAILED"
         if error_count > 0:
             status += f" - Found {error_count} error{'s' if error_count != 1 else ''}"
             if error_details:
                 status += f" ({error_details})"
 
-    print(f"    {status}{Colors.RESET}")
+    print(f"{status}{Colors.RESET}")
 
     return CheckResult(
         name=name, passed=passed, can_auto_fix=can_auto_fix, command=command, output=output, error_count=error_count, error_details=error_details
     )
+
+
+def run_quality_check(name: str, command: str, can_auto_fix: bool = False) -> CheckResult:
+    """Run a single quality check and return the result."""
+    # Use progress indicator for longer operations
+    return run_quality_check_with_progress(name, command, can_auto_fix)
 
 
 def get_git_diff_hash() -> str:
@@ -317,6 +354,9 @@ def main() -> int:
         # 4. Run unit tests (cannot auto-fix)
         test_check = run_quality_check("Unit Tests", "python scripts/run_enhanced_tests.py", can_auto_fix=False)
 
+        # 5. Run VIKTOR tests (cannot auto-fix)
+        viktor_test_check = run_quality_check("VIKTOR Tests", "python scripts/run_viktor_tests.py", can_auto_fix=False)
+
         # If no auto-fixes were made, we're done with iterations
         if not made_fixes:
             print(f"{Colors.CYAN}[i] No auto-fixes applied this iteration, proceeding to final report{Colors.RESET}")
@@ -325,7 +365,7 @@ def main() -> int:
         print(f"{Colors.YELLOW}[!] Auto-fixes applied, running checks again...{Colors.RESET}")
 
     # Final status report
-    all_checks = [ruff_check, ruff_format, mypy_check, test_check]
+    all_checks = [ruff_check, ruff_format, mypy_check, test_check, viktor_test_check]
     failed_checks = print_final_status_report(all_checks)
 
     # If there are failures that can't be auto-fixed
