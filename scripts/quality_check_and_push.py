@@ -128,20 +128,35 @@ def run_command(command: str, capture_output: bool = True) -> tuple[int, str]:
         if capture_output:
             # Enhanced capture for viktor-cli to prevent subprocess leaks
             if "viktor-cli" in command:
-                # Use more aggressive capture for viktor-cli
+                # Use most aggressive capture possible for viktor-cli
+                # Create a completely isolated environment
+                env = dict(os.environ)
+                env.update(
+                    {
+                        "PYTHONUNBUFFERED": "1",
+                        "GIT_TERMINAL_PROMPT": "0",  # Disable git prompts
+                        "GIT_ASKPASS": "echo",  # Disable git password prompts
+                    }
+                )
+
                 result = subprocess.run(
                     command,
                     shell=True,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,  # Merge stderr into stdout
+                    stderr=subprocess.PIPE,  # Capture stderr separately first
+                    stdin=subprocess.DEVNULL,  # Prevent any input
                     text=True,
                     cwd=Path.cwd(),
                     check=False,
                     encoding="utf-8",
                     errors="replace",
-                    env={**dict(os.environ), "PYTHONUNBUFFERED": "1"},  # Force unbuffered output
+                    env=env,
+                    # Additional isolation
+                    preexec_fn=None if os.name == "nt" else os.setsid,  # Create new process group on Unix
                 )
-                return result.returncode, result.stdout or ""
+                # Combine all output
+                combined_output = (result.stdout or "") + (result.stderr or "")
+                return result.returncode, combined_output
             # Standard capture for other commands
             result = subprocess.run(
                 command,
@@ -274,12 +289,29 @@ def run_quality_check_with_progress(name: str, command: str, can_auto_fix: bool 
         spinner_thread.start()
 
     try:
+        # For VIKTOR tests, add extra debugging
+        if "VIKTOR Tests" in name:
+            # Flush all output streams before running
+            sys.stdout.flush()
+            sys.stderr.flush()
+
         exit_code, output = run_command(command)
+
+        # For VIKTOR tests, check for any leaked output
+        if "VIKTOR Tests" in name and output:
+            # Check if output contains git-related content that shouldn't be there
+            git_keywords = ["Enumerating objects", "Counting objects", "Compressing objects", "Writing objects", "remote:", "To https://github.com"]
+            leaked_git_output = any(keyword in output for keyword in git_keywords)
+            if leaked_git_output:
+                # This shouldn't happen with proper capture, but let's log it
+                print(f"\n{Colors.YELLOW}[DEBUG] Detected git output in VIKTOR tests: {output[:200]}...{Colors.RESET}")
+
     finally:
         if "Tests" in name:
             stop_spinner.set()
-            # Clear the spinner line
+            # Clear the spinner line and flush
             print(f"\r{Colors.CYAN}[>] Running {name}...{Colors.RESET}", end="", flush=True)
+            sys.stdout.flush()
 
     passed = exit_code == 0
     duration = time.time() - start_time
