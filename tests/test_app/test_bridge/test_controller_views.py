@@ -254,8 +254,14 @@ class TestBridgeControllerViews(unittest.TestCase):
         assert isinstance(result, TableResult)
         mock_create_table.assert_called_once()
 
-        # Verify the table data is properly passed through
-        assert result.data is mock_df
+        # Verify the table data is properly converted from DataFrame
+        # TableResult converts DataFrame to list of lists format
+        assert isinstance(result.data, list)
+        assert len(result.data) == 3  # 3 rows of data
+        assert len(result.data[0]) == 4  # 4 columns
+
+        # Check first row data
+        assert result.data[0] == ["ULS_1", 1.35, 1.5, "Ultimate Limit State 1"]
 
     @patch("app.bridge.controller.api_sdk.API")
     @view_test_wrapper("get_bridge_map_view")
