@@ -12,7 +12,7 @@ class LoadZoneDataRow(TypedDict, total=False):
 
     zone_type: str
     pavement_thickness: float  # New field for pavement thickness
-    pavement_material: str     # New field for pavement material
+    pavement_material: str  # New field for pavement material
     d1_width: float | None
     d2_width: float | None
     d3_width: float | None
