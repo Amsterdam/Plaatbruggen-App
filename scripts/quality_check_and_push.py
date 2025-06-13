@@ -126,6 +126,23 @@ def run_command(command: str, capture_output: bool = True) -> tuple[int, str]:
     """Run a shell command and return exit code and output."""
     try:
         if capture_output:
+            # Enhanced capture for viktor-cli to prevent subprocess leaks
+            if "viktor-cli" in command:
+                # Use more aggressive capture for viktor-cli
+                result = subprocess.run(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,  # Merge stderr into stdout
+                    text=True,
+                    cwd=Path.cwd(),
+                    check=False,
+                    encoding="utf-8",
+                    errors="replace",
+                    env={**dict(os.environ), "PYTHONUNBUFFERED": "1"},  # Force unbuffered output
+                )
+                return result.returncode, result.stdout or ""
+            # Standard capture for other commands
             result = subprocess.run(
                 command,
                 shell=True,
