@@ -21,6 +21,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements_dev.txt
+        
+    - name: Setup viktor-cli
+      run: |
+        curl -Lo viktor-cli 'https://developers.viktor.ai/api/v1/get-cli/?platform=linux&format=binary'
+        chmod +x viktor-cli
+        ./viktor-cli ci-install
     
-    - name: Run quality checks
-      run: python scripts/quality_check_and_push.py --dry-run 
+    - name: Run quality checks  
+      run: |
+        export PATH=$PWD:$PATH
+        python scripts/quality_check_and_push.py --dry-run 
