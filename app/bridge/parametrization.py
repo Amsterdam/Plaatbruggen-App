@@ -248,7 +248,7 @@ class BridgeParametrization(Parametrization):
     # ----------------------------------
     # --- Info Page ---
     # ----------------------------------
-    info = Page("Info", views=["get_bridge_map_view", "get_bridge_summary_view"])
+    info = Page("Info", views=["get_bridge_map_view"])
 
     # Bridge identification section
     info.bridge_info_section = Text(
@@ -410,6 +410,7 @@ Below you will find important information about this bridge structure."""
             "get_2d_longitudinal_section",
             "get_2d_cross_section",
             "get_load_zones_view",
+            "get_load_combinations_view",
         ],
     )
 
@@ -420,8 +421,8 @@ Below you will find important information about this bridge structure."""
     input.belastingcombinaties = Tab("Belastingcombinaties")
 
     # --- Load Combinations (in belastingcombinaties tab) ---
-    input.belastingcombinaties.cc_class = MultiSelectField("Gevolgklasse", options=["CC1a/b", "CC2", "CC3"])
-    input.belastingcombinaties.uls_comb_factor = MultiSelectField("Belastingscombinaties", options=["ULS", "SLS", "FAT"])
+    input.belastingcombinaties.cc_class = OptionField("Gevolgklasse", options=["CC1a/b", "CC2", "CC3"], variant="radio")
+    input.belastingcombinaties.comb_types = MultiSelectField("Belastingscombinaties", options=["ULS", "SLS", "FAT"])
 
     # ----------------------------------------
     # --- Invoer Page -> Dimensions tab ---
