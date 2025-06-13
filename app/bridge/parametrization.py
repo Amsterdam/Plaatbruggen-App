@@ -4,6 +4,14 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from app.constants import (
+    BRIDGE_DATA_PATH,
+    LOAD_ZONE_TYPES,
+    LOAD_ZONES_INFO_TEXT,
+    MAX_LOAD_ZONE_SEGMENT_FIELDS,
+    PAVEMENT_MATERIAL_OPTIONS,
+    SCIA_INFO_TEXT,
+)
 from viktor import DynamicArray
 from viktor.parametrization import (
     BooleanField,
@@ -22,8 +30,6 @@ from viktor.parametrization import (
     TextAreaField,
     TextField,
 )
-
-from app.constants import BRIDGE_DATA_PATH, LOAD_ZONE_TYPES, LOAD_ZONES_INFO_TEXT, MAX_LOAD_ZONE_SEGMENT_FIELDS, PAVEMENT_MATERIAL_OPTIONS, SCIA_INFO_TEXT
 
 from .geometry_functions import get_steel_qualities
 
@@ -690,23 +696,23 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
     input.belastingzones.load_zones_array.pavement_thickness = NumberField(
         "Dikte verharding",
         default=0.05,  # 5cm default
-        min=0.001,     # Minimum 1mm
-        max=1.0,       # Maximum 1m
+        min=0.001,  # Minimum 1mm
+        max=1.0,  # Maximum 1m
         suffix="m",
-        step=0.001,    # 1mm steps
-        description="Dikte van de wegverharding/ophoging voor deze belastingzone. Wordt gebruikt voor berekening eigengewicht."
+        step=0.001,  # 1mm steps
+        description="Dikte van de wegverharding/ophoging voor deze belastingzone. Wordt gebruikt voor berekening eigengewicht.",
     )
-    
+
     input.belastingzones.load_zones_array.pavement_material = OptionField(
         "Materiaal verharding",
         options=PAVEMENT_MATERIAL_OPTIONS,
         default="Asfalt",
-        description="Type materiaal van de verharding. Bepaalt de soortelijke massa voor eigengewichtberekening."
+        description="Type materiaal van de verharding. Bepaalt de soortelijke massa voor eigengewichtberekening.",
     )
 
     # TODO: Add calculated field showing resulting load in kN/m² based on thickness × material density
     # TODO: This calculation should be implemented in the controller/backend logic
-    
+
     input.belastingzones.load_zones_array.lb_pavement = LineBreak()
 
     # Dynamically create dX_width fields for the load_zones_array

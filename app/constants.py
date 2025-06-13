@@ -64,9 +64,9 @@ LOAD_ZONE_TYPES = ["Voetgangers", "Fietsers", "Auto", "Berm"]
 # TODO: Create materials.csv with specific masses for different pavement types
 PAVEMENT_MATERIAL_OPTIONS = [
     "Asfalt",  # TODO: Add density value (typical: ~23 kN/m³)
-    "Beton",   # TODO: Add density value (typical: ~24 kN/m³) 
-    "Klinkers", # TODO: Add density value (typical: ~22 kN/m³)
-    "Grind",   # TODO: Add density value (typical: ~18 kN/m³)
+    "Beton",  # TODO: Add density value (typical: ~24 kN/m³)
+    "Klinkers",  # TODO: Add density value (typical: ~22 kN/m³)
+    "Grind",  # TODO: Add density value (typical: ~18 kN/m³)
     "Tegels",  # TODO: Add density value (typical: ~20 kN/m³)
 ]
 
