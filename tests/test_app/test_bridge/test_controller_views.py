@@ -30,6 +30,7 @@ class TestBridgeControllerViews(unittest.TestCase):
             "get_2d_longitudinal_section",
             "get_top_view",
             "get_load_zones_view",
+            "get_load_combinations_view",
             "get_output_report",
             "get_bridge_map_view",
         ]
@@ -222,6 +223,39 @@ class TestBridgeControllerViews(unittest.TestCase):
         # Should return a figure with appropriate message
         json_result = json.loads(result.figure)
         assert "layout" in json_result
+
+    @patch("app.bridge.controller.create_load_combination_table")
+    @view_test_wrapper("get_load_combinations_view")
+    def test_get_load_combinations_view_execution(self, mock_create_table: MagicMock) -> None:
+        """Test actual execution of get_load_combinations_view."""
+        # Arrange
+        import pandas as pd
+
+        # Create a mock DataFrame with typical load combination data
+        mock_df = pd.DataFrame(
+            {
+                "Combination": ["ULS_1", "ULS_2", "SLS_1"],
+                "Dead Load": [1.35, 1.35, 1.0],
+                "Live Load": [1.5, 1.5, 1.0],
+                "Description": ["Ultimate Limit State 1", "Ultimate Limit State 2", "Serviceability Limit State 1"],
+            }
+        )
+        mock_create_table.return_value = mock_df
+
+        # Access the original method directly
+        original_method = self.controller.__class__.get_load_combinations_view
+
+        # Act - call bypassing decorator
+        result = original_method(self.controller, self.default_params)
+
+        # Assert
+        from viktor.views import TableResult
+
+        assert isinstance(result, TableResult)
+        mock_create_table.assert_called_once()
+
+        # Verify the table data is properly passed through
+        assert result.data is mock_df
 
     @patch("app.bridge.controller.api_sdk.API")
     @view_test_wrapper("get_bridge_map_view")
