@@ -198,13 +198,18 @@ def run_quality_check_with_progress(name: str, command: str, can_auto_fix: bool 
     start_time = time.time()
 
     # Progress indicator for longer operations
-    spinner = itertools.cycle(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧"])
+    spinner = itertools.cycle(["|", "/", "-", "\\"])
     stop_spinner = threading.Event()
 
     def show_spinner():
         while not stop_spinner.is_set():
-            print(f"\r{Colors.CYAN}[>] Running {name}... {next(spinner)}{Colors.RESET}", end="", flush=True)
-            time.sleep(0.1)
+            try:
+                print(f"\r{Colors.CYAN}[>] Running {name}... {next(spinner)}{Colors.RESET}", end="", flush=True)
+                time.sleep(0.2)
+            except UnicodeEncodeError:
+                # Fallback for encoding issues
+                print(f"\r[>] Running {name}... {next(spinner)}", end="", flush=True)
+                time.sleep(0.2)
 
     # Start spinner for tests (which take longer)
     if "Tests" in name:
