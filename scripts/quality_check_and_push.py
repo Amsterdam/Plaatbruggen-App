@@ -139,7 +139,7 @@ def run_command(command: str, capture_output: bool = True) -> tuple[int, str]:
                     }
                 )
 
-                result = subprocess.run(
+                result = subprocess.run(  # noqa: UP022
                     command,
                     shell=True,
                     stdout=subprocess.PIPE,
@@ -151,8 +151,8 @@ def run_command(command: str, capture_output: bool = True) -> tuple[int, str]:
                     encoding="utf-8",
                     errors="replace",
                     env=env,
-                    # Additional isolation
-                    preexec_fn=None if os.name == "nt" else os.setsid,  # Create new process group on Unix
+                    # Additional isolation (Unix only - Windows doesn't support setsid)
+                    **({"preexec_fn": os.setsid} if os.name != "nt" and hasattr(os, "setsid") else {}),
                 )
                 # Combine all output
                 combined_output = (result.stdout or "") + (result.stderr or "")
