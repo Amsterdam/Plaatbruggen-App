@@ -668,10 +668,13 @@ Houdt rekening met laadtijd van het model, wanneer er veel zones en wapeningscon
 
     # --- Load Zones (in belastingzones tab) ---
     input.belastingzones.info_text = Text(
-        "Definieer hier de belastingzones. Elke zone wordt gestapeld vanaf één zijde van de brug. "
-        "Vul alleen breedtes in voor de daadwerkelijk gedefinieerde brugsegmenten (D-nummers) "
-        "onder de tab 'Dimensies'. De laatste belastingzone loopt automatisch door tot het einde van de brug; "
-        "hiervoor hoeven dus geen segmentbreedtes (D-waardes) ingevuld te worden."
+        """Definieer hier de werkelijke wegindeling op de brug, de belastingen worden hier automatisch van afgeleid.
+De belastingen volgens de theoretische wegindeling worden automatisch gegenereerd op de achtergrond, hier hoef je niets voor in te vullen.
+
+Elke zone wordt gestapeld vanaf één zijde van de brug.
+Vul alleen breedtes in voor de daadwerkelijk gedefinieerde brugsegmenten (D-nummers) onder de tab Dimensies.
+De laatste belastingzone loopt automatisch door tot het einde van de brug;
+hiervoor hoeven dus geen segmentbreedtes (D-waardes) ingevuld te worden."""
     )
 
     input.belastingzones.load_zones_array = DynamicArray(
